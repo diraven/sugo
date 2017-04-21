@@ -6,7 +6,7 @@ import (
 )
 
 type BasicEmbed struct {
-	Triggers []string
+	Basic
 	Response *discordgo.MessageEmbed
 }
 
