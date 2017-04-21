@@ -7,6 +7,8 @@ import (
 
 var Bot Instance
 
+const VERSION string = "0.0.12"
+
 type Instance struct {
 	*discordgo.Session
 	Self     *discordgo.User
