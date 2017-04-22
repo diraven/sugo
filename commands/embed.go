@@ -12,6 +12,5 @@ type BasicEmbed struct {
 
 func (c BasicEmbed) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
 	_, err = sg.ChannelMessageSendEmbed(m.ChannelID, c.Response)
-	print(err)
 	return
 }

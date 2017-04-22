@@ -9,6 +9,8 @@ var Bot Instance
 
 const VERSION string = "0.0.12"
 
+const PermissionNone = 0 // A permission that is always granted.
+
 type Instance struct {
 	*discordgo.Session
 	Self     *discordgo.User
@@ -59,7 +61,27 @@ func (sg *Instance) RegisterCommand(command Command) (err error) {
 	return
 }
 
+func (sg *Instance) UserHasPermission(permission int, u *discordgo.User, c *discordgo.Channel) (result bool, err error) {
+	perms, err := sg.UserChannelPermissions(u.ID, c.ID)
+	if err != nil {
+		return
+	}
+	result = (perms | permission) == perms
+	return
+}
+
+func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (result bool, err error) {
+	result, err = sg.UserHasPermission(permission, sg.Self, c)
+	return
+}
+
 func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Make sure we are in the correct bot instance.
+	if Bot.Session != s {
+		// TODO: Report error.
+		return
+	}
+
 	// Make sure message is not sent by bot.
 	if m.Author.Bot {
 		return
@@ -73,10 +95,26 @@ func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// Simple dispatch commmand.
+	// Dispatch command.
 	for _, command := range Bot.commands {
-		if command.Test(&Bot, m.Message) {
-			command.Execute(&Bot, m.Message)
+		// Test if command is applicable.
+		is_applicable, err := command.IsApplicable(&Bot, m.Message)
+		if err != nil {
+			// TODO: Report error.
+		}
+		if is_applicable {
+			// Check if user has all necessary permissions.
+			is_allowed, err := command.IsAllowed(&Bot, m.Message)
+			if err != nil {
+				// TODO: Report error.
+			}
+			if is_allowed {
+				// Execute command.
+				err := command.Execute(&Bot, m.Message)
+				if err != nil {
+					// TODO: Report error.
+				}
+			}
 		}
 	}
 }

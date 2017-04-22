@@ -5,14 +5,7 @@ import (
 )
 
 type Command interface {
-	Test(sg *Instance, Message *discordgo.Message) (is_applicable bool)
-	Execute(sg *Instance, Message *discordgo.Message) (err error)
+	IsApplicable(sg *Instance, m *discordgo.Message) (is_applicable bool, err error)
+	IsAllowed(sg *Instance, m *discordgo.Message) (passed bool, err error)
+	Execute(sg *Instance, m *discordgo.Message) (err error)
 }
-
-//func (c Command) Test(Message discordgo.Message) (is_applicable bool) {
-//	return
-//}
-//
-//func (c Command) Execute() (err error) {
-//	return
-//}
