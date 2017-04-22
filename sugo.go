@@ -7,7 +7,7 @@ import (
 
 var Bot Instance
 
-const VERSION string = "0.0.12"
+const VERSION string = "0.0.14"
 
 const PermissionNone = 0 // A permission that is always granted.
 
