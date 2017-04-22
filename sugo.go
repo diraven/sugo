@@ -14,7 +14,7 @@ const PermissionNone = 0 // A permission that is always granted.
 type Instance struct {
 	*discordgo.Session
 	Self     *discordgo.User
-	Root     *discordgo.User
+	root     *discordgo.User
 	commands []Command
 }
 
@@ -47,7 +47,7 @@ func Start(token string, root_uid string) (sg *Instance, err error) {
 		if err != nil {
 			// TODO: Report error.
 		} else {
-			sg.Root = root
+			sg.root = root
 		}
 	}
 
@@ -67,6 +67,20 @@ func Start(token string, root_uid string) (sg *Instance, err error) {
 
 func (sg *Instance) RegisterCommand(command Command) (err error) {
 	sg.commands = append(sg.commands, command)
+	return
+}
+
+func (sg *Instance) IsRoot(user *discordgo.User) (result bool) {
+	// By default user is not root.
+	result = false
+	// If root is defined for our bot.
+	if sg.root != nil {
+		// If root ID is the same as user ID
+		if sg.root.ID == user.ID && user.ID != "" {
+			// Then the user is root.
+			result = true
+		}
+	}
 	return
 }
 

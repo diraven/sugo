@@ -56,14 +56,13 @@ func (c Basic) IsAllowed(sg *sugo.Instance, m *discordgo.Message) (result bool, 
 		return
 	}
 
-	// If root user issued a command - it is always allowed.
-	if sg.Root != nil {
-		if m.Author.ID == sg.Root.ID {
-			return true, nil
-		}
+	// If user is a root - command is always allowed.
+	if sg.IsRoot(m.Author) {
+		return true, nil
 	}
+	// Otherwise if user is not a root a command is root-only - command is not allowed.
 	if c.RootOnly {
-		return // If command is for root only - we do not check anything else and just deny using it.
+		return
 	}
 
 	// Make sure user has the permission required.
