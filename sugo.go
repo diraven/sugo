@@ -73,7 +73,7 @@ func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// Simple dispatch commmand
+	// Simple dispatch commmand.
 	for _, command := range Bot.commands {
 		if command.Test(&Bot, m.Message) {
 			command.Execute(&Bot, m.Message)
