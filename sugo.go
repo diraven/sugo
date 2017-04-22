@@ -14,10 +14,11 @@ const PermissionNone = 0 // A permission that is always granted.
 type Instance struct {
 	*discordgo.Session
 	Self     *discordgo.User
+	Root     *discordgo.User
 	commands []Command
 }
 
-func Start(token string) (sg *Instance) {
+func Start(token string, root_uid string) (sg *Instance, err error) {
 	// Create empty Instance session.
 	Bot = Instance{}
 	sg = &Bot
@@ -32,16 +33,25 @@ func Start(token string) (sg *Instance) {
 	// Save Discord session into Instance struct.
 	sg.Session = s
 
-	// Get the account information.
+	// Get bot account info.
 	self, err := s.User("@me")
 	if err != nil {
 		fmt.Println("error obtaining account details,", err)
+		return
 	}
-
-	// Save reference to the bot into Instance struct.
 	sg.Self = self
 
-	// Register messageCreate as a callback for the messageCreate events.
+	// Get root account info.
+	if root_uid != "" {
+		root, err := s.User(root_uid)
+		if err != nil {
+			// TODO: Report error.
+		} else {
+			sg.Root = root
+		}
+	}
+
+	// Register callback for the messageCreate events.
 	s.AddHandler(onMessageCreate)
 
 	// Open the websocket and begin listening.
@@ -52,7 +62,6 @@ func Start(token string) (sg *Instance) {
 	}
 
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
-
 	return
 }
 

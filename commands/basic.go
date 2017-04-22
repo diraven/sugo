@@ -8,6 +8,7 @@ import (
 )
 
 type Basic struct {
+	RootOnly            bool
 	Triggers            []string
 	PermissionsRequired []int
 	Response            *string
@@ -28,7 +29,7 @@ func (c Basic) IsAllowed(sg *sugo.Instance, m *discordgo.Message) (result bool, 
 	// By default command is not allowed.
 	result = false
 
-	// For security reasons - every command should have permissions set explicitly.
+	// For security reasons - every command should have at least one permission set explicitly.
 	if len(c.PermissionsRequired) == 0 {
 		err = errors.SugoError{Text: "Command has no PermissionsRequired[]!"}
 		return
@@ -46,21 +47,31 @@ func (c Basic) IsAllowed(sg *sugo.Instance, m *discordgo.Message) (result bool, 
 		compound_perm |= perm
 	}
 
-	// Make sure user has the permission required.
-	user_has_perm, err := sg.UserHasPermission(compound_perm, m.Author, channel)
-	if err != nil {
-		return
-	}
-	if !(user_has_perm) {
-		return
-	}
-
 	// Make sure bot has the permission required.
 	bot_has_perm, err := sg.BotHasPermission(compound_perm, channel)
 	if err != nil {
 		return
 	}
 	if !(bot_has_perm) {
+		return
+	}
+
+	// If root user issued a command - it is always allowed.
+	if sg.Root != nil {
+		if m.Author.ID == sg.Root.ID {
+			return true, nil
+		}
+	}
+	if c.RootOnly {
+		return // If command is for root only - we do not check anything else and just deny using it.
+	}
+
+	// Make sure user has the permission required.
+	user_has_perm, err := sg.UserHasPermission(compound_perm, m.Author, channel)
+	if err != nil {
+		return
+	}
+	if !(user_has_perm) {
 		return
 	}
 
