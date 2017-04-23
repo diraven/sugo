@@ -26,8 +26,9 @@ import (
 )
 
 func main() {
-	sugo.Bot.RegisterCommand(sugo_commands_std.Info)
-	sugo.Bot.RegisterCommand(sugo_commands_std.Shutdown)
+	sugo.Bot.RegisterCommand("info", sugo_commands_std.Info)
+	sugo.Bot.RegisterCommand("shutdown", sugo_commands_std.Shutdown)
+	sugo.Bot.RegisterCommand("dumpdata", sugo_commands_std.Dumpdata)
 
 	err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
 	if err != nil {

@@ -22,7 +22,7 @@ type channelData struct {
 type userData struct {
 }
 
-type data struct {
+type bot_data struct {
 	Servers  map[string]serverData
 	Channels map[string]channelData
 	Users    map[string]userData
@@ -41,7 +41,7 @@ func (sg *Instance) LoadData() (bytes_count int, err error) {
 	}
 
 	// Decode JSON data.
-	json.Unmarshal(data, &sg.Data)
+	json.Unmarshal(data, &sg.data)
 	if err != nil {
 		return
 	}
@@ -53,7 +53,7 @@ func (sg *Instance) LoadData() (bytes_count int, err error) {
 
 func (sg *Instance) DumpData() (bytes_count int, err error) {
 	// Encode our data into JSON.
-	data, err := json.Marshal(sg.Data)
+	data, err := json.Marshal(sg.data)
 	if err != nil {
 		return
 	}

@@ -16,7 +16,19 @@ func ChannelAsMention(c *discordgo.Channel) (s string) {
 	return
 }
 
-func TimeToDiscordFormat(t *time.Time) (s string) {
+func TimeToDiscordTimestamp(t time.Time) (s string) {
 	s = t.Format(time.RFC3339)
 	return
+}
+
+func DiscordTimestampToTime(s string) (t time.Time, err error) {
+	t, err = time.Parse(time.RFC3339, s)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func PointerToString(input_str string)(pointer_to_str *string) {
+	return &input_str
 }

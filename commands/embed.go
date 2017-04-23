@@ -7,10 +7,10 @@ import (
 
 type BasicEmbed struct {
 	Basic
-	Response discordgo.MessageEmbed
+	Response *discordgo.MessageEmbed
 }
 
 func (c BasicEmbed) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
-	_, err = sg.ChannelMessageSendEmbed(m.ChannelID, &c.Response)
+	_, err = sg.ChannelMessageSendEmbed(m.ChannelID, c.Response)
 	return
 }

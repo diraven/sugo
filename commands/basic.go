@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"strings"
 	"github.com/diraven/sugo"
 	"github.com/diraven/sugo/errors"
 	"fmt"
@@ -11,25 +10,18 @@ import (
 
 type Basic struct {
 	RootOnly            bool
-	Triggers            []string
 	PermissionsRequired []int
 	Response            string
 }
 
-func (c Basic) IsApplicable(sg *sugo.Instance, m *discordgo.Message) (is_applicable bool, err error) {
-	is_applicable = false
-	for _, trigger := range c.Triggers {
-		if strings.Contains(m.Content, trigger) {
-			is_applicable = true
-			return
-		}
-	}
+func (c Basic) Validate(sg *sugo.Instance, m *discordgo.Message) (passed bool, err error) {
+	passed = true
 	return
 }
 
-func (c Basic) IsAllowed(sg *sugo.Instance, m *discordgo.Message) (result bool, err error) {
+func (c Basic) CheckPermissions(sg *sugo.Instance, m *discordgo.Message) (passed bool, err error) {
 	// By default command is not allowed.
-	result = false
+	passed = false
 
 	// For security reasons - every command should have at least one permission set explicitly.
 	if len(c.PermissionsRequired) == 0 {
@@ -82,7 +74,7 @@ func (c Basic) IsAllowed(sg *sugo.Instance, m *discordgo.Message) (result bool, 
 	// - User has all the permissions required.
 	// - Bot has all the permissions required.
 	// So we can safely say the command is allowed to be executed.
-	result = true
+	passed = true
 	return
 }
 
