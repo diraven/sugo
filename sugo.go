@@ -7,7 +7,7 @@ import (
 
 var Bot Instance
 
-const VERSION string = "0.0.14"
+const VERSION string = "0.0.18"
 
 const PermissionNone = 0 // A permission that is always granted.
 
@@ -16,17 +16,25 @@ type Instance struct {
 	Self     *discordgo.User
 	root     *discordgo.User
 	commands []Command
+	Data     data
+	Done chan bool
 }
 
-func Start(token string, root_uid string) (sg *Instance, err error) {
-	// Create empty Instance session.
-	Bot = Instance{}
-	sg = &Bot
+func (sg *Instance) Startup(token string, root_uid string) (err error) {
+	// Intitialize Done channel.
+	sg.Done = make(chan bool)
+
+	// Initialize data storage.
+	_, err = sg.LoadData()
+	if err != nil {
+		fmt.Println("Error loading data... ", err)
+		return
+	}
 
 	// Create a new Discord session using the provided bot token.
 	s, err := discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("error creating Discord session,", err)
+		fmt.Println("Error creating Discord session... ", err)
 		return
 	}
 
@@ -34,16 +42,16 @@ func Start(token string, root_uid string) (sg *Instance, err error) {
 	sg.Session = s
 
 	// Get bot account info.
-	self, err := s.User("@me")
+	self, err := sg.Session.User("@me")
 	if err != nil {
-		fmt.Println("error obtaining account details,", err)
+		fmt.Println("Error obtaining account details... ", err)
 		return
 	}
 	sg.Self = self
 
 	// Get root account info.
 	if root_uid != "" {
-		root, err := s.User(root_uid)
+		root, err := sg.Session.User(root_uid)
 		if err != nil {
 			// TODO: Report error.
 		} else {
@@ -52,16 +60,37 @@ func Start(token string, root_uid string) (sg *Instance, err error) {
 	}
 
 	// Register callback for the messageCreate events.
-	s.AddHandler(onMessageCreate)
+	sg.Session.AddHandler(onMessageCreate)
 
 	// Open the websocket and begin listening.
-	err = s.Open()
+	err = sg.Session.Open()
 	if err != nil {
-		fmt.Println("error opening connection,", err)
+		fmt.Println("Error opening connection... ", err)
 		return
 	}
 
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+
+	// Block until a message from Done channel.
+	<-sg.Done
+	return
+}
+
+func (sg *Instance) Shutdown() (err error) {
+	// Dump data.
+	_, err = sg.DumpData()
+	if err != nil {
+		return
+	}
+
+	// Close discord session.
+	err = sg.Session.Close()
+	if err != nil {
+		return
+	}
+
+	// Send to Done channel.
+	sg.Done <- true
 	return
 }
 

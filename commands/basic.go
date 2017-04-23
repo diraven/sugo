@@ -5,13 +5,15 @@ import (
 	"strings"
 	"github.com/diraven/sugo"
 	"github.com/diraven/sugo/errors"
+	"fmt"
+	"github.com/diraven/sugo/helpers"
 )
 
 type Basic struct {
 	RootOnly            bool
 	Triggers            []string
 	PermissionsRequired []int
-	Response            *string
+	Response            string
 }
 
 func (c Basic) IsApplicable(sg *sugo.Instance, m *discordgo.Message) (is_applicable bool, err error) {
@@ -85,6 +87,28 @@ func (c Basic) IsAllowed(sg *sugo.Instance, m *discordgo.Message) (result bool, 
 }
 
 func (c Basic) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
-	_, err = sg.ChannelMessageSend(m.ChannelID, *c.Response)
+	_, err = c.RespondMention(sg, m, c.Response)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// Responds to the channel.
+func (c Basic) Respond(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	message, err = sg.ChannelMessageSend(m.ChannelID, text)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// Responds to the channel with the original message author mention.
+func (c Basic) RespondMention(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	response_text := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
+	message, err = sg.ChannelMessageSend(m.ChannelID, response_text)
+	if err != nil {
+		return
+	}
 	return
 }

@@ -20,28 +20,18 @@ Typical bot initialization would look like the following:
 package main
 
 import (
-	"github.com/diraven/sugo"
-	"fmt"
 	"os"
+	"github.com/diraven/sugo"
 	"github.com/diraven/sugo-commands-std"
 )
 
 func main() {
-  // Initialize the bot itself.
-	bot, err := sugo.Start(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
-	if err != nil {
-		fmt.Println(err)
-	}
+	sugo.Bot.RegisterCommand(sugo_commands_std.Info)
+	sugo.Bot.RegisterCommand(sugo_commands_std.Shutdown)
 
-  // Register all the commands from packages imported you are interested in.
-	bot.RegisterCommand(sugo_commands_std.Info)
-  
-  // Just to see the bot's user id and make sure everything works.
-	fmt.Println(bot.Self.ID)
-  
-  // Simple way to keep the bot running (c).
-	<-make(chan struct{})
-  
-	return
+	err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
+	if err != nil {
+		// TODO: Report error.
+	}
 }
 ```
