@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
-	"github.com/diraven/sugo/errors"
 	"fmt"
 	"github.com/diraven/sugo/helpers"
 )
@@ -25,7 +24,7 @@ func (c Basic) CheckPermissions(sg *sugo.Instance, m *discordgo.Message) (passed
 
 	// For security reasons - every command should have at least one permission set explicitly.
 	if len(c.PermissionsRequired) == 0 {
-		err = errors.SugoError{Text: "Command has no PermissionsRequired[]!"}
+		err = sugo.Error{Text: "Command has no PermissionsRequired[]!"}
 		return
 	}
 

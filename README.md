@@ -1,4 +1,4 @@
-# sugo
+# Sugo
 
 Sugo is essentially a bot framework built on top of [discordgo bindings](https://github.com/bwmarrin/discordgo). There are few convenience features, such as:
 
@@ -7,10 +7,10 @@ Sugo is essentially a bot framework built on top of [discordgo bindings](https:/
 - and eventually more... hopefully.
 
 There are few repositories with the commands available:
-- [sugo-commands-std](https://github.com/diraven/sugo-commands-std)
+- [sugo_commands_std](https://github.com/diraven/sugo_commands_std)
 - well, for now there is only one. =)
 
-The project is on rather early stages of development, so untill first release there will be little effort to keep commands API backwards-compatible. Please, fork or checkout a commit that works for you.
+The project is on rather early stages of development, so until first release there will be little effort to keep commands API backwards-compatible. Please, fork or checkout a commit that works for you.
 
 If you have something to share, discuss or propose - please, do not hesitate to do so.
 
@@ -22,7 +22,7 @@ package main
 import (
 	"os"
 	"github.com/diraven/sugo"
-	"github.com/diraven/sugo-commands-std"
+	"github.com/diraven/sugo_commands_std"
 )
 
 func main() {
