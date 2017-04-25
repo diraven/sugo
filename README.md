@@ -27,8 +27,9 @@ import (
 )
 
 func main() {
-	// Command without trigger will be executed if there is a message with bot mention and nothing else.
+	// You can build your simple custom command right here in the init if you so desire.
 	greetCommand := &commands.Basic{}
+	// Command without trigger will be executed if there is a message with bot mention and nothing else.
 	greetCommand.AddRequiredPermission(sugo.PermissionNone)
 	greetCommand.SetResponse("Hi! My name is " +
 		"@Sugo and I'm here to help you out... Try `@sugo help` for more info.")
@@ -45,6 +46,8 @@ func main() {
 	sugo.Bot.RegisterCommand(&sugo_commands_std.Dumpdata)
 	sugo.Bot.RegisterCommand(&sugo_commands_std.Loaddata)
 
+	// Now just start the bot up and see what happens. Make sure to provide at least token via SUGO_TOKEN
+	// environment variable.
 	err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
 	if err != nil {
 		// TODO: Report error.
