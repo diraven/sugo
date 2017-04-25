@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 	"strconv"
-	"strings"
 )
 
 func UserAsMention(u *discordgo.User) (s string) {
@@ -48,15 +47,15 @@ func DiscordIDCreationTime(ID string) (t time.Time, err error) {
 }
 
 // ConsumeTerm removes and returns first term from the given string.
-func ConsumeTerm(input *string) (term string) {
-	*input = strings.TrimSpace(*input)
-	nextSpaceIndex := strings.Index(*input, " ")
-	if nextSpaceIndex < 0 {
-		term = *input
-		*input = ""
-	} else {
-		term = (*input)[:nextSpaceIndex]
-		*input = (*input)[nextSpaceIndex+1:]
-	}
-	return
-}
+//func ConsumeTerm(input *string) (term string) {
+//	*input = strings.TrimSpace(*input)
+//	nextSpaceIndex := strings.Index(*input, " ")
+//	if nextSpaceIndex < 0 {
+//		term = *input
+//		*input = ""
+//	} else {
+//		term = (*input)[:nextSpaceIndex]
+//		*input = (*input)[nextSpaceIndex+1:]
+//	}
+//	return
+//}

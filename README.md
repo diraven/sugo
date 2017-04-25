@@ -23,12 +23,26 @@ import (
 	"os"
 	"github.com/diraven/sugo"
 	"github.com/diraven/sugo_commands_std"
+	"github.com/diraven/sugo/commands"
 )
 
 func main() {
-	sugo.Bot.RegisterCommand("info", sugo_commands_std.Info)
-	sugo.Bot.RegisterCommand("shutdown", sugo_commands_std.Shutdown)
-	sugo.Bot.RegisterCommand("dumpdata", sugo_commands_std.Dumpdata)
+	// Command without trigger will be executed if there is a message with bot mention and nothing else.
+	sugo.Bot.RegisterCommand(commands.Basic{
+		PermissionsRequired: []int{sugo.PermissionNone},
+		Response:            "Hi! My name is @Sugo and I'm here to help you out... Try `@sugo help` for more info.",
+	})
+
+	// If you don't like default command trigger (for example if it clashes with some other one), you can change it like
+	// so:
+	sugo_commands_std.Info.Trigger = "info" // Change "info" to whatever you see appropriate.
+	sugo.Bot.RegisterCommand(sugo_commands_std.Info)
+
+	// And add some other commands to your bot.
+	sugo.Bot.RegisterCommand(sugo_commands_std.Help)
+	sugo.Bot.RegisterCommand(sugo_commands_std.Shutdown)
+	sugo.Bot.RegisterCommand(sugo_commands_std.Dumpdata)
+	sugo.Bot.RegisterCommand(sugo_commands_std.Loaddata)
 
 	err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
 	if err != nil {

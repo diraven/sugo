@@ -8,10 +8,11 @@ import (
 	"syscall"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo/helpers"
+	"strings"
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.21"
+const VERSION string = "0.0.22"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
@@ -19,7 +20,7 @@ const PermissionNone = 0
 // Bot contains bot instance.
 var Bot Instance
 
-// Instance interface describes bot.
+// Instance struct describes bot.
 type Instance struct {
 	// Bot has everything discordgo.Session has.
 	*discordgo.Session
@@ -27,8 +28,8 @@ type Instance struct {
 	Self *discordgo.User
 	// root is a user that always has all permissions granted.
 	root *discordgo.User
-	// commands contains all the commands loaded into the bot.
-	commands map[string]Command
+	// Commands contains all the Commands loaded into the bot.
+	Commands []Command
 	// data is in-memory data storage.
 	data *bot_data
 	// CShutdown is channel that receives shutdown signals.
@@ -69,7 +70,7 @@ func (sg *Instance) Startup(token string, root_uid string) (err error) {
 	if root_uid != "" {
 		root, err := sg.Session.User(root_uid)
 		if err != nil {
-			// TODO: Report error.
+			return err
 		} else {
 			sg.root = root
 		}
@@ -92,8 +93,12 @@ func (sg *Instance) Startup(token string, root_uid string) (err error) {
 	// Wait for shutdown signal to arrive.
 	<-sg.CShutdown
 
+	fmt.Println("Termination signal received. Shutting down...")
+
 	// Gracefully shut the bot down.
 	sg.teardown()
+
+	fmt.Println("Bye!")
 
 	return
 }
@@ -119,23 +124,10 @@ func (sg *Instance) teardown() (err error) {
 	return
 }
 
-// RegisterCommand adds command to the bot's list of registered commands.
-func (sg *Instance) RegisterCommand(trigger string, c Command) (err error) {
-	// Initialize commands storage if not yet done.
-	if sg.commands == nil {
-		sg.commands = make(map[string]Command)
-	}
-
-	// Check if given trigger already exists.
-	if _, ok := sg.commands[trigger]; ok {
-		return Error{
-			Text: fmt.Sprintf("Conflicting triggers: Command with top level '%s' trigger already exists.", trigger),
-		}
-	}
-
-	// Save command into the bot's commands map.
-	sg.commands[trigger] = c
-	return
+// RegisterCommand adds command to the bot's list of registered Commands.
+func (sg *Instance) RegisterCommand(c Command) {
+	// Save command into the bot's Commands list.
+	sg.Commands = append(sg.Commands, c)
 }
 
 // IsRoot checks if a given user is root.
@@ -169,8 +161,37 @@ func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (resu
 	return
 }
 
+func (sg *Instance) FindCommand(m *discordgo.Message) (output Command, err error) {
+	for _, command := range Bot.Commands {
+		// Check if message matches command.
+		matched, err := command.Match(&Bot, m)
+		if err != nil {
+			return nil, err
+		}
+		if !matched {
+			// Message did not match command.
+			continue
+		}
+
+		// Command matched, check if necessary permissions are present.
+		passed, err := command.CheckPermissions(&Bot, m)
+		if err != nil {
+			return nil, err
+		}
+		if !passed {
+			// Message did not pass permissions check.
+			return nil, nil
+		}
+
+		// Command matched and permissions check passed, returning command.
+		return command, nil
+	}
+	// No commands matched.
+	return nil, nil
+}
+
 // onMessageCreate contains all the message processing logic for the bot.
-func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
 		// TODO: Report error.
@@ -178,44 +199,33 @@ func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// Make sure message author is not a bot.
-	if m.Author.Bot {
+	if mc.Author.Bot {
+		// TODO: Report error.
 		return
 	}
 
 	// Make sure the bot is mentioned in the message, and bot mention is first mention in the message.
-	mention := helpers.ConsumeTerm(&m.Content)
-	if mention != helpers.UserAsMention(Bot.Self) {
+	bot_mention := helpers.UserAsMention(Bot.Self)
+	if strings.HasPrefix(strings.TrimSpace(mc.Content), bot_mention) {
+		// Remove bot mention from the string.
+		mc.Content = strings.TrimSpace(strings.TrimPrefix(mc.Content, bot_mention))
+	} else {
+		// Bot was not mentioned.
 		return
 	}
 
-	// Get next term, which is probably command name.
-	command_name := helpers.ConsumeTerm(&m.Content)
-
-	if command_name != "" {
-		// Command name exists after bot mention.
-
-		// Try to find the command in bot commands.
-		command, ok := Bot.commands[command_name]
-
-		if ok {
-			// If command has been found.
-			is_allowed, err := command.CheckPermissions(&Bot, m.Message)
-			if err != nil {
-				// TODO: Report error.
-			}
-			if is_allowed {
-				// Execute command.
-				err := command.Execute(&Bot, m.Message)
-				if err != nil {
-					// TODO: Report error.
-				}
-			}
-		} else {
-			// Command not found.
-			// TODO: Here should probably be something like "Command not found, try help command"
+	// Search for applicable command.
+	command, err := Bot.FindCommand(mc.Message)
+	if err != nil {
+		// TODO: Report error.
+	}
+	if command != nil {
+		err := command.Execute(&Bot, mc.Message)
+		if err != nil {
+			// TODO: Report error.
 		}
 	} else {
-		// There is nothing else but bot mention in the message.
-		// TODO: Here should be some kind of response where bot presents itself and invites to use "help" command
+		// Command not found.
+		// TODO: Here should probably be something like a response where bot presents itself and invites to use "help" command.
 	}
 }
