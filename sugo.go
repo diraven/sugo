@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.24"
+const VERSION string = "0.0.25"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
@@ -166,8 +166,9 @@ func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (resu
 	return
 }
 
-func FindCommand(m *discordgo.Message, cmdList *[]iCommand) (output iCommand, err error) {
-	for _, command := range *cmdList {
+func FindCommand(m *discordgo.Message, cmdList []iCommand) (output iCommand, err error) {
+	// For every command in the list provided:
+	for _, command := range cmdList {
 		// Check if message matches command.
 		matched, err := command.Match(&Bot, m)
 		if err != nil {
@@ -188,7 +189,26 @@ func FindCommand(m *discordgo.Message, cmdList *[]iCommand) (output iCommand, er
 			return nil, nil
 		}
 
-		// Command matched and permissions check passed, returning command.
+		// Command matched and permissions check passed.
+
+		// Check if there are any subcommands.
+		subcommands := command.SubCommands()
+		if len(subcommands) > 0 {
+			// We do have subcommands. Consume original parent command trigger from the message.
+			m.Content = strings.TrimSpace(strings.TrimPrefix(m.Content, command.Trigger()))
+
+			// Now try to match any of the subcommands.
+			subcommand, err := FindCommand(m, subcommands)
+			if err != nil {
+				return nil, err
+			}
+			// If we were able to get subcommand that matched, return it.
+			if subcommand != nil {
+				return subcommand, nil
+			}
+		}
+
+		// Either there are no subcommands, or none of those worked. Return parent command.
 		return command, nil
 	}
 	// No commands matched.
@@ -220,7 +240,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Search for applicable command.
-	command, err := FindCommand(mc.Message, &Bot.Commands)
+	command, err := FindCommand(mc.Message, Bot.Commands)
 	if err != nil {
 		// TODO: Report error.
 	}

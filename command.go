@@ -23,6 +23,12 @@ type Command struct {
 	description string
 	// usage contains an example of the command usage.
 	usage string
+	// subCommands contains all subcommands of the given command.
+	subCommands []iCommand
+	// subCommandsTriggers contains all triggers of subcommands for the help to refer to.
+	subCommandsTriggers []string
+	// parent_ contains command, which is parent for this one
+	parent_ iCommand
 }
 
 type iCommand interface {
@@ -30,6 +36,7 @@ type iCommand interface {
 	CheckPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error)
 	Execute(sg *Instance, m *discordgo.Message) (err error)
 	HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed)
+	Path() (value string)
 
 	Trigger() (value string)
 	SetTrigger(value string)
@@ -39,6 +46,9 @@ type iCommand interface {
 
 	PermissionsRequired() (value []int)
 	AddRequiredPermission(value int)
+
+	SubCommands() (value []iCommand)
+	AddSubCommand(value iCommand) (err error)
 
 	Response() (value string)
 	SetResponse(value string)
@@ -51,6 +61,10 @@ type iCommand interface {
 
 	Usage() (value string)
 	SetUsage(value string)
+	FullUsage() (value string)
+
+	parent() (command iCommand)
+	setParent(command iCommand)
 }
 
 func (c *Command) Trigger() (value string) {
@@ -75,6 +89,29 @@ func (c *Command) PermissionsRequired() (value []int) {
 
 func (c *Command) AddRequiredPermission(value int) {
 	c.permissionsRequired = append(c.permissionsRequired, value)
+}
+
+func (c *Command) SubCommands() (value []iCommand) {
+	return c.subCommands
+}
+
+func (c *Command) AddSubCommand(subCommand iCommand) (err error) {
+	// Make sure command we are adding was not added anywhere else.
+	if subCommand.parent() != nil {
+		return Error{fmt.Sprintf("The subcommand is already registered: %s", subCommand)}
+	}
+
+	// Set subCommand parent for later reference.
+	subCommand.setParent(iCommand(c))
+
+	// Add subCommand.
+	c.subCommands = append(c.subCommands, subCommand)
+
+	// Cache subCommand trigger.
+	if subCommand.Trigger() != "" {
+		c.subCommandsTriggers = append(c.subCommandsTriggers, subCommand.Trigger())
+	}
+	return nil
 }
 
 func (c *Command) Response() (value string) {
@@ -109,14 +146,34 @@ func (c *Command) SetUsage(value string) {
 	c.usage = value
 }
 
+func (c *Command) Path() (value string) {
+	if c.parent_ != nil {
+		return fmt.Sprintf("%s %s", c.parent().Path(), c.Trigger())
+	} else {
+		return fmt.Sprintf("`@%s` %s", Bot.Self.Username, c.Trigger())
+	}
+}
+
+func (c *Command) FullUsage() (value string) {
+	return fmt.Sprintf("%s %s", c.Path(), c.Usage())
+}
+
+func (c *Command) parent() (value iCommand) {
+	return c.parent_
+}
+
+func (c *Command) setParent(value iCommand) {
+	c.parent_ = value
+}
+
 func (c *Command) HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
-	if c.Trigger() == "" || c.Description() == "" || c.Usage() == "" {
+	if c.Trigger() == "" || c.Description() == "" {
 		embed = &discordgo.MessageEmbed{
 			Title:       m.Content,
 			Description: "Developer of this command did not supply it with description. :frowning:",
 			Color:       COLOR_WARNING,
 		}
-		return
+		return embed
 	} else {
 		embed = &discordgo.MessageEmbed{
 			Title:       m.Content,
@@ -125,11 +182,21 @@ func (c *Command) HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordg
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:  "Usage:",
-					Value: fmt.Sprintf("`@%s` %s", sg.Self.Username, c.Usage()),
+					Value: c.FullUsage(),
 				},
 			},
 		}
-		return
+		if len(c.SubCommands()) > 0 {
+			embed.Fields = append(embed.Fields,
+				&discordgo.MessageEmbedField{
+					Name:  "Subcommands:",
+					Value: strings.Join(c.subCommandsTriggers, ", "),
+				}, &discordgo.MessageEmbedField{
+					Name:  "To get help on 'subcommand' type:",
+					Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger()),
+				})
+		}
+		return embed
 	}
 
 }
@@ -138,10 +205,13 @@ func (c *Command) HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordg
 func (c *Command) Match(sg *Instance, m *discordgo.Message) (matched bool, err error) {
 	// By default command is not matched.
 	matched = false
+
+	// If trigger is not set, check if command is empty.
 	if c.Trigger() == "" && m.Content == "" {
 		return true, nil
 	}
 
+	// Trigger is set, see if it's in the message.
 	if c.Trigger() != "" {
 		if strings.HasPrefix(m.Content, c.Trigger()) {
 			matched = true
@@ -213,17 +283,27 @@ func (c *Command) CheckPermissions(sg *Instance, m *discordgo.Message) (passed b
 
 // Execute performs commands actions. For basic command it's just a simple text response.
 func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
-	if c.embedResponse != nil {
+	if c.EmbedResponse() != nil {
 		_, err = c.RespondWithEmbed(sg, m, c.EmbedResponse())
 		if err != nil {
 			return
 		}
-	} else {
+	}
+
+	if c.Response() != "" {
 		_, err = c.RespondWithMention(sg, m, c.Response())
 		if err != nil {
 			return
 		}
 	}
+
+	if len(c.SubCommands()) > 0 {
+		_, err = c.RespondWithMention(sg, m, "This command itself does not seem to do anything. Try subcommands instead.")
+		if err != nil {
+			return
+		}
+	}
+
 	return
 }
 
