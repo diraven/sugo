@@ -11,7 +11,7 @@ import (
 // Basic struct describes basic command type.
 type Basic struct {
 	// Trigger is a sequence of symbols message should start with to match with the command.
-	Trigger string
+	trigger string
 	// RootOnly determines if the command is supposed to be used by root only.
 	RootOnly bool
 	// PermissionsRequired is a slice of all permissions required by the command (but not subcommands).
@@ -24,8 +24,16 @@ type Basic struct {
 	Usage string
 }
 
-func (c Basic) HelpEmbed(sg *sugo.Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
-	if c.Trigger == "" || c.Description == "" || c.Usage == "" {
+func (c *Basic) Trigger() (trigger string) {
+	return c.trigger
+}
+
+func (c *Basic) SetTrigger(trigger string) {
+	c.trigger = trigger
+}
+
+func (c *Basic) HelpEmbed(sg *sugo.Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
+	if c.Trigger() == "" || c.Description == "" || c.Usage == "" {
 		embed = &discordgo.MessageEmbed{
 			Title:       m.Content,
 			Description: "Developer of this command did not supply it with description. :frowning:",
@@ -50,15 +58,15 @@ func (c Basic) HelpEmbed(sg *sugo.Instance, m *discordgo.Message) (embed *discor
 }
 
 // Match checks if command signature matches the message content.
-func (c Basic) Match(sg *sugo.Instance, m *discordgo.Message) (matched bool, err error) {
+func (c *Basic) Match(sg *sugo.Instance, m *discordgo.Message) (matched bool, err error) {
 	// By default command is not matched.
 	matched = false
-	if c.Trigger == "" && m.Content == "" {
+	if c.Trigger() == "" && m.Content == "" {
 		return true, nil
 	}
 
-	if c.Trigger != "" {
-		if strings.HasPrefix(m.Content, c.Trigger) {
+	if c.Trigger() != "" {
+		if strings.HasPrefix(m.Content, c.Trigger()) {
 			matched = true
 			return true, nil
 		}
@@ -67,7 +75,7 @@ func (c Basic) Match(sg *sugo.Instance, m *discordgo.Message) (matched bool, err
 }
 
 // CheckPermissions checks message author and bot permissions if they match command's required permissions.
-func (c Basic) CheckPermissions(sg *sugo.Instance, m *discordgo.Message) (passed bool, err error) {
+func (c *Basic) CheckPermissions(sg *sugo.Instance, m *discordgo.Message) (passed bool, err error) {
 	// By default command is not allowed.
 	passed = false
 
@@ -127,7 +135,7 @@ func (c Basic) CheckPermissions(sg *sugo.Instance, m *discordgo.Message) (passed
 }
 
 // Execute performs commands actions. For basic command it's just a simple text response.
-func (c Basic) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
+func (c *Basic) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
 	_, err = c.RespondWithMention(sg, m, c.Response)
 	if err != nil {
 		return
@@ -136,7 +144,7 @@ func (c Basic) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
 }
 
 // Responds to the channel without mention of the original message author.
-func (c Basic) Respond(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+func (c *Basic) Respond(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	message, err = sg.ChannelMessageSend(m.ChannelID, text)
 	if err != nil {
 		return
@@ -145,7 +153,7 @@ func (c Basic) Respond(sg *sugo.Instance, m *discordgo.Message, text string) (me
 }
 
 // Responds to the channel with the original message author mention.
-func (c Basic) RespondWithMention(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+func (c *Basic) RespondWithMention(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	response_text := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
 	message, err = sg.ChannelMessageSend(m.ChannelID, response_text)
 	if err != nil {

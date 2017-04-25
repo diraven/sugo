@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.22"
+const VERSION string = "0.0.23"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
@@ -30,6 +30,8 @@ type Instance struct {
 	root *discordgo.User
 	// Commands contains all the Commands loaded into the bot.
 	Commands []Command
+	// Just a cached list of triggers to use with the help command.
+	Triggers []string
 	// data is in-memory data storage.
 	data *bot_data
 	// CShutdown is channel that receives shutdown signals.
@@ -128,6 +130,9 @@ func (sg *Instance) teardown() (err error) {
 func (sg *Instance) RegisterCommand(c Command) {
 	// Save command into the bot's Commands list.
 	sg.Commands = append(sg.Commands, c)
+	if c.Trigger() != "" {
+		sg.Triggers = append(sg.Triggers, c.Trigger())
+	}
 }
 
 // IsRoot checks if a given user is root.
@@ -161,8 +166,8 @@ func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (resu
 	return
 }
 
-func (sg *Instance) FindCommand(m *discordgo.Message) (output Command, err error) {
-	for _, command := range Bot.Commands {
+func FindCommand(m *discordgo.Message, cmdList *[]Command) (output Command, err error) {
+	for _, command := range *cmdList {
 		// Check if message matches command.
 		matched, err := command.Match(&Bot, m)
 		if err != nil {
@@ -215,7 +220,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Search for applicable command.
-	command, err := Bot.FindCommand(mc.Message)
+	command, err := FindCommand(mc.Message, &Bot.Commands)
 	if err != nil {
 		// TODO: Report error.
 	}
