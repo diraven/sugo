@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"syscall"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo/helpers"
 	"strings"
+	"syscall"
 )
 
 // VERSION contains current version of the Sugo framework.
@@ -34,14 +34,14 @@ type Instance struct {
 	Triggers []string
 	// data is in-memory data storage.
 	data *bot_data
-	// CShutdown is channel that receives shutdown signals.
-	CShutdown chan os.Signal
+	// cShutdown is channel that receives shutdown signals.
+	cShutdown chan os.Signal
 }
 
 // Startup starts the bot up.
 func (sg *Instance) Startup(token string, root_uid string) (err error) {
 	// Intitialize Shutdown channel.
-	sg.CShutdown = make(chan os.Signal, 1)
+	sg.cShutdown = make(chan os.Signal, 1)
 
 	// Initialize data storage.
 	_, err = sg.LoadData()
@@ -89,11 +89,11 @@ func (sg *Instance) Startup(token string, root_uid string) (err error) {
 	}
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
 
-	// Register bot sg.CShutdown channel to receive shutdown signals.
-	signal.Notify(sg.CShutdown, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	// Register bot sg.cShutdown channel to receive shutdown signals.
+	signal.Notify(sg.cShutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	// Wait for shutdown signal to arrive.
-	<-sg.CShutdown
+	<-sg.cShutdown
 
 	fmt.Println("Termination signal received. Shutting down...")
 
@@ -107,7 +107,7 @@ func (sg *Instance) Startup(token string, root_uid string) (err error) {
 
 // Shutdown sends shutdown signal to the bot's shutdown channel.
 func (sg *Instance) Shutdown() () {
-	sg.CShutdown <- os.Interrupt
+	sg.cShutdown <- os.Interrupt
 }
 
 // teardown gracefully releases all resources and saves data before shutdown.

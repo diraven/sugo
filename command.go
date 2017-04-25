@@ -288,6 +288,7 @@ func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
 		if err != nil {
 			return
 		}
+		return
 	}
 
 	if c.Response() != "" {
@@ -295,6 +296,7 @@ func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
 		if err != nil {
 			return
 		}
+		return
 	}
 
 	if len(c.SubCommands()) > 0 {
@@ -302,6 +304,7 @@ func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
 		if err != nil {
 			return
 		}
+		return
 	}
 
 	return
