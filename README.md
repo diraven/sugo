@@ -28,21 +28,21 @@ import (
 
 func main() {
 	// Command without trigger will be executed if there is a message with bot mention and nothing else.
-	sugo.Bot.RegisterCommand(commands.Basic{
+	sugo.Bot.RegisterCommand(&commands.Basic{
 		PermissionsRequired: []int{sugo.PermissionNone},
 		Response:            "Hi! My name is @Sugo and I'm here to help you out... Try `@sugo help` for more info.",
 	})
 
 	// If you don't like default command trigger (for example if it clashes with some other one), you can change it like
 	// so:
-	sugo_commands_std.Info.Trigger = "info" // Change "info" to whatever you see appropriate.
-	sugo.Bot.RegisterCommand(sugo_commands_std.Info)
+	sugo_commands_std.Info.SetTrigger("info") // Change "info" to whatever you see appropriate.
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Info)
 
 	// And add some other commands to your bot.
-	sugo.Bot.RegisterCommand(sugo_commands_std.Help)
-	sugo.Bot.RegisterCommand(sugo_commands_std.Shutdown)
-	sugo.Bot.RegisterCommand(sugo_commands_std.Dumpdata)
-	sugo.Bot.RegisterCommand(sugo_commands_std.Loaddata)
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Help)
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Shutdown)
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Dumpdata)
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Loaddata)
 
 	err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
 	if err != nil {
