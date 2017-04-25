@@ -9,6 +9,25 @@ type Command interface {
 	CheckPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error)
 	Execute(sg *Instance, m *discordgo.Message) (err error)
 	HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed)
-	Trigger() (trigger string)
-	SetTrigger(trigger string)
+
+	Trigger() (value string)
+	SetTrigger(value string)
+
+	RootOnly() (value bool)
+	SetRootOnly(value bool)
+
+	PermissionsRequired() (value []int)
+	AddRequiredPermission(value int)
+
+	Response() (value string)
+	SetResponse(value string)
+
+	EmbedResponse() (value *discordgo.MessageEmbed)
+	SetEmbedResponse(value *discordgo.MessageEmbed)
+
+	Description() (value string)
+	SetDescription(value string)
+
+	Usage() (value string)
+	SetUsage(value string)
 }

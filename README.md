@@ -28,10 +28,11 @@ import (
 
 func main() {
 	// Command without trigger will be executed if there is a message with bot mention and nothing else.
-	sugo.Bot.RegisterCommand(&commands.Basic{
-		PermissionsRequired: []int{sugo.PermissionNone},
-		Response:            "Hi! My name is @Sugo and I'm here to help you out... Try `@sugo help` for more info.",
-	})
+	greetCommand := &commands.Basic{}
+	greetCommand.AddRequiredPermission(sugo.PermissionNone)
+	greetCommand.SetResponse("Hi! My name is " +
+		"@Sugo and I'm here to help you out... Try `@sugo help` for more info.")
+	sugo.Bot.RegisterCommand(greetCommand)
 
 	// If you don't like default command trigger (for example if it clashes with some other one), you can change it like
 	// so:

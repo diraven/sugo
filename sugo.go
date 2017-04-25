@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.23"
+const VERSION string = "0.0.24"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
