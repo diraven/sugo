@@ -23,17 +23,15 @@ import (
 	"os"
 	"github.com/diraven/sugo"
 	"github.com/diraven/sugo_commands_std"
-	"github.com/diraven/sugo/commands"
 )
 
 func main() {
-	// You can build your simple custom command right here in the init if you so desire.
-	greetCommand := &commands.Basic{}
-	// Command without trigger will be executed if there is a message with bot mention and nothing else.
-	greetCommand.AddRequiredPermission(sugo.PermissionNone)
-	greetCommand.SetResponse("Hi! My name is " +
-		"@Sugo and I'm here to help you out... Try `@sugo help` for more info.")
-	sugo.Bot.RegisterCommand(greetCommand)
+	// You can build your own simple custom command right here if you so desire.
+	testCommand := sugo.Command{}
+	testCommand.SetTrigger("test")
+	testCommand.AddRequiredPermission(sugo.PermissionNone)
+	testCommand.SetResponse("Passed!")
+	sugo.Bot.RegisterCommand(&testCommand)
 
 	// If you don't like default command trigger (for example if it clashes with some other one), you can change it like
 	// so:
@@ -41,13 +39,13 @@ func main() {
 	sugo.Bot.RegisterCommand(&sugo_commands_std.Info)
 
 	// And add some other commands to your bot.
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Greet)
 	sugo.Bot.RegisterCommand(&sugo_commands_std.Help)
-	sugo.Bot.RegisterCommand(&sugo_commands_std.Shutdown)
-	sugo.Bot.RegisterCommand(&sugo_commands_std.Dumpdata)
-	sugo.Bot.RegisterCommand(&sugo_commands_std.Loaddata)
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Sys)
+	sugo.Bot.RegisterCommand(&sugo_commands_std.Data)
 
-	// Now just start the bot up and see what happens. Make sure to provide at least token via SUGO_TOKEN
-	// environment variable.
+	// Now just start the bot up and see what happens.
+	// Make sure to provide at least token via SUGO_TOKEN environment variable.
 	err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
 	if err != nil {
 		// TODO: Report error.
