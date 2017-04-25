@@ -1,100 +1,127 @@
-package commands
+package sugo
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/diraven/sugo"
 	"fmt"
 	"github.com/diraven/sugo/helpers"
 	"strings"
 )
 
-// Basic struct describes basic command type.
-type Basic struct {
-	// Trigger is a sequence of symbols message should start with to match with the command.
+// Command struct describes basic command type.
+type Command struct {
+	// trigger is a sequence of symbols message should start with to match with the command.
 	trigger string
-	// RootOnly determines if the command is supposed to be used by root only.
+	// rootOnly determines if the command is supposed to be used by root only.
 	rootOnly bool
-	// PermissionsRequired is a slice of all permissions required by the command (but not subcommands).
+	// permissionsRequired is a slice of all permissions required by the command (but not subcommands).
 	permissionsRequired []int
-	// Response is a string that will be sent to the user in response to the command.
+	// response is a string that will be sent to the user in response to the command.
 	response string
 	// embedResponse is a *discordgo.MessageEmbed, if set - has priority over text response.
 	embedResponse *discordgo.MessageEmbed
-	// Description should contain short command description.
+	// description should contain short command description.
 	description string
-	// Usage contains an example of the command usage.
+	// usage contains an example of the command usage.
 	usage string
 }
 
-func (c *Basic) Trigger() (value string) {
+type iCommand interface {
+	Match(sg *Instance, m *discordgo.Message) (matched bool, err error)
+	CheckPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error)
+	Execute(sg *Instance, m *discordgo.Message) (err error)
+	HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed)
+
+	Trigger() (value string)
+	SetTrigger(value string)
+
+	RootOnly() (value bool)
+	SetRootOnly(value bool)
+
+	PermissionsRequired() (value []int)
+	AddRequiredPermission(value int)
+
+	Response() (value string)
+	SetResponse(value string)
+
+	EmbedResponse() (value *discordgo.MessageEmbed)
+	SetEmbedResponse(value *discordgo.MessageEmbed)
+
+	Description() (value string)
+	SetDescription(value string)
+
+	Usage() (value string)
+	SetUsage(value string)
+}
+
+func (c *Command) Trigger() (value string) {
 	return c.trigger
 }
 
-func (c *Basic) SetTrigger(value string) {
+func (c *Command) SetTrigger(value string) {
 	c.trigger = value
 }
 
-func (c *Basic) RootOnly() (value bool) {
+func (c *Command) RootOnly() (value bool) {
 	return c.rootOnly
 }
 
-func (c *Basic) SetRootOnly(value bool) {
+func (c *Command) SetRootOnly(value bool) {
 	c.rootOnly = value
 }
 
-func (c *Basic) PermissionsRequired() (value []int) {
+func (c *Command) PermissionsRequired() (value []int) {
 	return c.permissionsRequired
 }
 
-func (c *Basic) AddRequiredPermission(value int) {
+func (c *Command) AddRequiredPermission(value int) {
 	c.permissionsRequired = append(c.permissionsRequired, value)
 }
 
-func (c *Basic) Response() (value string) {
+func (c *Command) Response() (value string) {
 	return c.response
 }
 
-func (c *Basic) SetResponse(value string) {
+func (c *Command) SetResponse(value string) {
 	c.response = value
 }
 
-func (c *Basic) EmbedResponse() (value *discordgo.MessageEmbed) {
+func (c *Command) EmbedResponse() (value *discordgo.MessageEmbed) {
 	return c.embedResponse
 }
 
-func (c *Basic) SetEmbedResponse(value *discordgo.MessageEmbed) {
+func (c *Command) SetEmbedResponse(value *discordgo.MessageEmbed) {
 	c.embedResponse = value
 }
 
-func (c *Basic) Description() (value string) {
+func (c *Command) Description() (value string) {
 	return c.description
 }
 
-func (c *Basic) SetDescription(value string) {
+func (c *Command) SetDescription(value string) {
 	c.description = value
 }
 
-func (c *Basic) Usage() (value string) {
+func (c *Command) Usage() (value string) {
 	return c.usage
 }
 
-func (c *Basic) SetUsage(value string) {
+func (c *Command) SetUsage(value string) {
 	c.usage = value
 }
 
-func (c *Basic) HelpEmbed(sg *sugo.Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
+func (c *Command) HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
 	if c.Trigger() == "" || c.Description() == "" || c.Usage() == "" {
 		embed = &discordgo.MessageEmbed{
 			Title:       m.Content,
 			Description: "Developer of this command did not supply it with description. :frowning:",
-			Color:       sugo.COLOR_WARNING,
+			Color:       COLOR_WARNING,
 		}
 		return
 	} else {
 		embed = &discordgo.MessageEmbed{
 			Title:       m.Content,
 			Description: c.Description(),
-			Color:       sugo.COLOR_INFO,
+			Color:       COLOR_INFO,
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:  "Usage:",
@@ -108,7 +135,7 @@ func (c *Basic) HelpEmbed(sg *sugo.Instance, m *discordgo.Message) (embed *disco
 }
 
 // Match checks if command signature matches the message content.
-func (c *Basic) Match(sg *sugo.Instance, m *discordgo.Message) (matched bool, err error) {
+func (c *Command) Match(sg *Instance, m *discordgo.Message) (matched bool, err error) {
 	// By default command is not matched.
 	matched = false
 	if c.Trigger() == "" && m.Content == "" {
@@ -125,13 +152,13 @@ func (c *Basic) Match(sg *sugo.Instance, m *discordgo.Message) (matched bool, er
 }
 
 // CheckPermissions checks message author and bot permissions if they match command's required permissions.
-func (c *Basic) CheckPermissions(sg *sugo.Instance, m *discordgo.Message) (passed bool, err error) {
+func (c *Command) CheckPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
 	// By default command is not allowed.
 	passed = false
 
 	// For security reasons - every command should have at least one permission set explicitly.
 	if len(c.PermissionsRequired()) == 0 {
-		err = sugo.Error{Text: "Command has no PermissionsRequired[]!"}
+		err = Error{Text: "Command has no PermissionsRequired[]!"}
 		return
 	}
 
@@ -185,7 +212,7 @@ func (c *Basic) CheckPermissions(sg *sugo.Instance, m *discordgo.Message) (passe
 }
 
 // Execute performs commands actions. For basic command it's just a simple text response.
-func (c *Basic) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
+func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
 	if c.embedResponse != nil {
 		_, err = c.RespondWithEmbed(sg, m, c.EmbedResponse())
 		if err != nil {
@@ -201,7 +228,7 @@ func (c *Basic) Execute(sg *sugo.Instance, m *discordgo.Message) (err error) {
 }
 
 // Responds to the channel without mention of the original message author.
-func (c *Basic) Respond(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+func (c *Command) Respond(sg *Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	message, err = sg.ChannelMessageSend(m.ChannelID, text)
 	if err != nil {
 		return
@@ -209,7 +236,7 @@ func (c *Basic) Respond(sg *sugo.Instance, m *discordgo.Message, text string) (m
 	return
 }
 
-func (c *Basic) RespondWithEmbed(sg *sugo.Instance, m *discordgo.Message, embed *discordgo.MessageEmbed) (message *discordgo.Message, err error) {
+func (c *Command) RespondWithEmbed(sg *Instance, m *discordgo.Message, embed *discordgo.MessageEmbed) (message *discordgo.Message, err error) {
 	_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 	if err != nil {
 		return
@@ -218,7 +245,7 @@ func (c *Basic) RespondWithEmbed(sg *sugo.Instance, m *discordgo.Message, embed 
 }
 
 // Responds to the channel with the original message author mention.
-func (c *Basic) RespondWithMention(sg *sugo.Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+func (c *Command) RespondWithMention(sg *Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	response_text := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
 	message, err = sg.ChannelMessageSend(m.ChannelID, response_text)
 	if err != nil {

@@ -29,7 +29,7 @@ type Instance struct {
 	// root is a user that always has all permissions granted.
 	root *discordgo.User
 	// Commands contains all the Commands loaded into the bot.
-	Commands []Command
+	Commands []iCommand
 	// Just a cached list of triggers to use with the help command.
 	Triggers []string
 	// data is in-memory data storage.
@@ -127,7 +127,7 @@ func (sg *Instance) teardown() (err error) {
 }
 
 // RegisterCommand adds command to the bot's list of registered Commands.
-func (sg *Instance) RegisterCommand(c Command) {
+func (sg *Instance) RegisterCommand(c iCommand) {
 	// Save command into the bot's Commands list.
 	sg.Commands = append(sg.Commands, c)
 	if c.Trigger() != "" {
@@ -166,7 +166,7 @@ func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (resu
 	return
 }
 
-func FindCommand(m *discordgo.Message, cmdList *[]Command) (output Command, err error) {
+func FindCommand(m *discordgo.Message, cmdList *[]iCommand) (output iCommand, err error) {
 	for _, command := range *cmdList {
 		// Check if message matches command.
 		matched, err := command.Match(&Bot, m)
