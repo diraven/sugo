@@ -37,6 +37,8 @@ type iCommand interface {
 	Execute(sg *Instance, m *discordgo.Message) (err error)
 	HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed)
 	Path() (value string)
+	Startup() (err error)
+	Teardown() (err error)
 
 	Trigger() (value string)
 	SetTrigger(value string)
@@ -144,6 +146,14 @@ func (c *Command) Usage() (value string) {
 
 func (c *Command) SetUsage(value string) {
 	c.usage = value
+}
+
+func (c *Command) Startup() (err error) {
+	return
+}
+
+func (c *Command) Teardown() (err error) {
+	return
 }
 
 func (c *Command) Path() (value string) {

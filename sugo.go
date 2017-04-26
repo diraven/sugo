@@ -78,6 +78,15 @@ func (sg *Instance) Startup(token string, root_uid string) (err error) {
 		}
 	}
 
+	// Perform startups for all the commands added.
+	for _, command := range sg.Commands {
+		err = command.Startup()
+		if err != nil {
+			fmt.Println("Error running startup for command... ", err)
+			return
+		}
+	}
+
 	// Register callback for the messageCreate events.
 	sg.Session.AddHandler(onMessageCreate)
 
@@ -112,6 +121,14 @@ func (sg *Instance) Shutdown() () {
 
 // teardown gracefully releases all resources and saves data before shutdown.
 func (sg *Instance) teardown() (err error) {
+	// Perform teardowns for all the commands added.
+	for _, command := range sg.Commands {
+		err = command.Teardown()
+		if err != nil {
+			fmt.Println("Error running teardown for command... ", err)
+		}
+	}
+
 	// Dump data.
 	_, err = sg.DumpData()
 	if err != nil {
