@@ -24,14 +24,15 @@ type Command struct {
 	// usage contains an example of the command usage.
 	usage string
 	// subCommands contains all subcommands of the given command.
-	subCommands []iCommand
+	subCommands []ICommand
 	// subCommandsTriggers contains all triggers of subcommands for the help to refer to.
 	subCommandsTriggers []string
-	// parent_ contains command, which is parent for this one
-	parent_ iCommand
+	// parentCommand contains command, which is parent for this one
+	parentCommand ICommand
 }
 
-type iCommand interface {
+// ICommand describes all the methods every command should have.
+type ICommand interface {
 	Match(sg *Instance, m *discordgo.Message) (matched bool, err error)
 	CheckPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error)
 	Execute(sg *Instance, m *discordgo.Message) (err error)
@@ -49,8 +50,8 @@ type iCommand interface {
 	PermissionsRequired() (value []int)
 	AddRequiredPermission(value int)
 
-	SubCommands() (value []iCommand)
-	AddSubCommand(value iCommand) (err error)
+	SubCommands() (value []ICommand)
+	AddSubCommand(value ICommand) (err error)
 
 	Response() (value string)
 	SetResponse(value string)
@@ -65,46 +66,54 @@ type iCommand interface {
 	SetUsage(value string)
 	FullUsage() (value string)
 
-	parent() (command iCommand)
-	setParent(command iCommand)
+	parent() (command ICommand)
+	setParent(command ICommand)
 }
 
+// Trigger returns currently set trigger for the command.
 func (c *Command) Trigger() (value string) {
 	return c.trigger
 }
 
+// SetTrigger sets trigger for command.
 func (c *Command) SetTrigger(value string) {
 	c.trigger = value
 }
 
+// RootOnly returns true if command requires user to be root and false otherwise.
 func (c *Command) RootOnly() (value bool) {
 	return c.rootOnly
 }
 
+// SetRootOnly sets root-only requirement for the command.
 func (c *Command) SetRootOnly(value bool) {
 	c.rootOnly = value
 }
 
+// PermissionsRequired returns currently set permissions for the command.
 func (c *Command) PermissionsRequired() (value []int) {
 	return c.permissionsRequired
 }
 
+// AddRequiredPermission adds required permission to the command.
 func (c *Command) AddRequiredPermission(value int) {
 	c.permissionsRequired = append(c.permissionsRequired, value)
 }
 
-func (c *Command) SubCommands() (value []iCommand) {
+// SubCommands returns all registered subcommands of the current command.
+func (c *Command) SubCommands() (value []ICommand) {
 	return c.subCommands
 }
 
-func (c *Command) AddSubCommand(subCommand iCommand) (err error) {
+// AddSubCommand adds subcommands to the command.
+func (c *Command) AddSubCommand(subCommand ICommand) (err error) {
 	// Make sure command we are adding was not added anywhere else.
 	if subCommand.parent() != nil {
 		return Error{fmt.Sprintf("The subcommand is already registered: %s", subCommand)}
 	}
 
 	// Set subCommand parent for later reference.
-	subCommand.setParent(iCommand(c))
+	subCommand.setParent(ICommand(c))
 
 	// Add subCommand.
 	c.subCommands = append(c.subCommands, subCommand)
@@ -116,98 +125,112 @@ func (c *Command) AddSubCommand(subCommand iCommand) (err error) {
 	return nil
 }
 
+// Response returns currently set text response of the command.
 func (c *Command) Response() (value string) {
 	return c.response
 }
 
+// SetResponse sets text response for the command.
 func (c *Command) SetResponse(value string) {
 	c.response = value
 }
 
+// EmbedResponse returns currently set embed response of the command.
 func (c *Command) EmbedResponse() (value *discordgo.MessageEmbed) {
 	return c.embedResponse
 }
 
+// SetEmbedResponse sets embed response for the command.
 func (c *Command) SetEmbedResponse(value *discordgo.MessageEmbed) {
 	c.embedResponse = value
 }
 
+// Description returns currently set description of the command.
 func (c *Command) Description() (value string) {
 	return c.description
 }
 
+// SetDescription sets description for the command.
 func (c *Command) SetDescription(value string) {
 	c.description = value
 }
 
+// Usage returns currently set usage example of the command.
 func (c *Command) Usage() (value string) {
 	return c.usage
 }
 
+// SetUsage sets usage example for the command.
 func (c *Command) SetUsage(value string) {
 	c.usage = value
 }
 
+// Startup is called on bot startup (may be used for initiating DB connections etc).
 func (c *Command) Startup() (err error) {
 	return
 }
 
+// Teardown is called on graceful bot shutdown (may be used to release resources such as closing files, db connections etc).
 func (c *Command) Teardown() (err error) {
 	return
 }
 
+// Path returns all the triggers from parent commands from outermost to innermost parent.
 func (c *Command) Path() (value string) {
-	if c.parent_ != nil {
+	if c.parentCommand != nil {
 		return fmt.Sprintf("%s %s", c.parent().Path(), c.Trigger())
-	} else {
-		return fmt.Sprintf("`@%s` %s", Bot.Self.Username, c.Trigger())
 	}
+	return fmt.Sprintf("`@%s` %s", Bot.Self.Username, c.Trigger())
 }
 
+// FullUsage returns full command usage including all parent triggers.
 func (c *Command) FullUsage() (value string) {
 	return fmt.Sprintf("%s %s", c.Path(), c.Usage())
 }
 
-func (c *Command) parent() (value iCommand) {
-	return c.parent_
+// parent returns parent command if any.
+func (c *Command) parent() (value ICommand) {
+	return c.parentCommand
 }
 
-func (c *Command) setParent(value iCommand) {
-	c.parent_ = value
+// setParent sets parent command.
+func (c *Command) setParent(value ICommand) {
+	c.parentCommand = value
 }
 
+// HelpEmbed returns automatically constructed help embed (based on command description, usage etc.) that is ready to
+// be sent via discordgo.
 func (c *Command) HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
 	if c.Trigger() == "" || c.Description() == "" {
 		embed = &discordgo.MessageEmbed{
 			Title:       m.Content,
 			Description: "Developer of this command did not supply it with description. :frowning:",
-			Color:       COLOR_WARNING,
-		}
-		return embed
-	} else {
-		embed = &discordgo.MessageEmbed{
-			Title:       m.Content,
-			Description: c.Description(),
-			Color:       COLOR_INFO,
-			Fields: []*discordgo.MessageEmbedField{
-				{
-					Name:  "Usage:",
-					Value: c.FullUsage(),
-				},
-			},
-		}
-		if len(c.SubCommands()) > 0 {
-			embed.Fields = append(embed.Fields,
-				&discordgo.MessageEmbedField{
-					Name:  "Subcommands:",
-					Value: strings.Join(c.subCommandsTriggers, ", "),
-				}, &discordgo.MessageEmbedField{
-					Name:  "To get help on 'subcommand' type:",
-					Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger()),
-				})
+			Color:       ColorWarning,
 		}
 		return embed
 	}
+	embed = &discordgo.MessageEmbed{
+		Title:       m.Content,
+		Description: c.Description(),
+		Color:       ColorInfo,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:  "Usage:",
+				Value: c.FullUsage(),
+			},
+		},
+	}
+	if len(c.SubCommands()) > 0 {
+		embed.Fields = append(embed.Fields,
+			&discordgo.MessageEmbedField{
+				Name:  "Subcommands:",
+				Value: strings.Join(c.subCommandsTriggers, ", "),
+			}, &discordgo.MessageEmbedField{
+				Name:  "To get help on 'subcommand' type:",
+				Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger()),
+			})
+	}
+	return embed
 
 }
 
@@ -249,17 +272,17 @@ func (c *Command) CheckPermissions(sg *Instance, m *discordgo.Message) (passed b
 	}
 
 	// Calculate compound permission.
-	var compound_perm int = 0
+	var compoundPerm int
 	for _, perm := range c.PermissionsRequired() {
-		compound_perm |= perm
+		compoundPerm |= perm
 	}
 
 	// Make sure bot has the permission required.
-	bot_has_perm, err := sg.BotHasPermission(compound_perm, channel)
+	botHasPerm, err := sg.BotHasPermission(compoundPerm, channel)
 	if err != nil {
 		return
 	}
-	if !(bot_has_perm) {
+	if !(botHasPerm) {
 		return
 	}
 
@@ -273,11 +296,11 @@ func (c *Command) CheckPermissions(sg *Instance, m *discordgo.Message) (passed b
 	}
 
 	// Make sure user has the permission required.
-	user_has_perm, err := sg.UserHasPermission(compound_perm, m.Author, channel)
+	userHasPerm, err := sg.UserHasPermission(compoundPerm, m.Author, channel)
 	if err != nil {
 		return
 	}
-	if !(user_has_perm) {
+	if !(userHasPerm) {
 		return
 	}
 
@@ -320,7 +343,7 @@ func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
 	return
 }
 
-// Responds to the channel without mention of the original message author.
+// Respond responds to the channel with c.Response text without mention of the original message author.
 func (c *Command) Respond(sg *Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	message, err = sg.ChannelMessageSend(m.ChannelID, text)
 	if err != nil {
@@ -329,6 +352,7 @@ func (c *Command) Respond(sg *Instance, m *discordgo.Message, text string) (mess
 	return
 }
 
+// RespondWithEmbed responds to the chennel with c.Embed embed without mention of the original message author.
 func (c *Command) RespondWithEmbed(sg *Instance, m *discordgo.Message, embed *discordgo.MessageEmbed) (message *discordgo.Message, err error) {
 	_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 	if err != nil {
@@ -337,10 +361,10 @@ func (c *Command) RespondWithEmbed(sg *Instance, m *discordgo.Message, embed *di
 	return
 }
 
-// Responds to the channel with the original message author mention.
+// RespondWithMention responds to the channel with c.Response text with the original message author mention.
 func (c *Command) RespondWithMention(sg *Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	response_text := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
-	message, err = sg.ChannelMessageSend(m.ChannelID, response_text)
+	responseText := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
+	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	if err != nil {
 		return
 	}

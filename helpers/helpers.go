@@ -46,6 +46,14 @@ func DiscordIDCreationTime(ID string) (t time.Time, err error) {
 	return
 }
 
+func BoolToInt(input bool) (output int) {
+	if input {
+		return 1
+	} else {
+		return 0
+	}
+}
+
 // ConsumeTerm removes and returns first term from the given string.
 //func ConsumeTerm(input *string) (term string) {
 //	*input = strings.TrimSpace(*input)

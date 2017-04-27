@@ -1,4 +1,4 @@
-// sugo is a discord bot framework written in go.
+// Package sugo is a discord bot framework written in go.
 package sugo
 
 import (
@@ -29,17 +29,17 @@ type Instance struct {
 	// root is a user that always has all permissions granted.
 	root *discordgo.User
 	// Commands contains all the Commands loaded into the bot.
-	Commands []iCommand
+	Commands []ICommand
 	// Just a cached list of triggers to use with the help command.
 	Triggers []string
 	// data is in-memory data storage.
-	data *bot_data
+	data *botData
 	// cShutdown is channel that receives shutdown signals.
 	cShutdown chan os.Signal
 }
 
 // Startup starts the bot up.
-func (sg *Instance) Startup(token string, root_uid string) (err error) {
+func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Intitialize Shutdown channel.
 	sg.cShutdown = make(chan os.Signal, 1)
 
@@ -69,13 +69,12 @@ func (sg *Instance) Startup(token string, root_uid string) (err error) {
 	sg.Self = self
 
 	// Get root account info.
-	if root_uid != "" {
-		root, err := sg.Session.User(root_uid)
+	if rootUID != "" {
+		root, err := sg.Session.User(rootUID)
 		if err != nil {
 			return err
-		} else {
-			sg.root = root
 		}
+		sg.root = root
 	}
 
 	// Perform startups for all the commands added.
@@ -144,7 +143,7 @@ func (sg *Instance) teardown() (err error) {
 }
 
 // RegisterCommand adds command to the bot's list of registered Commands.
-func (sg *Instance) RegisterCommand(c iCommand) {
+func (sg *Instance) RegisterCommand(c ICommand) {
 	// Save command into the bot's Commands list.
 	sg.Commands = append(sg.Commands, c)
 	if c.Trigger() != "" {
@@ -177,13 +176,14 @@ func (sg *Instance) UserHasPermission(permission int, u *discordgo.User, c *disc
 	return
 }
 
-// UserHasPermission checks if bot has given permission on a given channel.
+// BotHasPermission checks if bot has given permission on a given channel.
 func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (result bool, err error) {
 	result, err = sg.UserHasPermission(permission, sg.Self, c)
 	return
 }
 
-func FindCommand(m *discordgo.Message, cmdList []iCommand) (output iCommand, err error) {
+// FindCommand looks for an appropriate (sub)command to execute (taking into account triggers and permissions).
+func FindCommand(m *discordgo.Message, cmdList []ICommand) (output ICommand, err error) {
 	// For every command in the list provided:
 	for _, command := range cmdList {
 		// Check if message matches command.
@@ -247,10 +247,10 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Make sure the bot is mentioned in the message, and bot mention is first mention in the message.
-	bot_mention := helpers.UserAsMention(Bot.Self)
-	if strings.HasPrefix(strings.TrimSpace(mc.Content), bot_mention) {
+	botMention := helpers.UserAsMention(Bot.Self)
+	if strings.HasPrefix(strings.TrimSpace(mc.Content), botMention) {
 		// Remove bot mention from the string.
-		mc.Content = strings.TrimSpace(strings.TrimPrefix(mc.Content, bot_mention))
+		mc.Content = strings.TrimSpace(strings.TrimPrefix(mc.Content, botMention))
 	} else {
 		// Bot was not mentioned.
 		return

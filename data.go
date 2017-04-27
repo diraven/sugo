@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-const DATA_FILENAME = "data.json"
+const dataFilename = "data.json"
 
 type serverData struct {
 	CommandsEnabledByDefault bool
@@ -22,20 +22,21 @@ type channelData struct {
 type userData struct {
 }
 
-type bot_data struct {
+type botData struct {
 	Servers  map[string]serverData
 	Channels map[string]channelData
 	Users    map[string]userData
 }
 
-func (sg *Instance) LoadData() (bytes_count int, err error) {
-	if _, error_type := os.Stat(DATA_FILENAME); os.IsNotExist(error_type) {
+// LoadData is supposed to load stored data from disk into memory.
+func (sg *Instance) LoadData() (bytesCount int, err error) {
+	if _, errorType := os.Stat(dataFilename); os.IsNotExist(errorType) {
 		// File to load data from does not exist.
 		return
 	}
 
 	// Load file.
-	data, err := ioutil.ReadFile(DATA_FILENAME)
+	data, err := ioutil.ReadFile(dataFilename)
 	if err != nil {
 		return
 	}
@@ -46,12 +47,13 @@ func (sg *Instance) LoadData() (bytes_count int, err error) {
 		return
 	}
 
-	data_length := len(data)
-	fmt.Printf("Data loaded successfully, %d bytes read.\n", data_length)
-	return data_length, err
+	dataLength := len(data)
+	fmt.Printf("Data loaded successfully, %d bytes read.\n", dataLength)
+	return dataLength, err
 }
 
-func (sg *Instance) DumpData() (bytes_count int, err error) {
+// DumpData saves data from memory into disk.
+func (sg *Instance) DumpData() (bytesCount int, err error) {
 	// Encode our data into JSON.
 	data, err := json.Marshal(sg.data)
 	if err != nil {
@@ -59,12 +61,12 @@ func (sg *Instance) DumpData() (bytes_count int, err error) {
 	}
 
 	// Save data into file.
-	err = ioutil.WriteFile(DATA_FILENAME, data, 0644)
+	err = ioutil.WriteFile(dataFilename, data, 0644)
 	if err != nil {
 		return
 	}
 
-	data_length := len(data)
+	dataLength := len(data)
 	fmt.Printf("Data saved successfully, %d bytes written.\n", len(data))
-	return data_length, err
+	return dataLength, err
 }

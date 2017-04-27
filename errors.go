@@ -1,5 +1,6 @@
 package sugo
 
+// Error represents any Sugo error...
 type Error struct {
 	Text string
 }
