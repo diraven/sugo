@@ -3,10 +3,10 @@ package sugo
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo/helpers"
+	"os"
+	"os/signal"
 	"strings"
 	"syscall"
 )
@@ -114,7 +114,7 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 }
 
 // Shutdown sends shutdown signal to the bot's shutdown channel.
-func (sg *Instance) Shutdown() () {
+func (sg *Instance) Shutdown() {
 	sg.cShutdown <- os.Interrupt
 }
 

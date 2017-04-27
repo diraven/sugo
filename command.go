@@ -1,8 +1,8 @@
 package sugo
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo/helpers"
 	"strings"
 )

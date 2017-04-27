@@ -1,10 +1,10 @@
 package helpers
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"fmt"
-	"time"
+	"github.com/bwmarrin/discordgo"
 	"strconv"
+	"time"
 )
 
 func UserAsMention(u *discordgo.User) (s string) {

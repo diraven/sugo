@@ -1,10 +1,10 @@
 package sugo
 
 import (
-	"os"
 	"encoding/json"
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
+	"os"
 )
 
 const dataFilename = "data.json"
