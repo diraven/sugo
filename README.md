@@ -1,3 +1,5 @@
+![code style](https://goreportcard.com/badge/github.com/diraven/sugo)
+
 # Sugo
 
 Sugo is essentially a bot framework built on top of [discordgo bindings](https://github.com/bwmarrin/discordgo). There are few convenience features, such as:
