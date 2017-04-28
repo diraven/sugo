@@ -24,12 +24,12 @@ package main
 import (
 	"os"
 	"github.com/diraven/sugo"
-	"github.com/diraven/sugo_commands_std/info"
-	"github.com/diraven/sugo_commands_std/greet"
-	"github.com/diraven/sugo_commands_std/help"
-	"github.com/diraven/sugo_commands_std/sys"
-	"github.com/diraven/sugo_commands_std/data"
-	"github.com/diraven/sugo_commands_std/test"
+	"github.com/diraven/sugo_std/info"
+	"github.com/diraven/sugo_std/greet"
+	"github.com/diraven/sugo_std/help"
+	"github.com/diraven/sugo_std/sys"
+	"github.com/diraven/sugo_std/data"
+	"github.com/diraven/sugo_std/test"
 )
 
 func main() {
@@ -44,9 +44,6 @@ func main() {
 	sugo.Bot.RegisterCommand(&sys.Command)
 	sugo.Bot.RegisterCommand(&data.Command)
 	sugo.Bot.RegisterCommand(&test.Command)
-
-	// ED commands
-	//sugo.Bot.RegisterCommand(&ed.Command)
 
 	// Now just start the bot up and see what happens.
 	// Make sure to provide at least token via SUGO_TOKEN environment variable.
