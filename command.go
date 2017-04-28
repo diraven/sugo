@@ -17,7 +17,7 @@ type Command struct {
 	// permissionsRequired is a slice of all permissions required by the command (but not subcommands).
 	permissionsRequired []int
 	// response is a string that will be sent to the user in response to the command.
-	response string
+	textResponse string
 	// embedResponse is a *discordgo.MessageEmbed, if set - has priority over text response.
 	embedResponse *discordgo.MessageEmbed
 	// description should contain short command description.
@@ -57,8 +57,8 @@ type ICommand interface {
 	AddSubCommand(ICommand)
 	SubCommandsTriggers() []string
 
-	Response() string
-	SetResponse(string)
+	TextResponse() string
+	SetTextResponse(string)
 
 	EmbedResponse() *discordgo.MessageEmbed
 	SetEmbedResponse(*discordgo.MessageEmbed)
@@ -119,14 +119,14 @@ func (c *Command) SubCommandsTriggers() []string {
 	return c.subCommandsTriggers
 }
 
-// Response returns currently set text response of the command.
-func (c *Command) Response() (value string) {
-	return c.response
+// TextResponse returns currently set text response of the command.
+func (c *Command) TextResponse() (value string) {
+	return c.textResponse
 }
 
-// SetResponse sets text response for the command.
-func (c *Command) SetResponse(value string) {
-	c.response = value
+// SetTextResponse sets text response for the command.
+func (c *Command) SetTextResponse(value string) {
+	c.textResponse = value
 }
 
 // EmbedResponse returns currently set embed response of the command.
@@ -365,8 +365,8 @@ func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
 		return
 	}
 
-	if c.Response() != "" {
-		_, err = c.RespondWithMention(sg, m, c.Response())
+	if c.TextResponse() != "" {
+		_, err = c.RespondWithMention(sg, m, c.TextResponse())
 		if err != nil {
 			return
 		}
@@ -384,7 +384,7 @@ func (c *Command) Execute(sg *Instance, m *discordgo.Message) (err error) {
 	return
 }
 
-// Respond responds to the channel with c.Response text without mention of the original message author.
+// Respond responds to the channel with c.TextResponse text without mention of the original message author.
 func (c *Command) Respond(sg *Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	message, err = sg.ChannelMessageSend(m.ChannelID, text)
 	if err != nil {
@@ -402,7 +402,7 @@ func (c *Command) RespondWithEmbed(sg *Instance, m *discordgo.Message, embed *di
 	return
 }
 
-// RespondWithMention responds to the channel with c.Response text with the original message author mention.
+// RespondWithMention responds to the channel with c.TextResponse text with the original message author mention.
 func (c *Command) RespondWithMention(sg *Instance, m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	responseText := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)

@@ -257,6 +257,8 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		// TODO: Report error.
 	}
 	if command != nil {
+		// Remove command trigger from message string.
+		mc.Content = strings.TrimSpace(strings.TrimPrefix(mc.Content, command.Trigger()))
 		err := command.Execute(&Bot, mc.Message)
 		if err != nil {
 			// TODO: Report error.
