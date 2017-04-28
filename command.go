@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo/helpers"
+	"log"
 	"strings"
 )
 
@@ -33,41 +34,44 @@ type Command struct {
 
 // ICommand describes all the methods every command should have.
 type ICommand interface {
-	Match(sg *Instance, m *discordgo.Message) (matched bool, err error)
-	CheckPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error)
-	Execute(sg *Instance, m *discordgo.Message) (err error)
-	HelpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed)
-	Path() (value string)
-	Startup() (err error)
-	Teardown() (err error)
+	Match(sg *Instance, m *discordgo.Message) (bool, error)
+	CheckPermissions(sg *Instance, m *discordgo.Message) (bool, error)
+	Execute(sg *Instance, m *discordgo.Message) error
+	HelpEmbed(sg *Instance, m *discordgo.Message) *discordgo.MessageEmbed
+	Path() string
+	Startup() error
+	Teardown() error
+	startup() error
+	teardown() error
 
-	Trigger() (value string)
-	SetTrigger(value string)
+	Trigger() string
+	SetTrigger(string)
 
-	RootOnly() (value bool)
-	SetRootOnly(value bool)
+	RootOnly() bool
+	SetRootOnly(bool)
 
-	PermissionsRequired() (value []int)
-	AddRequiredPermission(value int)
+	PermissionsRequired() []int
+	AddRequiredPermission(int)
 
-	SubCommands() (value []ICommand)
-	AddSubCommand(value ICommand) (err error)
+	SubCommands() []ICommand
+	AddSubCommand(ICommand)
+	SubCommandsTriggers() []string
 
-	Response() (value string)
-	SetResponse(value string)
+	Response() string
+	SetResponse(string)
 
-	EmbedResponse() (value *discordgo.MessageEmbed)
-	SetEmbedResponse(value *discordgo.MessageEmbed)
+	EmbedResponse() *discordgo.MessageEmbed
+	SetEmbedResponse(*discordgo.MessageEmbed)
 
-	Description() (value string)
-	SetDescription(value string)
+	Description() string
+	SetDescription(string)
 
-	Usage() (value string)
-	SetUsage(value string)
-	FullUsage() (value string)
+	Usage() string
+	SetUsage(string)
+	FullUsage() string
 
-	parent() (command ICommand)
-	setParent(command ICommand)
+	parent() ICommand
+	setParent(ICommand)
 }
 
 // Trigger returns currently set trigger for the command.
@@ -106,23 +110,13 @@ func (c *Command) SubCommands() (value []ICommand) {
 }
 
 // AddSubCommand adds subcommands to the command.
-func (c *Command) AddSubCommand(subCommand ICommand) (err error) {
-	// Make sure command we are adding was not added anywhere else.
-	if subCommand.parent() != nil {
-		return Error{fmt.Sprintf("The subcommand is already registered: %s", subCommand)}
-	}
-
-	// Set subCommand parent for later reference.
-	subCommand.setParent(ICommand(c))
-
-	// Add subCommand.
+func (c *Command) AddSubCommand(subCommand ICommand) {
 	c.subCommands = append(c.subCommands, subCommand)
+}
 
-	// Cache subCommand trigger.
-	if subCommand.Trigger() != "" {
-		c.subCommandsTriggers = append(c.subCommandsTriggers, subCommand.Trigger())
-	}
-	return nil
+// SubCommandsTriggers returns triggers for all registered immediate child commands.
+func (c *Command) SubCommandsTriggers() []string {
+	return c.subCommandsTriggers
 }
 
 // Response returns currently set text response of the command.
@@ -163,6 +157,53 @@ func (c *Command) Usage() (value string) {
 // SetUsage sets usage example for the command.
 func (c *Command) SetUsage(value string) {
 	c.usage = value
+}
+
+// startup is internal function called on bot startup.
+func (c *Command) startup() error {
+	// For every subcommand (if any):
+	for _, v := range c.SubCommands() {
+		// Build command triggers cache.
+		if v.Trigger() != "" {
+			c.subCommandsTriggers = append(c.subCommandsTriggers, v.Trigger())
+		}
+
+		// Check if command already registered elsewhere.
+		if v.parent() != nil {
+			return Error{fmt.Sprintf("The subcommand is already registered elsewhere: %s", c.FullUsage())}
+		}
+		// Set command parent.
+		v.setParent(ICommand(c))
+
+		// Run system startup for subcommand.
+		v.startup()
+	}
+
+	// Run public startup for command.
+	c.Startup()
+
+	return nil
+}
+
+// teardown is internal function called on bot graceful shutdown.
+func (c *Command) teardown() error {
+	var err error
+
+	// For every subcommand (if any):
+	for _, v := range c.SubCommands() {
+		// Run system startup for subcommand.
+		err = v.teardown()
+		if err != nil {
+			log.Printf("Command teardown error: %s\n", err)
+		}
+	}
+
+	// Run public teardown for command.
+	err = c.Teardown()
+	if err != nil {
+		log.Printf("Command teardown error: %s\n", err)
+	}
+	return nil
 }
 
 // Startup is called on bot startup (may be used for initiating DB connections etc).

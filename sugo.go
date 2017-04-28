@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.25"
+const VERSION string = "0.0.26"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
@@ -29,13 +29,16 @@ type Instance struct {
 	// root is a user that always has all permissions granted.
 	root *discordgo.User
 	// Commands contains all the Commands loaded into the bot.
-	Commands []ICommand
-	// Just a cached list of triggers to use with the help command.
-	Triggers []string
+	RootCommand ICommand
 	// data is in-memory data storage.
 	data *botData
 	// cShutdown is channel that receives shutdown signals.
 	cShutdown chan os.Signal
+}
+
+func init() {
+	// Initialize root command, we won't be able to add subcommands to it otherwise.
+	Bot.RootCommand = ICommand(&Command{})
 }
 
 // Startup starts the bot up.
@@ -77,14 +80,8 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 		sg.root = root
 	}
 
-	// Perform startups for all the commands added.
-	for _, command := range sg.Commands {
-		err = command.Startup()
-		if err != nil {
-			fmt.Println("Error running startup for command... ", err)
-			return
-		}
-	}
+	// Perform startup for commands.
+	sg.RootCommand.startup()
 
 	// Register callback for the messageCreate events.
 	sg.Session.AddHandler(onMessageCreate)
@@ -120,13 +117,8 @@ func (sg *Instance) Shutdown() {
 
 // teardown gracefully releases all resources and saves data before shutdown.
 func (sg *Instance) teardown() (err error) {
-	// Perform teardowns for all the commands added.
-	for _, command := range sg.Commands {
-		err = command.Teardown()
-		if err != nil {
-			fmt.Println("Error running teardown for command... ", err)
-		}
-	}
+	// Perform teardown for commands.
+	sg.RootCommand.teardown()
 
 	// Dump data.
 	_, err = sg.DumpData()
@@ -142,13 +134,16 @@ func (sg *Instance) teardown() (err error) {
 	return
 }
 
-// RegisterCommand adds command to the bot's list of registered Commands.
-func (sg *Instance) RegisterCommand(c ICommand) {
+// AddCommand is a convenience function to add subcommand to root command.
+func (sg *Instance) AddCommand(c ICommand) {
 	// Save command into the bot's Commands list.
-	sg.Commands = append(sg.Commands, c)
-	if c.Trigger() != "" {
-		sg.Triggers = append(sg.Triggers, c.Trigger())
-	}
+	sg.RootCommand.AddSubCommand(c)
+}
+
+// Triggers is a convenience function to get all top-level commands triggers.
+func (sg *Instance) Triggers() []string {
+	// Save command into the bot's Commands list.
+	return sg.RootCommand.SubCommandsTriggers()
 }
 
 // IsRoot checks if a given user is root.
@@ -257,7 +252,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Search for applicable command.
-	command, err := FindCommand(mc.Message, Bot.Commands)
+	command, err := FindCommand(mc.Message, Bot.RootCommand.SubCommands())
 	if err != nil {
 		// TODO: Report error.
 	}
