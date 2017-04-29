@@ -23,28 +23,27 @@ Typical bot initialization would look like the following:
 package main
 
 import (
-	"os"
 	"github.com/diraven/sugo"
-	"github.com/diraven/sugo_std/info"
-	"github.com/diraven/sugo_std/greet"
-	"github.com/diraven/sugo_std/help"
-	"github.com/diraven/sugo_std/sys"
-	"github.com/diraven/sugo_std/data"
-	"github.com/diraven/sugo_std/test"
+	"github.com/diraven/sugo_ed/ed"
+	"github.com/diraven/sugo_std"
+	"os"
 )
 
 func main() {
 	// If you don't like default command trigger (for example if it clashes with some other one), you can change it like
 	// so:
-	info.Command.SetTrigger("info") // Change "info" to whatever you see appropriate.
-	sugo.Bot.RegisterCommand(&info.Command)
+	std.Info.Trigger = "info" // Change "info" to whatever you see appropriate.
+	sugo.Bot.AddCommand(std.Info)
 
 	// And add some other commands to your bot.
-	sugo.Bot.RegisterCommand(&greet.Command)
-	sugo.Bot.RegisterCommand(&help.Command)
-	sugo.Bot.RegisterCommand(&sys.Command)
-	sugo.Bot.RegisterCommand(&data.Command)
-	sugo.Bot.RegisterCommand(&test.Command)
+	sugo.Bot.AddCommand(std.Greet)
+	sugo.Bot.AddCommand(std.SYS)
+	sugo.Bot.AddCommand(std.Help)
+	sugo.Bot.AddCommand(std.Data)
+	sugo.Bot.AddCommand(std.Test)
+
+	// Elite: Dangerous commands.
+	sugo.Bot.AddCommand(ed.Command)
 
 	// Now just start the bot up and see what happens.
 	// Make sure to provide at least token via SUGO_TOKEN environment variable.
