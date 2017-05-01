@@ -14,7 +14,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.29"
+const VERSION string = "0.0.30"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
@@ -74,7 +74,7 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	}
 
 	// Perform Startup for commands.
-	cmdStartup(sg.rootCommand, sg)
+	sg.rootCommand.startup(sg)
 
 	// Register callback for the messageCreate events.
 	sg.Session.AddHandler(onMessageCreate)
@@ -111,7 +111,7 @@ func (sg *Instance) Shutdown() {
 // teardown gracefully releases all resources and saves data before Shutdown.
 func (sg *Instance) teardown() (err error) {
 	// Perform teardown for commands.
-	cmdTeardown(sg.rootCommand, sg)
+	sg.rootCommand.teardown(sg)
 
 	// Close discord session.
 	err = sg.Session.Close()
@@ -172,8 +172,9 @@ func (sg *Instance) botHasPermission(permission int, c *discordgo.Channel) (resu
 func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
 	// For every command in the list provided:
 	for _, command := range cmdList {
+
 		// Check if message matches command.
-		matched, err := cmdMatch(command, q, Bot, m)
+		matched, err := command.match(q, Bot, m)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +184,7 @@ func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Co
 		}
 
 		// Command matched, check if necessary permissions are present.
-		passed, err := cmdCheckPermissions(command, Bot, m)
+		passed, err := command.checkPermissions(Bot, m)
 		if err != nil {
 			return nil, err
 		}
@@ -252,10 +253,10 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 	if command != nil {
 		// Remove command trigger from message string.
-		q = strings.TrimSpace(strings.TrimPrefix(q, cmdPath(command)))
+		q = strings.TrimSpace(strings.TrimPrefix(q, command.path()))
 
 		// And execute command.
-		err = cmdExecute(ctx, q, command, Bot, mc.Message)
+		err = command.execute(ctx, q, Bot, mc.Message)
 		if err != nil {
 			log.Println(err)
 		}
@@ -263,8 +264,6 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Command not found.
-	// TODO: Here should probably be something like a response where bot presents itself and invites to use "help" command.
-
 }
 
 // RespondText responds to the channel with text without mention of the original message author.
@@ -279,9 +278,6 @@ func (sg *Instance) RespondText(m *discordgo.Message, text string) (message *dis
 // RespondEmbed responds to the channel with embed without mention of the original message author.
 func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageEmbed) (message *discordgo.Message, err error) {
 	_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
-	if err != nil {
-		return
-	}
 	return
 }
 
@@ -289,9 +285,6 @@ func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageE
 func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	responseText := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
-	if err != nil {
-		return
-	}
 	return
 }
 
@@ -303,6 +296,6 @@ func (sg *Instance) helpEmbed(c *Command) (embed *discordgo.MessageEmbed, err er
 		return
 	}
 	// Else return automatically generated one.
-	embed = cmdHelpEmbed(c, sg)
+	embed = c.helpEmbed(sg)
 	return
 }

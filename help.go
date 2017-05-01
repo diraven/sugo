@@ -19,7 +19,7 @@ var CmdHelp = &Command{
 
 		if q == "" {
 			// No arguments, just the help itself.
-			c.EmbedResponse = &discordgo.MessageEmbed{
+			_, err = sg.RespondEmbed(m, &discordgo.MessageEmbed{
 				Title:       "Available commands",
 				Description: strings.Join(sg.triggers(), ", "),
 				Color:       ColorInfo,
@@ -29,7 +29,7 @@ var CmdHelp = &Command{
 						Value: helpers.UserAsMention(sg.Self) + " help something",
 					},
 				},
-			}
+			})
 			return
 		}
 		// Search for applicable command.
@@ -43,10 +43,10 @@ var CmdHelp = &Command{
 			if err != nil {
 				return
 			}
-			c.EmbedResponse = embed
+			_, err = sg.RespondEmbed(m, embed)
 			return
 		}
-		c.TextResponse = "I know nothing about this command, sorry..."
+		_, err = sg.RespondTextMention(m, "I know nothing about this command, sorry...")
 		return
 	},
 }

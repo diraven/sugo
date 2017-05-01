@@ -42,8 +42,8 @@ type Command struct {
 	Teardown  func(c *Command, sg *Instance) (err error)
 }
 
-// cmdStartup is internal function called for each command on bot startup.
-func cmdStartup(c *Command, sg *Instance) (err error) {
+// startup is internal function called for each command on bot startup.
+func (c *Command) startup(sg *Instance) (err error) {
 	// For every subcommand (if any):
 	for _, v := range c.SubCommands {
 		// Build command triggers cache.
@@ -54,14 +54,14 @@ func cmdStartup(c *Command, sg *Instance) (err error) {
 		// Check if command is already registered elsewhere.
 		if v.parent != nil {
 			return sError{
-				fmt.Sprintf("The subcommand is already registered elsewhere: %s", cmdFullUsage(c, sg)),
+				fmt.Sprintf("The subcommand is already registered elsewhere: %s", c.path()),
 			}
 		}
 		// Set command parent.
 		v.parent = c
 
 		// Run system startup for subcommand.
-		cmdStartup(v, sg)
+		v.startup(sg)
 	}
 
 	// Run public startup for command if set.
@@ -75,8 +75,8 @@ func cmdStartup(c *Command, sg *Instance) (err error) {
 	return
 }
 
-// cmdTeardown is internal function called for each command on bot graceful Shutdown.
-func cmdTeardown(c *Command, sg *Instance) error {
+// teardown is internal function called for each command on bot graceful Shutdown.
+func (c *Command) teardown(sg *Instance) error {
 	var err error
 
 	// For every subcommand (if any):
@@ -84,7 +84,7 @@ func cmdTeardown(c *Command, sg *Instance) error {
 		// Here be some internal code to tear commands down... some day. May be.
 
 		// Run system startup for subcommand.
-		err = cmdTeardown(v, sg)
+		err = v.teardown(sg)
 		if err != nil {
 			log.Fatal("Command teardown error: ", err)
 		}
@@ -100,37 +100,33 @@ func cmdTeardown(c *Command, sg *Instance) error {
 	return nil
 }
 
-// cmdPath returns all the triggers from parent commands from outermost to innermost parent.
-func cmdPath(c *Command) (value string) {
+// path returns all the triggers from parent commands from outermost to innermost parent.
+func (c *Command) path() (value string) {
 	if c.parent != nil {
-		return strings.TrimSpace(cmdPath(c.parent) + " " + c.Trigger)
+		return strings.TrimSpace(c.parent.path() + " " + c.Trigger)
 	}
 	return c.Trigger
 }
 
-// cmdFullUsage returns full command usage including all parent triggers.
-func cmdFullUsage(c *Command, sg *Instance) (value string) {
-	return helpers.UserAsMention(sg.Self) + cmdPath(c) + " " + c.Usage
+func (c *Command) FullHelpPath(sg *Instance) (value string) {
+	return helpers.UserAsMention(sg.Self) + " help " + c.path()
 }
 
-// cmdHelpEmbed is a default implementation of help embed builder.
-func cmdHelpEmbed(c *Command, sg *Instance) (embed *discordgo.MessageEmbed) {
-	if c.Trigger == "" || c.Description == "" {
-		embed = &discordgo.MessageEmbed{
-			Title:       cmdPath(c),
-			Description: "Developer of this command did not supply it with description. :frowning:",
-			Color:       ColorWarning,
-		}
-		return embed
-	}
+// fullUsage returns full command usage including all parent triggers.
+func (c *Command) fullUsage(sg *Instance) (value string) {
+	return helpers.UserAsMention(sg.Self) + " " + c.path() + " " + c.Usage
+}
+
+// helpEmbed is a default implementation of help embed builder.
+func (c *Command) helpEmbed(sg *Instance) (embed *discordgo.MessageEmbed) {
 	embed = &discordgo.MessageEmbed{
-		Title:       cmdPath(c),
+		Title:       c.path(),
 		Description: c.Description,
 		Color:       ColorInfo,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:  "Usage:",
-				Value: cmdFullUsage(c, sg),
+				Value: c.fullUsage(sg),
 			},
 		},
 	}
@@ -148,13 +144,13 @@ func cmdHelpEmbed(c *Command, sg *Instance) (embed *discordgo.MessageEmbed) {
 
 }
 
-// cmdMatch is a system matching function that checks if command trigger matches the start of message content.
-func cmdMatch(c *Command, q string, sg *Instance, m *discordgo.Message) (matched bool, err error) {
+// match is a system matching function that checks if command trigger matches the start of message content.
+func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched bool, err error) {
 	// By default command is not matched.
 	matched = false
 
 	// If trigger is not set, check if command is empty.
-	if c.Trigger == "" && m.Content == "" {
+	if c.Trigger == "" && q == "" {
 		return true, nil
 	}
 
@@ -169,7 +165,7 @@ func cmdMatch(c *Command, q string, sg *Instance, m *discordgo.Message) (matched
 }
 
 // checkCheckPermissions checks message author and bot permissions if they match command's required permissions.
-func cmdCheckPermissions(c *Command, sg *Instance, m *discordgo.Message) (passed bool, err error) {
+func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
 	// By default command is not allowed.
 	passed = false
 
@@ -228,10 +224,11 @@ func cmdCheckPermissions(c *Command, sg *Instance, m *discordgo.Message) (passed
 	return
 }
 
-// cmdExecute is a default command execution function.
-func cmdExecute(ctx context.Context, q string, c *Command, sg *Instance, m *discordgo.Message) (err error) {
+// execute is a default command execution function.
+func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discordgo.Message) (err error) {
 	var actionPerformed bool
 
+	// Set timeout to the context if requested by user.
 	if c.Timeout != 0 {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, c.Timeout)
@@ -268,17 +265,16 @@ func cmdExecute(ctx context.Context, q string, c *Command, sg *Instance, m *disc
 	if !actionPerformed {
 		if len(c.SubCommands) > 0 {
 			// If there is at least one subcommand and no other actions taken - explain it to the user.
-			_, err = sg.RespondTextMention(m, "This command itself does not seem to do anything. Try subcommands instead.")
-			if err != nil {
-				return
-			}
+			_, err = sg.RespondTextMention(
+				m,
+				"This command itself does not seem to do anything. Try "+c.FullHelpPath(sg)+".",
+			)
+			return
 		}
 
 		// We did nothing and there are no subcommands...
 		_, err = Bot.RespondTextMention(m, "Looks like this command just does nothing... What is it here for?")
-		if err != nil {
-			return
-		}
+		return
 	}
 
 	return
