@@ -1,30 +1,34 @@
 package sugo
 
 import (
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo/helpers"
 	"log"
 	"strings"
+	"time"
 )
 
 // Command struct describes basic command type.
 type Command struct {
-	// trigger is a sequence of symbols message should start with to match with the command.
+	// Timeout
+	Timeout time.Duration
+	// Trigger is a sequence of symbols message should start with to match with the command.
 	Trigger string
-	// rootOnly determines if the command is supposed to be used by root only.
+	// RootOnly determines if the command is supposed to be used by root only.
 	RootOnly bool
-	// permissionsRequired is a slice of all permissions required by the command (but not subcommands).
+	// PermissionsRequired is a slice of all permissions required by the command (but not subcommands).
 	Permissions []int
-	// response is a string that will be sent to the user in response to the command.
+	// Response is a string that will be sent to the user in response to the command.
 	TextResponse string
-	// embedResponse is a *discordgo.MessageEmbed, if set - has priority over text response.
+	// EmbedResponse is a *discordgo.MessageEmbed, if set - has priority over text response.
 	EmbedResponse *discordgo.MessageEmbed
-	// description should contain short command description.
+	// Description should contain short command description.
 	Description string
-	// usage contains an example of the command usage.
+	// Usage contains an example of the command usage.
 	Usage string
-	// subCommands contains all subcommands of the given command.
+	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
 
 	// parentCommand contains command, which is parent for this one
@@ -32,7 +36,7 @@ type Command struct {
 	// subCommandsTriggers contains all triggers of subcommands for the help to refer to.
 	subCommandsTriggers []string
 
-	Execute   func(c *Command, sg *Instance, m *discordgo.Message) (err error)
+	Execute   func(ctx context.Context, c *Command, query string, sg *Instance, m *discordgo.Message) (err error)
 	HelpEmbed func(c *Command, sg *Instance) (embed *discordgo.MessageEmbed, err error)
 	Startup   func(c *Command, sg *Instance) (err error)
 	Teardown  func(c *Command, sg *Instance) (err error)
@@ -225,12 +229,18 @@ func cmdCheckPermissions(c *Command, sg *Instance, m *discordgo.Message) (passed
 }
 
 // cmdExecute is a default command execution function.
-func cmdExecute(c *Command, sg *Instance, m *discordgo.Message) (err error) {
+func cmdExecute(ctx context.Context, q string, c *Command, sg *Instance, m *discordgo.Message) (err error) {
 	var actionPerformed bool
+
+	if c.Timeout != 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, c.Timeout)
+		defer cancel()
+	}
 
 	if c.Execute != nil {
 		// Run custom command Execute if set.
-		err = c.Execute(c, sg, m)
+		err = c.Execute(ctx, c, q, sg, m)
 		if err != nil {
 			return
 		}

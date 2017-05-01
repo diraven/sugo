@@ -2,6 +2,7 @@
 package sugo
 
 import (
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo/helpers"
@@ -13,7 +14,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.27"
+const VERSION string = "0.0.28"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
@@ -30,8 +31,8 @@ type Instance struct {
 	rootCommand *Command
 	// data is in-memory data storage.
 	data *botData
-	// cShutdown is channel that receives shutdown signals.
-	cShutdown chan os.Signal
+	// done is channel that receives shutdown signals.
+	done chan os.Signal
 }
 
 // Bot contains bot instance.
@@ -45,7 +46,7 @@ func init() {
 // Startup starts the bot up.
 func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Intitialize Shutdown channel.
-	sg.cShutdown = make(chan os.Signal, 1)
+	sg.done = make(chan os.Signal, 1)
 
 	// Initialize data storage.
 	_, err = sg.LoadData()
@@ -95,11 +96,11 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	}
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
 
-	// Register bot sg.cShutdown channel to receive shutdown signals.
-	signal.Notify(sg.cShutdown, syscall.SIGINT, syscall.SIGTERM)
+	// Register bot sg.done channel to receive shutdown signals.
+	signal.Notify(sg.done, syscall.SIGINT, syscall.SIGTERM)
 
 	// Wait for shutdown signal to arrive.
-	<-sg.cShutdown
+	<-sg.done
 
 	fmt.Println("Termination signal received. Shutting down...")
 
@@ -113,7 +114,7 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 
 // Shutdown sends shutdown signal to the bot's shutdown channel.
 func (sg *Instance) Shutdown() {
-	sg.cShutdown <- os.Interrupt
+	sg.done <- os.Interrupt
 }
 
 // teardown gracefully releases all resources and saves data before shutdown.
@@ -184,7 +185,7 @@ func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (resu
 }
 
 // FindCommand looks for an appropriate (sub)command to execute (taking into account triggers and permissions).
-func FindCommand(m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
+func FindCommand(query string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
 	// For every command in the list provided:
 	for _, command := range cmdList {
 		// Check if message matches command.
@@ -213,10 +214,10 @@ func FindCommand(m *discordgo.Message, cmdList []*Command) (output *Command, err
 		subcommands := command.SubCommands
 		if len(subcommands) > 0 {
 			// We do have subcommands. Consume original parent command trigger from the message.
-			m.Content = strings.TrimSpace(strings.TrimPrefix(m.Content, command.Trigger))
+			query = strings.TrimSpace(strings.TrimPrefix(query, command.Trigger))
 
 			// Now try to match any of the subcommands.
-			subcommand, err := FindCommand(m, subcommands)
+			subcommand, err := FindCommand(query, m, subcommands)
 			if err != nil {
 				return nil, err
 			}
@@ -235,7 +236,10 @@ func FindCommand(m *discordgo.Message, cmdList []*Command) (output *Command, err
 
 // onMessageCreate contains all the message processing logic for the bot.
 func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
-	var err error
+	var err error                                  // Used to capture and report errors.
+	var ctx context.Context = context.Background() // Root context.
+	var command *Command                           // Used to store the command we will execute.
+	var query string = mc.Content                  // Command query string.
 
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
@@ -258,8 +262,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Search for applicable command.
-	var command *Command
-	command, err = FindCommand(mc.Message, Bot.rootCommand.SubCommands)
+	command, err = FindCommand(query, mc.Message, Bot.rootCommand.SubCommands)
 	if err != nil {
 		log.Println(err)
 	}
@@ -268,7 +271,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		mc.Content = strings.TrimSpace(strings.TrimPrefix(mc.Content, command.Trigger))
 
 		// And execute command.
-		err = cmdExecute(command, Bot, mc.Message)
+		err = cmdExecute(ctx, query, command, Bot, mc.Message)
 		if err != nil {
 			log.Println(err)
 		}
