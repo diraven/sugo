@@ -14,7 +14,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.28"
+const VERSION string = "0.0.29"
 
 // PermissionNone is a permission that is always granted for everybody.
 const PermissionNone = 0
@@ -41,8 +41,8 @@ func init() {
 	Bot.rootCommand = &Command{}
 }
 
-// startup starts the bot up.
-func (sg *Instance) startup(token string, rootUID string) (err error) {
+// Startup starts the bot up.
+func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Intitialize Shutdown channel.
 	sg.done = make(chan os.Signal, 1)
 
@@ -73,7 +73,7 @@ func (sg *Instance) startup(token string, rootUID string) (err error) {
 		sg.root = root
 	}
 
-	// Perform startup for commands.
+	// Perform Startup for commands.
 	cmdStartup(sg.rootCommand, sg)
 
 	// Register callback for the messageCreate events.

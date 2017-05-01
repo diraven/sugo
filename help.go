@@ -8,7 +8,7 @@ import (
 )
 
 // Help shows help section for appropriate command.
-var Help = &Command{
+var CmdHelp = &Command{
 	Trigger:     "help",
 	Permissions: []int{PermissionNone},
 	Description: "Shows help section for the appropriate command.",
