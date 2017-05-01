@@ -103,7 +103,7 @@ func cmdTeardown(c *Command, sg *Instance) error {
 // cmdPath returns all the triggers from parent commands from outermost to innermost parent.
 func cmdPath(c *Command) (value string) {
 	if c.parent != nil {
-		return cmdPath(c.parent) + " " + c.Trigger
+		return strings.TrimSpace(cmdPath(c.parent) + " " + c.Trigger)
 	}
 	return c.Trigger
 }
@@ -148,8 +148,8 @@ func cmdHelpEmbed(c *Command, sg *Instance) (embed *discordgo.MessageEmbed) {
 
 }
 
-// cmdMatch is a default matching function that checks if command trigger matches the start of message content.
-func cmdMatch(c *Command, sg *Instance, m *discordgo.Message) (matched bool, err error) {
+// cmdMatch is a system matching function that checks if command trigger matches the start of message content.
+func cmdMatch(c *Command, q string, sg *Instance, m *discordgo.Message) (matched bool, err error) {
 	// By default command is not matched.
 	matched = false
 
@@ -160,7 +160,7 @@ func cmdMatch(c *Command, sg *Instance, m *discordgo.Message) (matched bool, err
 
 	// Trigger is set, see if it's in the message.
 	if c.Trigger != "" {
-		if strings.HasPrefix(m.Content, c.Trigger) {
+		if strings.HasPrefix(q, c.Trigger) {
 			matched = true
 			return true, nil
 		}

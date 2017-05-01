@@ -185,11 +185,11 @@ func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (resu
 }
 
 // FindCommand looks for an appropriate (sub)command to execute (taking into account triggers and permissions).
-func FindCommand(query string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
+func FindCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
 	// For every command in the list provided:
 	for _, command := range cmdList {
 		// Check if message matches command.
-		matched, err := cmdMatch(command, Bot, m)
+		matched, err := cmdMatch(command, q, Bot, m)
 		if err != nil {
 			return nil, err
 		}
@@ -214,10 +214,10 @@ func FindCommand(query string, m *discordgo.Message, cmdList []*Command) (output
 		subcommands := command.SubCommands
 		if len(subcommands) > 0 {
 			// We do have subcommands. Consume original parent command trigger from the message.
-			query = strings.TrimSpace(strings.TrimPrefix(query, command.Trigger))
+			q = strings.TrimSpace(strings.TrimPrefix(q, command.Trigger))
 
 			// Now try to match any of the subcommands.
-			subcommand, err := FindCommand(query, m, subcommands)
+			subcommand, err := FindCommand(q, m, subcommands)
 			if err != nil {
 				return nil, err
 			}
@@ -239,7 +239,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	var err error                                  // Used to capture and report errors.
 	var ctx context.Context = context.Background() // Root context.
 	var command *Command                           // Used to store the command we will execute.
-	var query string = mc.Content                  // Command query string.
+	var q string = mc.Content                      // Command query string.
 
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
@@ -253,25 +253,25 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 
 	// Make sure the bot is mentioned in the message, and bot mention is first mention in the message.
 	botMention := helpers.UserAsMention(Bot.Self)
-	if strings.HasPrefix(strings.TrimSpace(mc.Content), botMention) {
+	if strings.HasPrefix(strings.TrimSpace(q), botMention) {
 		// Remove bot mention from the string.
-		mc.Content = strings.TrimSpace(strings.TrimPrefix(mc.Content, botMention))
+		q = strings.TrimSpace(strings.TrimPrefix(q, botMention))
 	} else {
 		// Bot was not mentioned.
 		return
 	}
 
 	// Search for applicable command.
-	command, err = FindCommand(query, mc.Message, Bot.rootCommand.SubCommands)
+	command, err = FindCommand(q, mc.Message, Bot.rootCommand.SubCommands)
 	if err != nil {
 		log.Println(err)
 	}
 	if command != nil {
 		// Remove command trigger from message string.
-		mc.Content = strings.TrimSpace(strings.TrimPrefix(mc.Content, command.Trigger))
+		q = strings.TrimSpace(strings.TrimPrefix(q, cmdPath(command)))
 
 		// And execute command.
-		err = cmdExecute(ctx, query, command, Bot, mc.Message)
+		err = cmdExecute(ctx, q, command, Bot, mc.Message)
 		if err != nil {
 			log.Println(err)
 		}
