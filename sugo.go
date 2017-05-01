@@ -29,9 +29,7 @@ type Instance struct {
 	root *discordgo.User
 	// rootCommand is the starting point for all the rest of commands.
 	rootCommand *Command
-	// data is in-memory data storage.
-	data *botData
-	// done is channel that receives shutdown signals.
+	// done is channel that receives Shutdown signals.
 	done chan os.Signal
 }
 
@@ -43,22 +41,15 @@ func init() {
 	Bot.rootCommand = &Command{}
 }
 
-// Startup starts the bot up.
-func (sg *Instance) Startup(token string, rootUID string) (err error) {
+// startup starts the bot up.
+func (sg *Instance) startup(token string, rootUID string) (err error) {
 	// Intitialize Shutdown channel.
 	sg.done = make(chan os.Signal, 1)
-
-	// Initialize data storage.
-	_, err = sg.LoadData()
-	if err != nil {
-		fmt.Println("Error loading data... ", err)
-		return
-	}
 
 	// Create a new Discord session using the provided bot token.
 	s, err := discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("Error creating Discord session... ", err)
+		fmt.Println("sError creating Discord session... ", err)
 		return
 	}
 
@@ -68,7 +59,7 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Get bot discordgo.User instance.
 	self, err := sg.Session.User("@me")
 	if err != nil {
-		fmt.Println("Error obtaining account details... ", err)
+		fmt.Println("sError obtaining account details... ", err)
 		return
 	}
 	sg.Self = self
@@ -91,15 +82,15 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Open the websocket and begin listening.
 	err = sg.Session.Open()
 	if err != nil {
-		fmt.Println("Error opening connection... ", err)
+		fmt.Println("sError opening connection... ", err)
 		return
 	}
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
 
-	// Register bot sg.done channel to receive shutdown signals.
+	// Register bot sg.done channel to receive Shutdown signals.
 	signal.Notify(sg.done, syscall.SIGINT, syscall.SIGTERM)
 
-	// Wait for shutdown signal to arrive.
+	// Wait for Shutdown signal to arrive.
 	<-sg.done
 
 	fmt.Println("Termination signal received. Shutting down...")
@@ -112,21 +103,15 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	return
 }
 
-// Shutdown sends shutdown signal to the bot's shutdown channel.
+// Shutdown sends Shutdown signal to the bot's Shutdown channel.
 func (sg *Instance) Shutdown() {
 	sg.done <- os.Interrupt
 }
 
-// teardown gracefully releases all resources and saves data before shutdown.
+// teardown gracefully releases all resources and saves data before Shutdown.
 func (sg *Instance) teardown() (err error) {
 	// Perform teardown for commands.
 	cmdTeardown(sg.rootCommand, sg)
-
-	// Dump data.
-	_, err = sg.DumpData()
-	if err != nil {
-		return
-	}
 
 	// Close discord session.
 	err = sg.Session.Close()
@@ -138,23 +123,22 @@ func (sg *Instance) teardown() (err error) {
 
 // AddCommand is a convenience function to add subcommand to root command.
 func (sg *Instance) AddCommand(c *Command) {
-	// Save command into the bot's Commands list.
+	// Save command into the bot's commands list.
 	sg.rootCommand.SubCommands = append(sg.rootCommand.SubCommands, c)
 }
 
-// Commands is a convenience function to that returns list of top-level bot commands.
-func (sg *Instance) Commands() []*Command {
+// commands is a convenience function to that returns list of top-level bot commands.
+func (sg *Instance) commands() []*Command {
 	return sg.rootCommand.SubCommands
 }
 
-// Triggers is a convenience function to get all top-level commands triggers.
-func (sg *Instance) Triggers() []string {
-	// Save command into the bot's Commands list.
+// triggers is a convenience function to get all top-level commands triggers.
+func (sg *Instance) triggers() []string {
 	return sg.rootCommand.subCommandsTriggers
 }
 
-// IsRoot checks if a given user is root.
-func (sg *Instance) IsRoot(user *discordgo.User) (result bool) {
+// isRoot checks if a given user is root.
+func (sg *Instance) isRoot(user *discordgo.User) (result bool) {
 	// By default user is not root.
 	result = false
 	// If root is defined for our bot.
@@ -168,8 +152,8 @@ func (sg *Instance) IsRoot(user *discordgo.User) (result bool) {
 	return
 }
 
-// UserHasPermission checks if given user has given permission on a given channel.
-func (sg *Instance) UserHasPermission(permission int, u *discordgo.User, c *discordgo.Channel) (result bool, err error) {
+// userHasPermission checks if given user has given permission on a given channel.
+func (sg *Instance) userHasPermission(permission int, c *discordgo.Channel, u *discordgo.User) (result bool, err error) {
 	perms, err := sg.UserChannelPermissions(u.ID, c.ID)
 	if err != nil {
 		return
@@ -178,14 +162,14 @@ func (sg *Instance) UserHasPermission(permission int, u *discordgo.User, c *disc
 	return
 }
 
-// BotHasPermission checks if bot has given permission on a given channel.
-func (sg *Instance) BotHasPermission(permission int, c *discordgo.Channel) (result bool, err error) {
-	result, err = sg.UserHasPermission(permission, sg.Self, c)
+// botHasPermission checks if bot has given permission on a given channel.
+func (sg *Instance) botHasPermission(permission int, c *discordgo.Channel) (result bool, err error) {
+	result, err = sg.userHasPermission(permission, c, sg.Self)
 	return
 }
 
-// FindCommand looks for an appropriate (sub)command to execute (taking into account triggers and permissions).
-func FindCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
+// findCommand looks for an appropriate (sub)command to execute (taking into account triggers and permissions).
+func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
 	// For every command in the list provided:
 	for _, command := range cmdList {
 		// Check if message matches command.
@@ -217,7 +201,7 @@ func FindCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Co
 			q = strings.TrimSpace(strings.TrimPrefix(q, command.Trigger))
 
 			// Now try to match any of the subcommands.
-			subcommand, err := FindCommand(q, m, subcommands)
+			subcommand, err := findCommand(q, m, subcommands)
 			if err != nil {
 				return nil, err
 			}
@@ -262,7 +246,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Search for applicable command.
-	command, err = FindCommand(q, mc.Message, Bot.rootCommand.SubCommands)
+	command, err = findCommand(q, mc.Message, Bot.rootCommand.SubCommands)
 	if err != nil {
 		log.Println(err)
 	}
@@ -281,15 +265,6 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Command not found.
 	// TODO: Here should probably be something like a response where bot presents itself and invites to use "help" command.
 
-}
-
-// Execute executes given command.
-func (sg *Instance) Execute(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	message, err = sg.ChannelMessageSend(m.ChannelID, text)
-	if err != nil {
-		return
-	}
-	return
 }
 
 // RespondText responds to the channel with text without mention of the original message author.
@@ -320,8 +295,8 @@ func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (messa
 	return
 }
 
-// HelpEmbed returns automatically generated help embed for the given command.
-func (sg *Instance) HelpEmbed(c *Command) (embed *discordgo.MessageEmbed, err error) {
+// helpEmbed returns automatically generated help embed for the given command.
+func (sg *Instance) helpEmbed(c *Command) (embed *discordgo.MessageEmbed, err error) {
 	// If command has custom help embed available, return that one.
 	if c.HelpEmbed != nil {
 		embed, err = c.HelpEmbed(c, sg)

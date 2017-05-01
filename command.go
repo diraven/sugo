@@ -53,7 +53,7 @@ func cmdStartup(c *Command, sg *Instance) (err error) {
 
 		// Check if command is already registered elsewhere.
 		if v.parent != nil {
-			return Error{
+			return sError{
 				fmt.Sprintf("The subcommand is already registered elsewhere: %s", cmdFullUsage(c, sg)),
 			}
 		}
@@ -75,7 +75,7 @@ func cmdStartup(c *Command, sg *Instance) (err error) {
 	return
 }
 
-// cmdTeardown is internal function called for each command on bot graceful shutdown.
+// cmdTeardown is internal function called for each command on bot graceful Shutdown.
 func cmdTeardown(c *Command, sg *Instance) error {
 	var err error
 
@@ -94,7 +94,7 @@ func cmdTeardown(c *Command, sg *Instance) error {
 	if c.Teardown != nil {
 		err = c.Teardown(c, sg)
 		if err != nil {
-			return Error{fmt.Sprintf("Command custom teardown error: %s\n", err)}
+			return sError{fmt.Sprintf("Command custom teardown error: %s\n", err)}
 		}
 	}
 	return nil
@@ -175,7 +175,7 @@ func cmdCheckPermissions(c *Command, sg *Instance, m *discordgo.Message) (passed
 
 	// For security reasons - every command should have at least one permission set explicitly.
 	if len(c.Permissions) == 0 {
-		err = Error{Text: "Command has no Permissions[]!"}
+		err = sError{"Command has no Permissions[]!"}
 		return
 	}
 
@@ -192,7 +192,7 @@ func cmdCheckPermissions(c *Command, sg *Instance, m *discordgo.Message) (passed
 	}
 
 	// Make sure bot has the permission required.
-	botHasPerm, err := sg.BotHasPermission(compoundPerm, channel)
+	botHasPerm, err := sg.botHasPermission(compoundPerm, channel)
 	if err != nil {
 		return
 	}
@@ -201,7 +201,7 @@ func cmdCheckPermissions(c *Command, sg *Instance, m *discordgo.Message) (passed
 	}
 
 	// If user is a root - command is always allowed.
-	if sg.IsRoot(m.Author) {
+	if sg.isRoot(m.Author) {
 		return true, nil
 	}
 	// Otherwise if user is not a root a command is root-only - command is not allowed.
@@ -210,7 +210,7 @@ func cmdCheckPermissions(c *Command, sg *Instance, m *discordgo.Message) (passed
 	}
 
 	// Make sure user has the permission required.
-	userHasPerm, err := sg.UserHasPermission(compoundPerm, m.Author, channel)
+	userHasPerm, err := sg.userHasPermission(compoundPerm, channel, m.Author)
 	if err != nil {
 		return
 	}

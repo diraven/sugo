@@ -9,7 +9,6 @@ Sugo is essentially a bot framework built on top of [discordgo bindings](https:/
 - and eventually more... hopefully.
 
 There are few repositories with the commands available:
-- [sugo_std](https://github.com/diraven/sugo_std)
 - [sugo_ed](https://github.com/diraven/sugo_ed)
 - more to come...
 

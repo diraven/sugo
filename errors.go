@@ -1,10 +1,10 @@
 package sugo
 
-// Error represents any Sugo error...
-type Error struct {
-	Text string
+// sError represents any Sugo error...
+type sError struct {
+	s string
 }
 
-func (se Error) Error() string {
-	return se.Text
+func (e sError) Error() string {
+	return e.s
 }
