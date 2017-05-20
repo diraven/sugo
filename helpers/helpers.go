@@ -1,23 +1,9 @@
 package helpers
 
 import (
-	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"strconv"
 	"time"
 )
-
-// UserAsMention returns a string in a form of <@0000000000> to be included into discord message.
-func UserAsMention(u *discordgo.User) (s string) {
-	s = fmt.Sprintf("<@%s>", u.ID)
-	return
-}
-
-// ChannelAsMention returns a string in a form of <#0000000000> to be included into discord message.
-func ChannelAsMention(c *discordgo.Channel) (s string) {
-	s = fmt.Sprintf("<#%s>", c.ID)
-	return
-}
 
 // TimeToDiscordTimestamp returns time in a format that Discord API accepts.
 func TimeToDiscordTimestamp(t time.Time) (s string) {

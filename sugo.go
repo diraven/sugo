@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/diraven/sugo/helpers"
 	"log"
 	"os"
 	"os/signal"
@@ -237,7 +236,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Make sure the bot is mentioned in the message, and bot mention is first mention in the message.
-	botMention := helpers.UserAsMention(Bot.Self)
+	botMention := Bot.Self.Mention()
 	if strings.HasPrefix(strings.TrimSpace(q), botMention) {
 		// Remove bot mention from the string.
 		q = strings.TrimSpace(strings.TrimPrefix(q, botMention))
@@ -283,7 +282,7 @@ func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageE
 
 // RespondTextMention responds to the channel with text with the original message author mention.
 func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	responseText := fmt.Sprintf("%s %s", helpers.UserAsMention(m.Author), text)
+	responseText := m.Author.Mention() + "" + text
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	return
 }

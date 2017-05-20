@@ -3,7 +3,6 @@ package sugo
 import (
 	"context"
 	"github.com/bwmarrin/discordgo"
-	"github.com/diraven/sugo/helpers"
 	"strings"
 )
 
@@ -26,7 +25,7 @@ var CmdHelp = &Command{
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "To get more info on 'something' try:",
-						Value: helpers.UserAsMention(sg.Self) + " help something",
+						Value: sg.Self.Mention() + " help something",
 					},
 				},
 			})

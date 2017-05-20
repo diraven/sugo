@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/diraven/sugo/helpers"
 	"log"
 	"strings"
 	"time"
@@ -109,12 +108,12 @@ func (c *Command) path() (value string) {
 }
 
 func (c *Command) FullHelpPath(sg *Instance) (value string) {
-	return helpers.UserAsMention(sg.Self) + " help " + c.path()
+	return sg.Self.Mention() + " help " + c.path()
 }
 
 // fullUsage returns full command usage including all parent triggers.
 func (c *Command) fullUsage(sg *Instance) (value string) {
-	return helpers.UserAsMention(sg.Self) + " " + c.path() + " " + c.Usage
+	return sg.Self.Mention() + " " + c.path() + " " + c.Usage
 }
 
 // helpEmbed is a default implementation of help embed builder.
