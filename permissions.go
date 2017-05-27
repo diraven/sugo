@@ -193,7 +193,7 @@ var CmdPerms = &Command{
 				}
 
 				sg.permissions.set(sg, command.path(), role.ID, true)
-				sg.RespondTextMention(m, role.Name+" is now allowed to use \""+q+"\".")
+				sg.RespondTextMention(m, "`@"+role.Name+"` is now allowed to use \""+q+"\".")
 				return
 			},
 		},
@@ -217,7 +217,7 @@ var CmdPerms = &Command{
 				}
 
 				sg.permissions.set(sg, command.path(), role.ID, false)
-				sg.RespondTextMention(m, role.Name+" is now not allowed to use \""+q+"\".")
+				sg.RespondTextMention(m, "`@"+role.Name+"` is now not allowed to use \""+q+"\".")
 				return
 			},
 		},
@@ -241,7 +241,7 @@ var CmdPerms = &Command{
 				}
 
 				sg.permissions.default_(sg, command.path(), role.ID)
-				sg.RespondTextMention(m, "\""+q+"\" usage permissions by \""+role.Name+"\" were set to default.")
+				sg.RespondTextMention(m, "`"+q+"` usage permissions by `@"+role.Name+"` were set to default.")
 				return
 			},
 		},
@@ -264,6 +264,7 @@ var CmdPerms = &Command{
 				}
 				if command == nil {
 					sg.RespondTextMention(m, "Command not found.")
+					return
 				}
 
 				// Get channel.
@@ -282,6 +283,7 @@ var CmdPerms = &Command{
 				member, err := sg.State.Member(guild.ID, userID)
 				if err != nil {
 					sg.RespondTextMention(m, "User not found.")
+					return
 				}
 
 				// Start building response embed.
@@ -306,7 +308,7 @@ var CmdPerms = &Command{
 						}
 						embed.Fields = append(embed.Fields,
 							&discordgo.MessageEmbedField{
-								Name:  role.Name + " (" + strconv.FormatInt(int64(role.Position), 10) + ")",
+								Name:  "`@" + role.Name + "` (" + strconv.FormatInt(int64(role.Position), 10) + ")",
 								Value: strconv.FormatBool(isAllowed),
 							},
 						)
