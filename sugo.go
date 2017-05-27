@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.31"
+const VERSION string = "0.1.0"
 
 // Instance struct describes bot.
 type Instance struct {

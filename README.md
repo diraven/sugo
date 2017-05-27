@@ -8,10 +8,7 @@ Sugo is essentially a bot framework built on top of [discordgo bindings](https:/
 - Ability to easily set up separate command repositories (such as commands for Elite Dangerous, commands for moderation etc) and activate only those you need.
 - and eventually more... hopefully.
 
-There are few repositories with the commands available:
-- [sugo_std](https://github.com/diraven/sugo_std)
-- [sugo_ed](https://github.com/diraven/sugo_ed)
-- more to come...
+You can pull pull request your own commands or changes to the existing ones in the [sugo_contrib](https://github.com/diraven/sugo_contrib) repo.
 
 The project is on rather early stages of development, so until first release there will be little effort to keep commands API backwards-compatible. Please, fork or checkout a commit that works for you.
 
