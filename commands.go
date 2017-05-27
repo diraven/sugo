@@ -167,13 +167,11 @@ func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched b
 // sequentially for topmost command and following the path to the subcommand in question.
 func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
 	// If user is a root - command is always allowed.
-	// TODO: Reenable.
 	if sg.isRoot(m.Author) {
 		return true, nil
 	}
 
 	// Otherwise if user is not a root and command is root-only - command is not allowed.
-	// TODO: Reenable.
 	if c.RootOnly {
 		return
 	}
