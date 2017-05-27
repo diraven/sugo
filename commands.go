@@ -17,8 +17,8 @@ type Command struct {
 	Trigger string
 	// RootOnly determines if the command is supposed to be used by root only.
 	RootOnly bool
-	// PermissionsRequired is a slice of all permissions required by the command (but not subcommands).
-	Permissions []int
+	// PermittedByDefault specifies if command is allowed to be used by default. Default is false.
+	PermittedByDefault bool
 	// Response is a string that will be sent to the user in response to the command.
 	TextResponse string
 	// EmbedResponse is a *discordgo.MessageEmbed, if set - has priority over text response.
@@ -99,7 +99,7 @@ func (c *Command) teardown(sg *Instance) error {
 	return nil
 }
 
-// path returns all the triggers from parent commands from outermost to innermost parent.
+// path returns sequence of triggers from outermost to innermost command for the given one.
 func (c *Command) path() (value string) {
 	if c.parent != nil {
 		return strings.TrimSpace(c.parent.path() + " " + c.Trigger)
@@ -163,63 +163,62 @@ func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched b
 	return
 }
 
-// checkCheckPermissions checks message author and bot permissions if they match command's required permissions.
+// checkCheckPermissions checks if given user has necessary permissions to use the command. The function is called
+// sequentially for topmost command and following the path to the subcommand in question.
 func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
-	// By default command is not allowed.
-	passed = false
-
-	// For security reasons - every command should have at least one permission set explicitly.
-	if len(c.Permissions) == 0 {
-		err = sError{"Command has no Permissions[]!"}
-		return
-	}
-
-	// Get channel to check for permissions.
-	channel, err := sg.Channel(m.ChannelID)
-	if err != nil {
-		return
-	}
-
-	// Calculate compound permission.
-	var compoundPerm int
-	for _, perm := range c.Permissions {
-		compoundPerm |= perm
-	}
-
-	// Make sure bot has the permission required.
-	botHasPerm, err := sg.botHasPermission(compoundPerm, channel)
-	if err != nil {
-		return
-	}
-	if !(botHasPerm) {
-		return
-	}
-
 	// If user is a root - command is always allowed.
+	// TODO: Reenable.
 	if sg.isRoot(m.Author) {
 		return true, nil
 	}
-	// Otherwise if user is not a root a command is root-only - command is not allowed.
+
+	// Otherwise if user is not a root and command is root-only - command is not allowed.
+	// TODO: Reenable.
 	if c.RootOnly {
 		return
 	}
 
-	// Make sure user has the permission required.
-	userHasPerm, err := sg.userHasPermission(compoundPerm, channel, m.Author)
+	// Now we need to check if we have any settings for every role user has sequentially starting from the topmost one.
+
+	// Get guild member.
+	channel, err := sg.State.Channel(m.ChannelID)
 	if err != nil {
 		return
 	}
-	if !(userHasPerm) {
+	member, err := sg.State.Member(channel.GuildID, m.Author.ID)
+	if err != nil {
 		return
 	}
 
-	// At this time we have checked that:
-	// - Command has at least one permission requirement.
-	// - Channel we check permissions against exists.
-	// - User has all the permissions required.
-	// - Bot has all the permissions required.
-	// So we can safely say the command is allowed to be executed.
-	passed = true
+	// For each role user has.
+	var role *discordgo.Role
+	var position int = 0 // position of the custom role setting found
+	var found bool       // if custom role setting found
+	for _, roleID := range member.Roles {
+		// Get role itself.
+		role, err = sg.State.Role(channel.GuildID, roleID)
+		if err != nil {
+			return false, err // Just make sure we are safe and return false in case of any errors.
+		}
+		// Check if role is allowed to use the command.
+		isAllowed, exists := sg.permissions.get(sg, c.path(), role.ID)
+
+		// If custom role setting exists and it's position less then the one we have already found (role that is higher
+		// takes precedence over the lower ones):
+		if exists && role.Position >= position {
+			position = role.Position // Store position of the role.
+			found = true             // Make sure we know we have found a custom setting.
+			passed = isAllowed       // Update return value.
+		}
+	}
+
+	if found {
+		// If we have found the custom role setting - we just return what we have found.
+		return
+	}
+
+	// There are no special permissions set for any of the user's roles. Fall back to default.
+	passed = c.PermittedByDefault
 	return
 }
 

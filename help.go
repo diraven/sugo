@@ -9,7 +9,7 @@ import (
 // Help shows help section for appropriate command.
 var CmdHelp = &Command{
 	Trigger:     "help",
-	Permissions: []int{PermissionNone},
+	PermittedByDefault: true,
 	Description: "Shows help section for the appropriate command.",
 	Usage:       "somecommand",
 	Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {

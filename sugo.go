@@ -3,7 +3,6 @@ package sugo
 
 import (
 	"context"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"os"
@@ -13,10 +12,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.0.30"
-
-// PermissionNone is a permission that is always granted for everybody.
-const PermissionNone = 0
+const VERSION string = "0.0.31"
 
 // Instance struct describes bot.
 type Instance struct {
@@ -28,6 +24,8 @@ type Instance struct {
 	root *discordgo.User
 	// rootCommand is the starting point for all the rest of commands.
 	rootCommand *Command
+	// permissionStorage contains struct to get and set per-role command permissions.
+	permissions iPermissionStorage
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
 }
@@ -45,10 +43,16 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Intitialize Shutdown channel.
 	sg.done = make(chan os.Signal, 1)
 
+	// Set default permissions storage if one is not specified.
+	if sg.permissions == nil {
+		sg.permissions = &permissionStorage{}
+	}
+	sg.permissions.startup(sg)
+
 	// Create a new Discord session using the provided bot token.
 	s, err := discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("sError creating Discord session... ", err)
+		log.Println("sError creating Discord session... ", err)
 		return
 	}
 
@@ -58,7 +62,7 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Get bot discordgo.User instance.
 	self, err := sg.Session.User("@me")
 	if err != nil {
-		fmt.Println("sError obtaining account details... ", err)
+		log.Println("sError obtaining account details... ", err)
 		return
 	}
 	sg.Self = self
@@ -81,10 +85,10 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Open the websocket and begin listening.
 	err = sg.Session.Open()
 	if err != nil {
-		fmt.Println("sError opening connection... ", err)
+		log.Println("sError opening connection... ", err)
 		return
 	}
-	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	log.Println("Bot is now running. Press CTRL-C to exit.")
 
 	// Register bot sg.done channel to receive Shutdown signals.
 	signal.Notify(sg.done, syscall.SIGINT, syscall.SIGTERM)
@@ -92,12 +96,12 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Wait for Shutdown signal to arrive.
 	<-sg.done
 
-	fmt.Println("Termination signal received. Shutting down...")
+	log.Println("Termination signal received. Shutting down...")
 
 	// Gracefully shut the bot down.
 	sg.teardown()
 
-	fmt.Println("Bye!")
+	log.Println("Bye!")
 
 	return
 }
@@ -109,6 +113,9 @@ func (sg *Instance) Shutdown() {
 
 // teardown gracefully releases all resources and saves data before Shutdown.
 func (sg *Instance) teardown() (err error) {
+	// Shutdown permissions storage.
+	sg.permissions.teardown(sg)
+
 	// Perform teardown for commands.
 	sg.rootCommand.teardown(sg)
 
@@ -184,6 +191,7 @@ func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Co
 
 		// Command matched, check if necessary permissions are present.
 		passed, err := command.checkPermissions(Bot, m)
+		log.Print(passed)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +235,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
-		log.Fatal(err)
+		log.Fatalln("ERROR:", err)
 	}
 
 	// Make sure message author is not a bot.
@@ -248,7 +256,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Search for applicable command.
 	command, err = findCommand(q, mc.Message, Bot.rootCommand.SubCommands)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln("ERROR:", err)
 	}
 	if command != nil {
 		// Remove command trigger from message string.
@@ -257,7 +265,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		// And execute command.
 		err = command.execute(ctx, q, Bot, mc.Message)
 		if err != nil {
-			log.Println(err)
+			log.Fatalln("ERROR:", err)
 		}
 		return
 	}
@@ -282,7 +290,7 @@ func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageE
 
 // RespondTextMention responds to the channel with text with the original message author mention.
 func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	responseText := m.Author.Mention() + "" + text
+	responseText := m.Author.Mention() + " " + text
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	return
 }
