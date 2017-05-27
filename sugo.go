@@ -191,7 +191,6 @@ func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Co
 
 		// Command matched, check if necessary permissions are present.
 		passed, err := command.checkPermissions(Bot, m)
-		log.Print(passed)
 		if err != nil {
 			return nil, err
 		}
@@ -283,8 +282,23 @@ func (sg *Instance) RespondText(m *discordgo.Message, text string) (message *dis
 }
 
 // RespondEmbed responds to the channel with embed without mention of the original message author.
+func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command) (message *discordgo.Message, err error) {
+	embed := &discordgo.MessageEmbed{
+		Title:       "Incorrect command usage.",
+		Description: "Try \"" + c.FullHelpPath(sg) + "\" for details",
+		Color:       ColorDanger,
+	}
+
+	message, err = sg.RespondEmbed(m, embed)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// RespondEmbed responds to the channel with embed without mention of the original message author.
 func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageEmbed) (message *discordgo.Message, err error) {
-	_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
+	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 	return
 }
 

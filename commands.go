@@ -35,7 +35,7 @@ type Command struct {
 	// subCommandsTriggers contains all triggers of subcommands for the help to refer to.
 	subCommandsTriggers []string
 
-	Execute   func(ctx context.Context, c *Command, query string, sg *Instance, m *discordgo.Message) (err error)
+	Execute   func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error)
 	HelpEmbed func(c *Command, sg *Instance) (embed *discordgo.MessageEmbed, err error)
 	Startup   func(c *Command, sg *Instance) (err error)
 	Teardown  func(c *Command, sg *Instance) (err error)

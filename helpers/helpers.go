@@ -3,6 +3,7 @@ package helpers
 import (
 	"strconv"
 	"time"
+	"strings"
 )
 
 // TimeToDiscordTimestamp returns time in a format that Discord API accepts.
@@ -18,6 +19,14 @@ func DiscordTimestampToTime(s string) (t time.Time, err error) {
 		return
 	}
 	return
+}
+
+func ConsumePrefix(s string, p string) string {
+	if strings.HasPrefix(s, p) {
+		s = strings.TrimPrefix(s, p)
+		return strings.TrimSpace(s)
+	}
+	return s
 }
 
 // PointerToString returns pointer to the string given.
