@@ -21,12 +21,17 @@ package main
 
 import (
 	"github.com/diraven/sugo"
+	"github.com/diraven/sugo_contrib/altaxi"
 	"github.com/diraven/sugo_contrib/ed"
 	"github.com/diraven/sugo_contrib/std"
 	"os"
 )
 
 func main() {
+	// You can set bot trigger if you like. If trigger is not set - by default bot will only react to messages starting
+	// with bot's mention.
+	//sugo.Bot.Trigger = "!"
+
 	// If you don't like default command trigger (for example if it clashes with some other one), you can change it like
 	// so:
 	std.Info.Trigger = "info" // Change "info" to whatever you see appropriate.
@@ -41,6 +46,9 @@ func main() {
 
 	// Elite: Dangerous commands.
 	sugo.Bot.AddCommand(ed.Command)
+
+	// AltisLife taxi-related commands.
+	sugo.Bot.AddCommand(altaxi.Command)
 
 	// Now just start the bot up and see what happens.
 	// Make sure to provide at least token via SUGO_TOKEN environment variable.

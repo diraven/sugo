@@ -26,6 +26,8 @@ type Instance struct {
 	rootCommand *Command
 	// permissionStorage contains struct to get and set per-role command permissions.
 	permissions iPermissionStorage
+	// Trigger contains global bot trigger (by default it's bot own mention)
+	Trigger string
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
 }
@@ -66,6 +68,11 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 		return
 	}
 	sg.Self = self
+
+	// Initialize bot trigger if not set.
+	if sg.Trigger == "" {
+		sg.Trigger = sg.Self.Mention()
+	}
 
 	// Get root account info.
 	if rootUID != "" {
@@ -242,11 +249,10 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
-	// Make sure the bot is mentioned in the message, and bot mention is first mention in the message.
-	botMention := Bot.Self.Mention()
-	if strings.HasPrefix(strings.TrimSpace(q), botMention) {
+	// Make sure message starts with bot trigger.
+	if strings.HasPrefix(strings.TrimSpace(q), Bot.Trigger) {
 		// Remove bot mention from the string.
-		q = strings.TrimSpace(strings.TrimPrefix(q, botMention))
+		q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Trigger))
 	} else {
 		// Bot was not mentioned.
 		return
