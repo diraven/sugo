@@ -301,6 +301,34 @@ var CmdPerms = &Command{
 				for _, r := range member.Roles {
 					isAllowed, exists = sg.permissions.get(sg, q, r)
 
+					// Check everyone role.
+					isAllowed, exists = sg.permissions.get(sg, q, guild.ID)
+					if exists {
+						embed.Fields = append(embed.Fields,
+							&discordgo.MessageEmbedField{
+								Name:   "@everyone:",
+								Value:  strconv.FormatBool(isAllowed),
+								Inline: true,
+							},
+						)
+					}
+					// Check default.
+					embed.Fields = append(embed.Fields,
+						&discordgo.MessageEmbedField{
+							Name:   "Default:",
+							Value:  strconv.FormatBool(command.PermittedByDefault),
+							Inline: true,
+						},
+					)
+					// Check if user is root.
+					embed.Fields = append(embed.Fields,
+						&discordgo.MessageEmbedField{
+							Name:   "Is Root:",
+							Value:  strconv.FormatBool(sg.isRoot(member.User)),
+							Inline: true,
+						},
+					)
+
 					if exists {
 						role, err = sg.State.Role(guild.ID, r)
 						if err != nil {
@@ -308,25 +336,13 @@ var CmdPerms = &Command{
 						}
 						embed.Fields = append(embed.Fields,
 							&discordgo.MessageEmbedField{
-								Name:  "`" + role.Name + "` (" + strconv.FormatInt(int64(role.Position), 10) + ")",
-								Value: strconv.FormatBool(isAllowed),
+								Name:   "`" + role.Name + "` (" + strconv.FormatInt(int64(role.Position), 10) + ")",
+								Value:  strconv.FormatBool(isAllowed),
+								Inline: true,
 							},
 						)
 					}
 				}
-				embed.Fields = append(embed.Fields,
-					&discordgo.MessageEmbedField{
-						Name:  "Command allowed by default:",
-						Value: strconv.FormatBool(command.PermittedByDefault),
-					},
-				)
-				embed.Fields = append(embed.Fields,
-					&discordgo.MessageEmbedField{
-						Name:  "User is Root:",
-						Value: strconv.FormatBool(sg.isRoot(member.User)),
-					},
-				)
-
 				sg.RespondEmbed(m, embed)
 				return
 			},

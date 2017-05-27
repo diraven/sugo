@@ -192,6 +192,19 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 	var role *discordgo.Role
 	var position int = 0 // position of the custom role setting found
 	var found bool       // if custom role setting found
+
+	// Start with checking "everyone" role permissions.
+	role, err = sg.State.Role(channel.GuildID, channel.GuildID)
+	if err != nil {
+		return false, err // Just make sure we are safe and return false in case of any errors.
+	}
+	isAllowed, exists := sg.permissions.get(sg, c.path(), role.ID)
+	if exists {
+		found = true
+		passed = isAllowed
+	}
+
+	// And now check all the rest of the user roles.
 	for _, roleID := range member.Roles {
 		// Get role itself.
 		role, err = sg.State.Role(channel.GuildID, roleID)
