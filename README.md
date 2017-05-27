@@ -24,8 +24,8 @@ package main
 
 import (
 	"github.com/diraven/sugo"
-	"github.com/diraven/sugo_ed/ed"
-	"github.com/diraven/sugo_std/std"
+	"github.com/diraven/sugo_contrib/ed"
+	"github.com/diraven/sugo_contrib/std"
 	"os"
 )
 
@@ -36,9 +36,10 @@ func main() {
 	sugo.Bot.AddCommand(std.Info)
 
 	// And add some other commands to your bot.
+	sugo.Bot.AddCommand(sugo.CmdHelp)
+	sugo.Bot.AddCommand(sugo.CmdPerms)
 	sugo.Bot.AddCommand(std.Greet)
 	sugo.Bot.AddCommand(std.SYS)
-	sugo.Bot.AddCommand(sugo.CmdHelp)
 	sugo.Bot.AddCommand(std.Test)
 
 	// Elite: Dangerous commands.
