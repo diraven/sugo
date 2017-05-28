@@ -241,6 +241,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
+		Bot.Shutdown()
 		log.Fatalln("ERROR:", err)
 	}
 
@@ -261,6 +262,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Search for applicable command.
 	command, err = findCommand(q, mc.Message, Bot.rootCommand.SubCommands)
 	if err != nil {
+		Bot.Shutdown()
 		log.Fatalln("ERROR:", err)
 	}
 	if command != nil {
@@ -270,7 +272,13 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		// And execute command.
 		err = command.execute(ctx, q, Bot, mc.Message)
 		if err != nil {
-			log.Fatalln("ERROR:", err)
+			if strings.Contains(err.Error(), "\"code\": 50013") {
+				// Insufficient permissions, bot configuration issue.
+				log.Println("ERROR:", err)
+			} else {
+				Bot.Shutdown()
+				log.Fatalln("ERROR:", err)
+			}
 		}
 		return
 	}
