@@ -76,7 +76,7 @@ func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 
 	// Log the operation results.
 	data_length = len(data)
-	log.Println("Permissions loaded successfully,", data_length, "bytes read.")
+	sg.DebugLog(0,"Permissions loaded successfully,", data_length, "bytes read.")
 
 	return
 }
@@ -95,7 +95,7 @@ func (p *permissionStorage) save(sg *Instance) (data_length int, err error) {
 	}
 
 	data_length = len(data)
-	log.Println("Permissions saved successfully,", data_length, "bytes written.")
+	sg.DebugLog(0,"Permissions saved successfully,", data_length, "bytes written.")
 
 	return
 }

@@ -166,13 +166,16 @@ func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched b
 // checkCheckPermissions checks if given user has necessary permissions to use the command. The function is called
 // sequentially for topmost command and following the path to the subcommand in question.
 func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
+	sg.DebugLog(2, "Permissions check initiated:", c.path())
 	// If user is a root - command is always allowed.
 	if sg.isRoot(m.Author) {
+		sg.DebugLog(2, "Passed! User is root.")
 		return true, nil
 	}
 
 	// Otherwise if user is not a root and command is root-only - command is not allowed.
 	if c.RootOnly {
+		sg.DebugLog(2, "Failed! User is not root while command is root only.")
 		return
 	}
 
@@ -183,10 +186,12 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 	if err != nil {
 		return
 	}
+	sg.DebugLog(2, "Channel:", channel.Name)
 	member, err := sg.State.Member(channel.GuildID, m.Author.ID)
 	if err != nil {
 		return
 	}
+	sg.DebugLog(2, "GuildID:", channel.GuildID)
 
 	// For each role user has.
 	var role *discordgo.Role
@@ -198,12 +203,15 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 	if err != nil {
 		return false, err // Just make sure we are safe and return false in case of any errors.
 	}
+	sg.DebugLog(2, "Checking @everyone permission...")
 	isAllowed, exists := sg.permissions.get(sg, c.path(), role.ID)
 	if exists {
 		found = true
 		passed = isAllowed
+		sg.DebugLog(2, "Found custom setting:", passed)
 	}
 
+	sg.DebugLog(2, "Checking the rest of the user roles...")
 	// And now check all the rest of the user roles.
 	for _, roleID := range member.Roles {
 		// Get role itself.
@@ -211,6 +219,7 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 		if err != nil {
 			return false, err // Just make sure we are safe and return false in case of any errors.
 		}
+		sg.DebugLog(3, "Role:", role.Position, role.Name)
 		// Check if role is allowed to use the command.
 		isAllowed, exists := sg.permissions.get(sg, c.path(), role.ID)
 
@@ -220,16 +229,19 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 			position = role.Position // Store position of the role.
 			found = true             // Make sure we know we have found a custom setting.
 			passed = isAllowed       // Update return value.
+			sg.DebugLog(3, "Found setting with higher position, overriding:", position, role.Name, passed)
 		}
 	}
 
 	if found {
+		sg.DebugLog(2, "Permissions check finished. Determining role:", position, passed)
 		// If we have found the custom role setting - we just return what we have found.
 		return
 	}
 
 	// There are no special permissions set for any of the user's roles. Fall back to default.
 	passed = c.PermittedByDefault
+	sg.DebugLog(2, "No special permissions set. Returning default:", passed)
 	return
 }
 

@@ -28,6 +28,8 @@ type Instance struct {
 	permissions iPermissionStorage
 	// Trigger contains global bot trigger (by default it's bot own mention)
 	Trigger string
+	// Debug determines if bot is in the debug mode (false by default).
+	Debug bool
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
 }
@@ -46,34 +48,43 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	sg.done = make(chan os.Signal, 1)
 
 	// Set default permissions storage if one is not specified.
+	sg.DebugLog(0, "Initiating permissions...")
 	if sg.permissions == nil {
 		sg.permissions = &permissionStorage{}
 	}
 	sg.permissions.startup(sg)
+	sg.DebugLog(0, "Done.")
 
 	// Create a new Discord session using the provided bot token.
+	sg.DebugLog(0, "Initiating Discord session...")
 	s, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.Println("sError creating Discord session... ", err)
 		return
 	}
+	sg.DebugLog(0, "Done.")
 
 	// Save Discord session into Instance struct.
 	sg.Session = s
 
 	// Get bot discordgo.User instance.
+	sg.DebugLog(0, "Getting bot user...")
 	self, err := sg.Session.User("@me")
 	if err != nil {
 		log.Println("sError obtaining account details... ", err)
 		return
 	}
 	sg.Self = self
+	sg.DebugLog(0, "Done. ID:", sg.Self.ID)
 
+	sg.DebugLog(0, "Initializing bot trigger...")
 	// Initialize bot trigger if not set.
 	if sg.Trigger == "" {
 		sg.Trigger = sg.Self.Mention()
 	}
+	sg.DebugLog(0, "Done. Trigger:", sg.Trigger)
 
+	sg.DebugLog(0, "Getting root info...")
 	// Get root account info.
 	if rootUID != "" {
 		root, err := sg.Session.User(rootUID)
@@ -82,19 +93,26 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 		}
 		sg.root = root
 	}
+	sg.DebugLog(0, "Done. Root:", sg.root.Username)
 
 	// Perform Startup for commands.
+	sg.DebugLog(0, "Performing commands startup...")
 	sg.rootCommand.startup(sg)
+	sg.DebugLog(0, "Done.")
 
 	// Register callback for the messageCreate events.
+	sg.DebugLog(0, "Registering onMessageCreate callback...")
 	sg.Session.AddHandler(onMessageCreate)
+	sg.DebugLog(0, "Done.")
 
 	// Open the websocket and begin listening.
+	sg.DebugLog(0, "Opening socket...")
 	err = sg.Session.Open()
 	if err != nil {
 		log.Println("sError opening connection... ", err)
 		return
 	}
+	sg.DebugLog(0, "Done.")
 	log.Println("Bot is now running. Press CTRL-C to exit.")
 
 	// Register bot sg.done channel to receive Shutdown signals.
@@ -103,12 +121,10 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Wait for Shutdown signal to arrive.
 	<-sg.done
 
-	log.Println("Termination signal received. Shutting down...")
-
+	sg.DebugLog(0, "Termination signal received. Shutting down...")
 	// Gracefully shut the bot down.
 	sg.teardown()
-
-	log.Println("Bye!")
+	sg.DebugLog(0, "Done.")
 
 	return
 }
@@ -121,13 +137,19 @@ func (sg *Instance) Shutdown() {
 // teardown gracefully releases all resources and saves data before Shutdown.
 func (sg *Instance) teardown() (err error) {
 	// Shutdown permissions storage.
+	sg.DebugLog(1, "Tearing down permissions...")
 	sg.permissions.teardown(sg)
+	sg.DebugLog(1, "Done.")
 
 	// Perform teardown for commands.
+	sg.DebugLog(1, "Tearing down commands...")
 	sg.rootCommand.teardown(sg)
+	sg.DebugLog(1, "Done.")
 
 	// Close discord session.
+	sg.DebugLog(1, "Closing Discord session...")
 	err = sg.Session.Close()
+	sg.DebugLog(1, "Done.")
 	if err != nil {
 		return
 	}
@@ -136,8 +158,10 @@ func (sg *Instance) teardown() (err error) {
 
 // AddCommand is a convenience function to add subcommand to root command.
 func (sg *Instance) AddCommand(c *Command) {
+	sg.DebugLog(0, "Adding command:", c.path())
 	// Save command into the bot's commands list.
 	sg.rootCommand.SubCommands = append(sg.rootCommand.SubCommands, c)
+	sg.DebugLog(0, "Done.")
 }
 
 // commands is a convenience function to that returns list of top-level bot commands.
@@ -166,24 +190,25 @@ func (sg *Instance) isRoot(user *discordgo.User) (result bool) {
 }
 
 // userHasPermission checks if given user has given permission on a given channel.
-func (sg *Instance) userHasPermission(permission int, c *discordgo.Channel, u *discordgo.User) (result bool, err error) {
-	perms, err := sg.UserChannelPermissions(u.ID, c.ID)
-	if err != nil {
-		return
-	}
-	result = (perms | permission) == perms
-	return
-}
+//func (sg *Instance) userHasPermission(permission int, c *discordgo.Channel, u *discordgo.User) (result bool, err error) {
+//	perms, err := sg.UserChannelPermissions(u.ID, c.ID)
+//	if err != nil {
+//		return
+//	}
+//	result = (perms | permission) == perms
+//	return
+//}
 
 // botHasPermission checks if bot has given permission on a given channel.
-func (sg *Instance) botHasPermission(permission int, c *discordgo.Channel) (result bool, err error) {
-	result, err = sg.userHasPermission(permission, c, sg.Self)
-	return
-}
+//func (sg *Instance) botHasPermission(permission int, c *discordgo.Channel) (result bool, err error) {
+//	result, err = sg.userHasPermission(permission, c, sg.Self)
+//	return
+//}
 
 // findCommand looks for an appropriate (sub)command to execute (taking into account triggers and permissions).
 func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
 	// For every command in the list provided:
+	Bot.DebugLog(1, "Trying to find command...")
 	for _, command := range cmdList {
 
 		// Check if message matches command.
@@ -195,22 +220,27 @@ func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Co
 			// Message did not match command.
 			continue
 		}
+		Bot.DebugLog(1, "Message matched command:", command.path())
 
 		// Command matched, check if necessary permissions are present.
+		Bot.DebugLog(1, "Checking command permissions...")
 		passed, err := command.checkPermissions(Bot, m)
 		if err != nil {
 			return nil, err
 		}
 		if !passed {
+			Bot.DebugLog(1, "Permission check failed.")
 			// Message did not pass permissions check.
 			return nil, nil
 		}
+		Bot.DebugLog(1, "Permission check passed.")
 
 		// Command matched and permissions check passed.
 
 		// Check if there are any subcommands.
 		subcommands := command.SubCommands
 		if len(subcommands) > 0 {
+			Bot.DebugLog(2, "Checking subcommands:", command.path())
 			// We do have subcommands. Consume original parent command trigger from the message.
 			q = strings.TrimSpace(strings.TrimPrefix(q, command.Trigger))
 
@@ -221,13 +251,17 @@ func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Co
 			}
 			// If we were able to get subcommand that matched, return it.
 			if subcommand != nil {
+				Bot.DebugLog(2, "Done! Match found:", subcommand.path())
 				return subcommand, nil
 			}
+			Bot.DebugLog(2, "Done checking subcommands:", command.path())
 		}
+		Bot.DebugLog(2, "No subcommands or none matched. Returning parent:", command.path())
 
 		// Either there are no subcommands, or none of those worked. Return parent command.
 		return command, nil
 	}
+	Bot.DebugLog(1, "No commands matched.")
 	// No commands matched.
 	return nil, nil
 }
@@ -272,10 +306,12 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		log.Fatalln("ERROR:", err)
 	}
 	if command != nil {
+		Bot.DebugLog(0, "Got command to execute:", command.path())
 		// Remove command trigger from message string.
 		q = strings.TrimSpace(strings.TrimPrefix(q, command.path()))
 
 		// And execute command.
+		Bot.DebugLog(0, "Executing...")
 		err = command.execute(ctx, q, Bot, mc.Message)
 		if err != nil {
 			if strings.Contains(err.Error(), "\"code\": 50013") {
@@ -286,6 +322,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 				log.Fatalln("ERROR:", err)
 			}
 		}
+		Bot.DebugLog(0, "Command execution finished:", command.path())
 		return
 	}
 
@@ -327,6 +364,20 @@ func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (messa
 	responseText := m.Author.Mention() + " " + text
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	return
+}
+
+// DebugLog puts vars into the log if bot debug is enabled.
+func (sg *Instance) DebugLog(nesting int, v ...interface{}) {
+	if nesting > 0 {
+		prefix := make([]interface{}, nesting, nesting)
+		for i := 0; i < nesting; i++ {
+			prefix[i] = ">"
+		}
+		v = append(prefix, v...)
+	}
+	if sg.Debug {
+		log.Println(v...)
+	}
 }
 
 // helpEmbed returns automatically generated help embed for the given command.
