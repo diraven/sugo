@@ -108,7 +108,7 @@ func (c *Command) path() (value string) {
 }
 
 func (c *Command) FullHelpPath(sg *Instance) (value string) {
-	return sg.Self.Mention() + " help " + c.path()
+	return sg.Trigger + " help " + c.path()
 }
 
 // fullUsage returns full command usage including all parent triggers.
