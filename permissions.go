@@ -52,7 +52,13 @@ func (p *permissionStorage) default_(sg *Instance, commandPath string, roleID st
 
 func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 	if _, error_type := os.Stat(DATA_FILENAME); os.IsNotExist(error_type) {
+		log.Println("No perms file found. Empty storage initialized.")
 		// File to load data from does not exist.
+		// Check if perms storage is empty and initialize it.
+		permsStorage := sg.permissions.(*permissionStorage)
+		if permsStorage.Permissions == nil {
+			permsStorage.Permissions = make(map[string]bool)
+		}
 		return
 	}
 
@@ -66,12 +72,6 @@ func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 	json.Unmarshal(data, sg.permissions.(*permissionStorage))
 	if err != nil {
 		return
-	}
-
-	// Check if perms storage is empty and initialize it.
-	permsStorage := sg.permissions.(*permissionStorage)
-	if permsStorage.Permissions == nil {
-		permsStorage.Permissions = make(map[string]bool)
 	}
 
 	// Log the operation results.

@@ -250,6 +250,12 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
+	// If bot nick was changed on the server - it will have ! in it's mention, so we need to remove that in order
+	// for mention detection to work right.
+	if strings.HasPrefix(q, "<@!") {
+		q = strings.Replace(q, "<@!", "<@", 1)
+	}
+
 	// Make sure message starts with bot trigger.
 	if strings.HasPrefix(strings.TrimSpace(q), Bot.Trigger) {
 		// Remove bot mention from the string.
