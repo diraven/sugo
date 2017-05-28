@@ -294,40 +294,40 @@ var CmdPerms = &Command{
 					Fields: []*discordgo.MessageEmbedField{},
 				}
 
-				// Get all member roles and check if any of those have custom permissions.
 				var isAllowed bool
 				var exists bool
+
+				// Check everyone role.
+				isAllowed, exists = sg.permissions.get(sg, q, guild.ID)
+				if exists {
+					embed.Fields = append(embed.Fields,
+						&discordgo.MessageEmbedField{
+							Name:   "@everyone",
+							Value:  strconv.FormatBool(isAllowed),
+							Inline: true,
+						},
+					)
+				}
+				// Check default.
+				embed.Fields = append(embed.Fields,
+					&discordgo.MessageEmbedField{
+						Name:   "Default",
+						Value:  strconv.FormatBool(command.PermittedByDefault),
+						Inline: true,
+					},
+				)
+				// Check if user is root.
+				embed.Fields = append(embed.Fields,
+					&discordgo.MessageEmbedField{
+						Name:   "Is Root",
+						Value:  strconv.FormatBool(sg.isRoot(member.User)),
+						Inline: true,
+					},
+				)
+
 				var role *discordgo.Role
 				for _, r := range member.Roles {
 					isAllowed, exists = sg.permissions.get(sg, q, r)
-
-					// Check everyone role.
-					isAllowed, exists = sg.permissions.get(sg, q, guild.ID)
-					if exists {
-						embed.Fields = append(embed.Fields,
-							&discordgo.MessageEmbedField{
-								Name:   "@everyone:",
-								Value:  strconv.FormatBool(isAllowed),
-								Inline: true,
-							},
-						)
-					}
-					// Check default.
-					embed.Fields = append(embed.Fields,
-						&discordgo.MessageEmbedField{
-							Name:   "Default:",
-							Value:  strconv.FormatBool(command.PermittedByDefault),
-							Inline: true,
-						},
-					)
-					// Check if user is root.
-					embed.Fields = append(embed.Fields,
-						&discordgo.MessageEmbedField{
-							Name:   "Is Root:",
-							Value:  strconv.FormatBool(sg.isRoot(member.User)),
-							Inline: true,
-						},
-					)
 
 					if exists {
 						role, err = sg.State.Role(guild.ID, r)
