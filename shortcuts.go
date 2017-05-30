@@ -185,7 +185,7 @@ var CmdShortcuts = &Command{
 
 				if !exists {
 					sg.RespondTextMention(m, "Shortcut \""+q+"\" not found.")
-
+					return
 				}
 
 				sg.shortcuts.del(sg, q)
