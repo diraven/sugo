@@ -25,7 +25,9 @@ type Instance struct {
 	// rootCommand is the starting point for all the rest of commands.
 	rootCommand *Command
 	// permissionStorage contains struct to get and set per-role command permissions.
-	permissions iPermissionStorage
+	permissions iPermissionsStorage
+	// shortcuts contains all the commands shortcuts
+	shortcuts iShortcutsStorage
 	// Trigger contains global bot trigger (by default it's bot own mention)
 	Trigger string
 	// Debug determines if bot is in the debug mode (false by default).
@@ -53,6 +55,14 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 		sg.permissions = &permissionStorage{}
 	}
 	sg.permissions.startup(sg)
+	sg.DebugLog(0, "Done.")
+
+	// Set default shortcuts storage if one is not specified.
+	sg.DebugLog(0, "Initiating shortcuts...")
+	if sg.shortcuts == nil {
+		sg.shortcuts = &shortcutsStorage{}
+	}
+	sg.shortcuts.startup(sg)
 	sg.DebugLog(0, "Done.")
 
 	// Create a new Discord session using the provided bot token.
@@ -141,6 +151,11 @@ func (sg *Instance) teardown() (err error) {
 	sg.permissions.teardown(sg)
 	sg.DebugLog(1, "Done.")
 
+	// Shutdown permissions storage.
+	sg.DebugLog(1, "Tearing down shortcuts...")
+	sg.shortcuts.teardown(sg)
+	sg.DebugLog(1, "Done.")
+
 	// Perform teardown for commands.
 	sg.DebugLog(1, "Tearing down commands...")
 	sg.rootCommand.teardown(sg)
@@ -205,67 +220,6 @@ func (sg *Instance) isRoot(user *discordgo.User) (result bool) {
 //	return
 //}
 
-// findCommand looks for an appropriate (sub)command to execute (taking into account triggers and permissions).
-func findCommand(q string, m *discordgo.Message, cmdList []*Command) (output *Command, err error) {
-	// For every command in the list provided:
-	Bot.DebugLog(1, "Trying to find command...")
-	for _, command := range cmdList {
-
-		// Check if message matches command.
-		matched, err := command.match(q, Bot, m)
-		if err != nil {
-			return nil, err
-		}
-		if !matched {
-			// Message did not match command.
-			continue
-		}
-		Bot.DebugLog(1, "Message matched command:", command.path())
-
-		// Command matched, check if necessary permissions are present.
-		Bot.DebugLog(1, "Checking command permissions...")
-		passed, err := command.checkPermissions(Bot, m)
-		if err != nil {
-			return nil, err
-		}
-		if !passed {
-			Bot.DebugLog(1, "Permission check failed.")
-			// Message did not pass permissions check.
-			return nil, nil
-		}
-		Bot.DebugLog(1, "Permission check passed.")
-
-		// Command matched and permissions check passed.
-
-		// Check if there are any subcommands.
-		subcommands := command.SubCommands
-		if len(subcommands) > 0 {
-			Bot.DebugLog(2, "Checking subcommands:", command.path())
-			// We do have subcommands. Consume original parent command trigger from the message.
-			q = strings.TrimSpace(strings.TrimPrefix(q, command.Trigger))
-
-			// Now try to match any of the subcommands.
-			subcommand, err := findCommand(q, m, subcommands)
-			if err != nil {
-				return nil, err
-			}
-			// If we were able to get subcommand that matched, return it.
-			if subcommand != nil {
-				Bot.DebugLog(2, "Done! Match found:", subcommand.path())
-				return subcommand, nil
-			}
-			Bot.DebugLog(2, "Done checking subcommands:", command.path())
-		}
-		Bot.DebugLog(2, "No subcommands or none matched. Returning parent:", command.path())
-
-		// Either there are no subcommands, or none of those worked. Return parent command.
-		return command, nil
-	}
-	Bot.DebugLog(1, "No commands matched.")
-	// No commands matched.
-	return nil, nil
-}
-
 // onMessageCreate contains all the message processing logic for the bot.
 func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	var err error                                  // Used to capture and report errors.
@@ -299,8 +253,22 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
+	// Process shortcuts.
+	Bot.DebugLog(0, "Looking for shortcuts...")
+	for shortcut, command := range Bot.shortcuts.all() {
+		log.Println(q)
+		if strings.Index(q, shortcut) == 0 {
+			if len(q) == len(shortcut) || string(q[len(shortcut)]) == " " {
+				q = strings.Replace(q, shortcut, command, 1)
+				Bot.DebugLog(0, "Shortcut found! Replaced \"", shortcut, "\" with \"", command, "\"")
+				break
+			}
+		}
+	}
+	Bot.DebugLog(0, "Done.")
+
 	// Search for applicable command.
-	command, err = findCommand(q, mc.Message, Bot.rootCommand.SubCommands)
+	command, err = Bot.rootCommand.search(Bot, q, mc.Message)
 	if err != nil {
 		Bot.Shutdown()
 		log.Fatalln("ERROR:", err)

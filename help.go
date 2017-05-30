@@ -32,7 +32,7 @@ var CmdHelp = &Command{
 			return
 		}
 		// Search for applicable command.
-		command, err := findCommand(q, m, sg.commands())
+		command, err := sg.rootCommand.search(sg, q, m)
 		if err != nil {
 			return
 		}

@@ -163,6 +163,69 @@ func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched b
 	return
 }
 
+// search searches for matching command (including permissions checks) in the given command's subcommands.
+func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *Command, err error) {
+	// For every command in the list provided:
+	sg.DebugLog(1, "Trying to find command...")
+	for _, command := range c.SubCommands {
+
+		// Check if message matches command.
+		matched, err := command.match(q, sg, m)
+		if err != nil {
+			return nil, err
+		}
+		if !matched {
+			// Message did not match command.
+			continue
+		}
+		sg.DebugLog(1, "Message matched command:", command.path())
+
+		// Command matched, check if necessary permissions are present.
+		sg.DebugLog(1, "Checking command permissions...")
+		passed, err := command.checkPermissions(sg, m)
+		if err != nil {
+			return nil, err
+		}
+		if !passed {
+			sg.DebugLog(1, "Permission check failed.")
+			// Message did not pass permissions check.
+			return nil, nil
+		}
+		sg.DebugLog(1, "Permission check passed.")
+
+		// Command matched and permissions check passed.
+
+		// Check if there are any subcommands.
+		if len(command.SubCommands) > 0 {
+			sg.DebugLog(2, "Checking subcommands:", command.path())
+			// We do have subcommands. Consume original parent command trigger from the message.
+			q = strings.TrimSpace(strings.TrimPrefix(q, command.Trigger))
+
+			// Now try to match any of the subcommands.
+			subcommand, err := command.search(sg, q, m)
+			if err != nil {
+				return nil, err
+			}
+			// If we were able to get subcommand that matched, return it.
+			if subcommand != nil {
+				sg.DebugLog(2, "Done! Match found:", subcommand.path())
+				return subcommand, nil
+			}
+			sg.DebugLog(2, "Done checking subcommands:", command.path())
+		}
+		sg.DebugLog(2, "No subcommands or none matched. Returning parent:", command.path())
+
+		// Either there are no subcommands, or none of those worked. Return parent command.
+		return command, nil
+	}
+	sg.DebugLog(1, "No (sub)commands matched.")
+	if c.parent == nil {
+		sg.RespondTextMention(m, "Oops... Command not found.")
+	}
+	// No commands matched.
+	return nil, nil
+}
+
 // checkCheckPermissions checks if given user has necessary permissions to use the command. The function is called
 // sequentially for topmost command and following the path to the subcommand in question.
 func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {

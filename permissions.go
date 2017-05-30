@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"github.com/bwmarrin/discordgo"
 	"io/ioutil"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 )
 
-type iPermissionStorage interface {
+type iPermissionsStorage interface {
 	get(sg *Instance, commandPath string, roleID string) (isAllowed bool, exists bool)
 	set(sg *Instance, commandPath string, roleID string, isAllowed bool)
 	default_(sg *Instance, commandPath string, roleID string)
@@ -21,7 +20,7 @@ type iPermissionStorage interface {
 	teardown(sg *Instance) error
 }
 
-const DATA_FILENAME = "permissions.json"
+const PERMISSIONS_DATA_FILENAME = "permissions.json"
 
 type permissionStorage struct {
 	Permissions map[string]bool
@@ -51,8 +50,8 @@ func (p *permissionStorage) default_(sg *Instance, commandPath string, roleID st
 }
 
 func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
-	if _, error_type := os.Stat(DATA_FILENAME); os.IsNotExist(error_type) {
-		log.Println("No perms file found. Empty storage initialized.")
+	if _, error_type := os.Stat(PERMISSIONS_DATA_FILENAME); os.IsNotExist(error_type) {
+		sg.DebugLog(0, "No perms file found. Empty storage initialized.")
 		// File to load data from does not exist.
 		// Check if perms storage is empty and initialize it.
 		permsStorage := sg.permissions.(*permissionStorage)
@@ -63,7 +62,7 @@ func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 	}
 
 	// Load file.
-	data, err := ioutil.ReadFile(DATA_FILENAME)
+	data, err := ioutil.ReadFile(PERMISSIONS_DATA_FILENAME)
 	if err != nil {
 		return
 	}
@@ -76,7 +75,7 @@ func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 
 	// Log the operation results.
 	data_length = len(data)
-	sg.DebugLog(0,"Permissions loaded successfully,", data_length, "bytes read.")
+	sg.DebugLog(0, "Permissions loaded successfully,", data_length, "bytes read.")
 
 	return
 }
@@ -89,13 +88,13 @@ func (p *permissionStorage) save(sg *Instance) (data_length int, err error) {
 	}
 
 	// Save data into file.
-	err = ioutil.WriteFile(DATA_FILENAME, data, 0644)
+	err = ioutil.WriteFile(PERMISSIONS_DATA_FILENAME, data, 0644)
 	if err != nil {
 		return
 	}
 
 	data_length = len(data)
-	sg.DebugLog(0,"Permissions saved successfully,", data_length, "bytes written.")
+	sg.DebugLog(0, "Permissions saved successfully,", data_length, "bytes written.")
 
 	return
 }
@@ -186,7 +185,7 @@ var CmdPerms = &Command{
 				}
 
 				// Try to find command.
-				command, err := findCommand(q, m, Bot.rootCommand.SubCommands)
+				command, err := sg.rootCommand.search(sg, q, m)
 				if command == nil {
 					sg.RespondTextMention(m, "Command not found.")
 					return
@@ -210,7 +209,7 @@ var CmdPerms = &Command{
 				}
 
 				// Try to find command.
-				command, err := findCommand(q, m, Bot.rootCommand.SubCommands)
+				command, err := sg.rootCommand.search(sg, q, m)
 				if command == nil {
 					sg.RespondTextMention(m, "Command not found.")
 					return
@@ -234,7 +233,7 @@ var CmdPerms = &Command{
 				}
 
 				// Try to find command.
-				command, err := findCommand(q, m, Bot.rootCommand.SubCommands)
+				command, err := sg.rootCommand.search(sg, q, m)
 				if command == nil {
 					sg.RespondTextMention(m, "Command not found.")
 					return
