@@ -219,9 +219,6 @@ func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *
 		return command, nil
 	}
 	sg.DebugLog(1, "No (sub)commands matched.")
-	if c.parent == nil {
-		sg.RespondTextMention(m, "Oops... Command not found.")
-	}
 	// No commands matched.
 	return nil, nil
 }
