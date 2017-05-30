@@ -187,7 +187,7 @@ var CmdPerms = &Command{
 				// Try to find command.
 				command, err := sg.rootCommand.search(sg, q, m)
 				if command == nil {
-					sg.RespondTextMention(m, "Command not found.")
+					sg.respondCommandNotFound(m)
 					return
 				}
 
@@ -211,7 +211,7 @@ var CmdPerms = &Command{
 				// Try to find command.
 				command, err := sg.rootCommand.search(sg, q, m)
 				if command == nil {
-					sg.RespondTextMention(m, "Command not found.")
+					sg.respondCommandNotFound(m)
 					return
 				}
 
@@ -235,7 +235,7 @@ var CmdPerms = &Command{
 				// Try to find command.
 				command, err := sg.rootCommand.search(sg, q, m)
 				if command == nil {
-					sg.RespondTextMention(m, "Command not found.")
+					sg.respondCommandNotFound(m)
 					return
 				}
 

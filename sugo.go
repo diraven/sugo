@@ -294,6 +294,8 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
+	Bot.respondCommandNotFound(mc.Message)
+
 	// Command not found.
 }
 
@@ -306,12 +308,28 @@ func (sg *Instance) RespondText(m *discordgo.Message, text string) (message *dis
 	return
 }
 
-// RespondEmbed responds to the channel with embed without mention of the original message author.
+// RespondBadCommandUsage responds to the channel with "incorrect command usage" message mentioning person that invoked
+// command.
 func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command) (message *discordgo.Message, err error) {
 	embed := &discordgo.MessageEmbed{
 		Title:       "Incorrect command usage.",
 		Description: "Try \"" + c.FullHelpPath(sg) + "\" for details",
 		Color:       ColorDanger,
+	}
+
+	message, err = sg.RespondEmbed(m, embed)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// respondCommandNotFound responds to the channel with "command not found" message mentioning person that invoked
+// command.
+func (sg *Instance) respondCommandNotFound(m *discordgo.Message) (message *discordgo.Message, err error) {
+	embed := &discordgo.MessageEmbed{
+		Title: "Command not found.",
+		Color: ColorDanger,
 	}
 
 	message, err = sg.RespondEmbed(m, embed)

@@ -167,8 +167,7 @@ var CmdShortcuts = &Command{
 				// Try to find command.
 				command, err := sg.rootCommand.search(sg, commandQ, m)
 				if command == nil {
-					print(q)
-					sg.RespondTextMention(m, "Command not found.")
+					sg.respondCommandNotFound(m)
 					return
 				}
 
