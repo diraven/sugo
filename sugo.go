@@ -309,6 +309,7 @@ func (sg *Instance) RespondText(m *discordgo.Message, text string) (message *dis
 
 // RespondBadCommandUsage responds to the channel with "incorrect command usage" message mentioning person that invoked
 // command.
+// _, err = sg.RespondBadCommandUsage(m, c)
 func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command) (message *discordgo.Message, err error) {
 	embed := &discordgo.MessageEmbed{
 		Title:       "Incorrect command usage.",

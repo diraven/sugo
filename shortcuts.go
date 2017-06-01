@@ -158,7 +158,7 @@ var CmdShortcuts = &Command{
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
 				ss := strings.Split(q, "->")
 				if len(ss) < 2 {
-					sg.RespondBadCommandUsage(m, c)
+					_, err = sg.RespondBadCommandUsage(m, c)
 					return
 				}
 				shortcut := strings.TrimSpace(ss[0])
