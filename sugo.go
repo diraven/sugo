@@ -60,7 +60,7 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Set default shortcuts storage if one is not specified.
 	sg.DebugLog(0, "Initiating shortcuts...")
 	if sg.shortcuts == nil {
-		sg.shortcuts = &shortcutsStorage{}
+		sg.shortcuts = &sShortcutsStorage{}
 	}
 	sg.shortcuts.startup(sg)
 	sg.DebugLog(0, "Done.")
@@ -254,12 +254,12 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 
 	// Process shortcuts.
 	Bot.DebugLog(0, "Looking for shortcuts...")
-	for shortcut, command := range Bot.shortcuts.all() {
+	for _, shortcut := range Bot.shortcuts.all() {
 		log.Println(q)
-		if strings.Index(q, shortcut) == 0 {
-			if len(q) == len(shortcut) || string(q[len(shortcut)]) == " " {
-				q = strings.Replace(q, shortcut, command, 1)
-				Bot.DebugLog(0, "Shortcut found! Replaced \"", shortcut, "\" with \"", command, "\"")
+		if strings.Index(q, shortcut.Short) == 0 {
+			if len(q) == len(shortcut.Short) || string(q[len(shortcut.Short)]) == " " {
+				q = strings.Replace(q, shortcut.Short, shortcut.Long, 1)
+				Bot.DebugLog(0, "Shortcut found! Replaced \"", shortcut.Short, "\" with \"", shortcut.Long, "\"")
 				break
 			}
 		}
@@ -349,6 +349,12 @@ func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageE
 func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
 	responseText := m.Author.Mention() + " " + text
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
+	return
+}
+
+// RespondSuccessMention responds to the channel with white checkmark on a green background with the original message author mention.
+func (sg *Instance) RespondSuccessMention(m *discordgo.Message) (message *discordgo.Message, err error) {
+	message, err = sg.RespondTextMention(m, ":white_check_mark:")
 	return
 }
 

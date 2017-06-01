@@ -11,10 +11,11 @@ import (
 )
 
 type iShortcutsStorage interface {
-	all() (shortcuts map[string]string)
-	get(sg *Instance, shortcut string) (command string, exists bool)
-	set(sg *Instance, shortcut string, command string)
-	del(sg *Instance, shortcut string)
+	all() (shortcuts []sShortcut)
+	add(sg *Instance, short string, long string)
+	get(sg *Instance, i int) (shortcut *sShortcut, exists bool)
+	del(sg *Instance, i int)
+	swap(sg *Instance, i1 int, i2 int)
 	load(sg *Instance) (data_length int, err error)
 	save(sg *Instance) (data_length int, err error)
 	startup(sg *Instance) error
@@ -23,35 +24,49 @@ type iShortcutsStorage interface {
 
 const SHORTCUTS_DATA_FILENAME = "shortcuts.json"
 
-type shortcutsStorage struct {
-	Shortcuts map[string]string
+type sShortcut struct {
+	Short string
+	Long  string
 }
 
-func (p *shortcutsStorage) all() (shortcuts map[string]string) {
+type sShortcutsStorage struct {
+	Shortcuts []sShortcut
+}
+
+func (p *sShortcutsStorage) all() (shortcuts []sShortcut) {
 	return p.Shortcuts
 }
 
-func (p *shortcutsStorage) get(sg *Instance, shortcut string) (command string, exists bool) {
-	command, exists = p.Shortcuts[shortcut]
-	return
+func (p *sShortcutsStorage) swap(sg *Instance, i1 int, i2 int) {
+	p.Shortcuts[i1], p.Shortcuts[i2] = p.Shortcuts[i2], p.Shortcuts[i1]
 }
 
-func (p *shortcutsStorage) set(sg *Instance, shortcut string, command string) {
-	p.Shortcuts[shortcut] = command
+func (p *sShortcutsStorage) get(sg *Instance, i int) (shortcut *sShortcut, exists bool) {
+	if i < 0 || i >= len(p.Shortcuts) {
+		return nil, false
+	}
+	return &p.Shortcuts[i], true
 }
 
-func (p *shortcutsStorage) del(sg *Instance, shortcut string) {
-	delete(p.Shortcuts, shortcut)
+func (p *sShortcutsStorage) add(sg *Instance, short string, long string) {
+	p.Shortcuts = append(p.Shortcuts, sShortcut{
+		short,
+		long,
+	})
 }
 
-func (p *shortcutsStorage) load(sg *Instance) (data_length int, err error) {
+func (p *sShortcutsStorage) del(sg *Instance, i int) {
+	p.Shortcuts = append(p.Shortcuts[:i], p.Shortcuts[i+1:]...)
+}
+
+func (p *sShortcutsStorage) load(sg *Instance) (data_length int, err error) {
 	if _, error_type := os.Stat(SHORTCUTS_DATA_FILENAME); os.IsNotExist(error_type) {
 		sg.DebugLog(0, "No shortcuts file found. Empty storage initialized.")
 		// File to load data from does not exist.
 		// Check if perms storage is empty and initialize it.
-		shortcutsStorage := sg.shortcuts.(*shortcutsStorage)
+		shortcutsStorage := sg.shortcuts.(*sShortcutsStorage)
 		if shortcutsStorage.Shortcuts == nil {
-			shortcutsStorage.Shortcuts = make(map[string]string)
+			shortcutsStorage.Shortcuts = make([]sShortcut, 0)
 		}
 		return
 	}
@@ -63,7 +78,7 @@ func (p *shortcutsStorage) load(sg *Instance) (data_length int, err error) {
 	}
 
 	// Decode JSON data.
-	json.Unmarshal(data, sg.shortcuts.(*shortcutsStorage))
+	json.Unmarshal(data, sg.shortcuts.(*sShortcutsStorage))
 	if err != nil {
 		return
 	}
@@ -75,9 +90,9 @@ func (p *shortcutsStorage) load(sg *Instance) (data_length int, err error) {
 	return
 }
 
-func (p *shortcutsStorage) save(sg *Instance) (data_length int, err error) {
+func (p *sShortcutsStorage) save(sg *Instance) (data_length int, err error) {
 	// Encode our data into JSON.
-	data, err := json.Marshal(sg.shortcuts.(*shortcutsStorage))
+	data, err := json.Marshal(sg.shortcuts.(*sShortcutsStorage))
 	if err != nil {
 		return
 	}
@@ -94,12 +109,12 @@ func (p *shortcutsStorage) save(sg *Instance) (data_length int, err error) {
 	return
 }
 
-func (p *shortcutsStorage) startup(sg *Instance) (err error) {
+func (p *sShortcutsStorage) startup(sg *Instance) (err error) {
 	_, err = p.load(sg)
 	return
 }
 
-func (p *shortcutsStorage) teardown(sg *Instance) (err error) {
+func (p *sShortcutsStorage) teardown(sg *Instance) (err error) {
 	_, err = p.save(sg)
 	return
 }
@@ -112,8 +127,8 @@ var CmdShortcuts = &Command{
 	Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
 		var result string = ""
 
-		for shortcut, command := range sg.shortcuts.(*shortcutsStorage).Shortcuts {
-			result = result + shortcut + " -> " + command + "\n"
+		for i, shortcut := range sg.shortcuts.(*sShortcutsStorage).Shortcuts {
+			result = result + strconv.FormatInt(int64(i), 10) + ": `" + shortcut.Short + "` -> `" + shortcut.Long + "`\n"
 		}
 
 		embed := &discordgo.MessageEmbed{
@@ -152,7 +167,7 @@ var CmdShortcuts = &Command{
 			},
 		},
 		{
-			Trigger:     "set",
+			Trigger:     "add",
 			Description: "Adds new or updates existent shortcut.",
 			Usage:       "shortcuts add shortcut -> command [subcommand ...]",
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
@@ -161,35 +176,80 @@ var CmdShortcuts = &Command{
 					_, err = sg.RespondBadCommandUsage(m, c)
 					return
 				}
-				shortcut := strings.TrimSpace(ss[0])
-				commandQ := strings.TrimSpace(ss[1])
+				short := strings.TrimSpace(ss[0])
+				long := strings.TrimSpace(ss[1])
 
 				// Try to find command.
-				command, err := sg.rootCommand.search(sg, commandQ, m)
+				command, err := sg.rootCommand.search(sg, long, m)
 				if command == nil {
 					sg.respondCommandNotFound(m)
 					return
 				}
 
-				sg.shortcuts.set(sg, shortcut, commandQ)
-				sg.RespondTextMention(m, "\""+shortcut+"\" is now a shortcut for \""+commandQ+"\".")
+				sg.shortcuts.add(sg, short, long)
+				sg.RespondTextMention(m, "\""+short+"\" is now a shortcut for \""+long+"\".")
 				return
 			},
 		},
 		{
 			Trigger:     "del",
 			Description: "Deletes specified shortcut.",
-			Usage:       "shortcut",
+			Usage:       "1",
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
-				_, exists := sg.shortcuts.get(sg, q)
+				i, err := strconv.ParseInt(q, 10, 0)
+				if err != nil {
+					_, err = sg.RespondBadCommandUsage(m, c)
+					return
+				}
+				_, exists := sg.shortcuts.get(sg, int(i))
 
 				if !exists {
 					sg.RespondTextMention(m, "Shortcut \""+q+"\" not found.")
 					return
 				}
 
-				sg.shortcuts.del(sg, q)
-				sg.RespondTextMention(m, "Shortcut \""+q+"\" was deleted successfully.")
+				sg.shortcuts.del(sg, int(i))
+				sg.RespondSuccessMention(m)
+				return
+			},
+		},
+		{
+			Trigger:     "swap",
+			Description: "Swaps specified shortcuts.",
+			Usage:       "1 2",
+			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
+				var exists bool
+				ss := strings.Split(q, " ")
+				if len(ss) < 2 {
+					_, err = sg.RespondBadCommandUsage(m, c)
+					return
+				}
+
+				i1, err := strconv.ParseInt(ss[0], 10, 0)
+				if err != nil {
+					_, err = sg.RespondBadCommandUsage(m, c)
+					return
+				}
+				_, exists = sg.shortcuts.get(sg, int(i1))
+				if !exists {
+					sg.RespondTextMention(m, "Shortcut \""+q+"\" not found.")
+					return
+				}
+
+				i2, err := strconv.ParseInt(ss[1], 10, 0)
+				if err != nil {
+					_, err = sg.RespondBadCommandUsage(m, c)
+					return
+				}
+				_, exists = sg.shortcuts.get(sg, int(i2))
+				if !exists {
+					sg.RespondTextMention(m, "Shortcut \""+q+"\" not found.")
+					return
+				}
+
+				sg.shortcuts.swap(sg, int(i1), int(i2))
+
+				sg.RespondSuccessMention(m)
 				return
 			},
 		},
