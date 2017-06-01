@@ -376,3 +376,26 @@ func (sg *Instance) helpEmbed(c *Command) (embed *discordgo.MessageEmbed, err er
 	embed = c.helpEmbed(sg)
 	return
 }
+
+// ChannelFromMessage returns a *discordgo.Channel struct from given *discordgo.Message struct.
+func (sg *Instance) ChannelFromMessage(m *discordgo.Message) (c *discordgo.Channel, err error) {
+	return sg.State.Channel(m.ChannelID)
+}
+
+// GuildFromMessage returns a *discordgo.Guild struct from given *discordgo.Message struct.
+func (sg *Instance) GuildFromMessage(m *discordgo.Message) (g *discordgo.Guild, err error) {
+	c, err := sg.ChannelFromMessage(m)
+	if err != nil {
+		return
+	}
+	return sg.State.Guild(c.GuildID)
+}
+
+// MemberFromMessage returns a *discordgo.Member struct from given *discordgo.Message struct.
+func (sg *Instance) MemberFromMessage(m *discordgo.Message) (mr *discordgo.Member, err error) {
+	g, err := sg.GuildFromMessage(m)
+	if err != nil {
+		return
+	}
+	return sg.State.Member(g.ID, m.Author.ID)
+}
