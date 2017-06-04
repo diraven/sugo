@@ -293,7 +293,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
-	Bot.respondCommandNotFound(mc.Message)
+	//Bot.respondCommandNotFound(mc.Message)
 
 	// Command not found.
 }
