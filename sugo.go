@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.1.0"
+const VERSION string = "0.1.1"
 
 // Instance struct describes bot.
 type Instance struct {
@@ -360,14 +360,14 @@ func (sg *Instance) RespondSuccessMention(m *discordgo.Message) (message *discor
 
 // DebugLog puts vars into the log if bot debug is enabled.
 func (sg *Instance) DebugLog(nesting int, v ...interface{}) {
-	if nesting > 0 {
-		prefix := make([]interface{}, nesting, nesting)
-		for i := 0; i < nesting; i++ {
-			prefix[i] = ">"
-		}
-		v = append(prefix, v...)
-	}
 	if sg.Debug {
+		if nesting > 0 {
+			prefix := make([]interface{}, nesting, nesting)
+			for i := 0; i < nesting; i++ {
+				prefix[i] = ">"
+			}
+			v = append(prefix, v...)
+		}
 		log.Println(v...)
 	}
 }

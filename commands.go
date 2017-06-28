@@ -17,6 +17,8 @@ type Command struct {
 	Trigger string
 	// RootOnly determines if the command is supposed to be used by root only.
 	RootOnly bool
+	// IgnoreDefaultChannel specifies if command works in guild default channel.
+	AllowDefaultChannel bool
 	// PermittedByDefault specifies if command is allowed to be used by default. Default is false.
 	PermittedByDefault bool
 	// Response is a string that will be sent to the user in response to the command.
@@ -228,10 +230,10 @@ func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *
 func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
 	sg.DebugLog(2, "Permissions check initiated:", c.path())
 	// If user is a root - command is always allowed.
-	if sg.isRoot(m.Author) {
-		sg.DebugLog(2, "Passed! User is root.")
-		return true, nil
-	}
+	//if sg.isRoot(m.Author) {
+	//	sg.DebugLog(2, "Passed! User is root.")
+	//	return true, nil
+	//}
 
 	// Otherwise if user is not a root and command is root-only - command is not allowed.
 	if c.RootOnly {
@@ -239,19 +241,26 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 		return
 	}
 
-	// Now we need to check if we have any settings for every role user has sequentially starting from the topmost one.
-
-	// Get guild member.
+	// Get channel.
 	channel, err := sg.State.Channel(m.ChannelID)
 	if err != nil {
 		return
 	}
+	// Check if we should ignore the command because it's disabled for default channel.
+	if !c.AllowDefaultChannel && channel.ID == channel.GuildID {
+		sg.DebugLog(2, "Failed! Default channel is ignored.")
+		return // passed=false, err=nil
+	}
 	sg.DebugLog(2, "Channel:", channel.Name)
+
+	// Get guild member.
 	member, err := sg.State.Member(channel.GuildID, m.Author.ID)
 	if err != nil {
 		return
 	}
 	sg.DebugLog(2, "GuildID:", channel.GuildID)
+
+	// Now we need to check if we have any settings for every role user has sequentially starting from the topmost one.
 
 	// For each role user has.
 	var role *discordgo.Role
