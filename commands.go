@@ -230,10 +230,10 @@ func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *
 func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
 	sg.DebugLog(2, "Permissions check initiated:", c.path())
 	// If user is a root - command is always allowed.
-	//if sg.isRoot(m.Author) {
-	//	sg.DebugLog(2, "Passed! User is root.")
-	//	return true, nil
-	//}
+	if sg.isRoot(m.Author) {
+		sg.DebugLog(2, "Passed! User is root.")
+		return true, nil
+	}
 
 	// Otherwise if user is not a root and command is root-only - command is not allowed.
 	if c.RootOnly {
