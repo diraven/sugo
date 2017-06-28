@@ -244,5 +244,31 @@ var CmdPerms = &Command{
 				return
 			},
 		},
+		{
+			Trigger:     "roles",
+			Description: "Shows all server roles with their IDs.",
+			Usage:       "",
+			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
+				// Try to find role.
+				embed := &discordgo.MessageEmbed{
+					Title: "Roles",
+				}
+
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return
+				}
+
+				for _, role := range guild.Roles {
+					embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+						Name:   role.Name,
+						Value:  role.ID,
+						Inline: true,
+					})
+				}
+				_, err = sg.RespondEmbed(m, embed)
+				return
+			},
+		},
 	},
 }
