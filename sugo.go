@@ -13,7 +13,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.1.2"
+const VERSION string = "0.1.3"
 
 // Instance struct describes bot.
 type Instance struct {
@@ -281,10 +281,13 @@ func (sg *Instance) RespondText(m *discordgo.Message, text string) (message *dis
 // RespondBadCommandUsage responds to the channel with "incorrect command usage" message mentioning person that invoked
 // command.
 // _, err = sg.RespondBadCommandUsage(m, c)
-func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command) (message *discordgo.Message, err error) {
+func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command, text string) (message *discordgo.Message, err error) {
+	if text == "" {
+		text = "Try \"" + c.FullHelpPath(sg) + "\" for details."
+	}
 	embed := &discordgo.MessageEmbed{
 		Title:       "Incorrect command usage.",
-		Description: "Try \"" + c.FullHelpPath(sg) + "\" for details",
+		Description: text,
 		Color:       ColorDanger,
 	}
 
@@ -324,8 +327,17 @@ func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (messa
 }
 
 // RespondSuccessMention responds to the channel with white checkmark on a green background with the original message author mention.
-func (sg *Instance) RespondSuccessMention(m *discordgo.Message) (message *discordgo.Message, err error) {
-	message, err = sg.RespondTextMention(m, ":white_check_mark:")
+func (sg *Instance) RespondSuccessMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	message, err = sg.RespondTextMention(m, ":white_check_mark: "+text)
+	return
+}
+
+// RespondFailMention responds to the channel with white checkmark on a green background with the original message author mention.
+func (sg *Instance) RespondFailMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	if text == "" {
+		text = "Oops... Something went wrong!"
+	}
+	message, err = sg.RespondTextMention(m, ":exclamation: "+text)
 	return
 }
 

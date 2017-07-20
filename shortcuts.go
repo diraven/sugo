@@ -170,7 +170,7 @@ var CmdShortcuts = &Command{
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
 				ss := strings.Split(q, "->")
 				if len(ss) < 2 {
-					_, err = sg.RespondBadCommandUsage(m, c)
+					_, err = sg.RespondBadCommandUsage(m, c, "")
 					return
 				}
 				short := strings.TrimSpace(ss[0])
@@ -195,7 +195,7 @@ var CmdShortcuts = &Command{
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
 				i, err := strconv.ParseInt(q, 10, 0)
 				if err != nil {
-					_, err = sg.RespondBadCommandUsage(m, c)
+					_, err = sg.RespondBadCommandUsage(m, c, "")
 					return
 				}
 				_, exists := sg.shortcuts.get(sg, int(i))
@@ -206,7 +206,7 @@ var CmdShortcuts = &Command{
 				}
 
 				sg.shortcuts.del(sg, int(i))
-				sg.RespondSuccessMention(m)
+				_, err = sg.RespondSuccessMention(m, "")
 				return
 			},
 		},
@@ -218,13 +218,13 @@ var CmdShortcuts = &Command{
 				var exists bool
 				ss := strings.Split(q, " ")
 				if len(ss) < 2 {
-					_, err = sg.RespondBadCommandUsage(m, c)
+					_, err = sg.RespondBadCommandUsage(m, c, "")
 					return
 				}
 
 				i1, err := strconv.ParseInt(ss[0], 10, 0)
 				if err != nil {
-					_, err = sg.RespondBadCommandUsage(m, c)
+					_, err = sg.RespondBadCommandUsage(m, c, "")
 					return
 				}
 				_, exists = sg.shortcuts.get(sg, int(i1))
@@ -235,7 +235,7 @@ var CmdShortcuts = &Command{
 
 				i2, err := strconv.ParseInt(ss[1], 10, 0)
 				if err != nil {
-					_, err = sg.RespondBadCommandUsage(m, c)
+					_, err = sg.RespondBadCommandUsage(m, c, "")
 					return
 				}
 				_, exists = sg.shortcuts.get(sg, int(i2))
@@ -246,7 +246,7 @@ var CmdShortcuts = &Command{
 
 				sg.shortcuts.swap(sg, int(i1), int(i2))
 
-				sg.RespondSuccessMention(m)
+				_, err = sg.RespondSuccessMention(m, "")
 				return
 			},
 		},
