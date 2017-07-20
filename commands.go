@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
 	"strings"
 	"time"
+	"errors"
 )
 
 // Command struct describes basic command type.
@@ -54,21 +54,20 @@ func (c *Command) startup(sg *Instance) (err error) {
 
 		// Check if command is already registered elsewhere.
 		if v.parent != nil {
-			return sError{
-				fmt.Sprintf("The subcommand is already registered elsewhere: %s", c.path()),
-			}
+			return errors.New("The subcommand is already registered elsewhere: " + c.path())
 		}
 		// Set command parent.
 		v.parent = c
 
 		// Run system startup for subcommand.
-		v.startup(sg)
+		if err = v.startup(sg); err != nil {
+			return
+		}
 	}
 
-	// Run public startup for command if set.
+	// Run custom startup for command if set.
 	if c.Startup != nil {
-		err = c.Startup(c, sg)
-		if err != nil {
+		if err = c.Startup(c, sg); err != nil {
 			return
 		}
 	}
@@ -77,28 +76,24 @@ func (c *Command) startup(sg *Instance) (err error) {
 }
 
 // teardown is internal function called for each command on bot graceful Shutdown.
-func (c *Command) teardown(sg *Instance) error {
-	var err error
-
+func (c *Command) teardown(sg *Instance) (err error) {
 	// For every subcommand (if any):
 	for _, v := range c.SubCommands {
 		// Here be some internal code to tear commands down... some day. May be.
 
-		// Run system startup for subcommand.
-		err = v.teardown(sg)
-		if err != nil {
-			log.Fatal("Command teardown error: ", err)
+		// Run system teardown for subcommand.
+		if err = v.teardown(sg); err != nil {
+			return
 		}
 	}
 
 	// Run public teardown for command if set.
 	if c.Teardown != nil {
-		err = c.Teardown(c, sg)
-		if err != nil {
-			return sError{fmt.Sprintf("Command custom teardown error: %s\n", err)}
+		if err = c.Teardown(c, sg); err != nil {
+			return
 		}
 	}
-	return nil
+	return
 }
 
 // path returns sequence of triggers from outermost to innermost command for the given one.
@@ -168,7 +163,6 @@ func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched b
 // search searches for matching command (including permissions checks) in the given command's subcommands.
 func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *Command, err error) {
 	// For every command in the list provided:
-	sg.DebugLog(1, "Trying to find command...")
 	for _, command := range c.SubCommands {
 
 		// Check if message matches command.
@@ -180,26 +174,21 @@ func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *
 			// Message did not match command.
 			continue
 		}
-		sg.DebugLog(1, "Message matched command:", command.path())
 
 		// Command matched, check if necessary permissions are present.
-		sg.DebugLog(1, "Checking command permissions...")
 		passed, err := command.checkPermissions(sg, m)
 		if err != nil {
 			return nil, err
 		}
 		if !passed {
-			sg.DebugLog(1, "Permission check failed.")
 			// Message did not pass permissions check.
 			return nil, nil
 		}
-		sg.DebugLog(1, "Permission check passed.")
 
 		// Command matched and permissions check passed.
 
 		// Check if there are any subcommands.
 		if len(command.SubCommands) > 0 {
-			sg.DebugLog(2, "Checking subcommands:", command.path())
 			// We do have subcommands. Consume original parent command trigger from the message.
 			q = strings.TrimSpace(strings.TrimPrefix(q, command.Trigger))
 
@@ -210,17 +199,13 @@ func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *
 			}
 			// If we were able to get subcommand that matched, return it.
 			if subcommand != nil {
-				sg.DebugLog(2, "Done! Match found:", subcommand.path())
 				return subcommand, nil
 			}
-			sg.DebugLog(2, "Done checking subcommands:", command.path())
 		}
-		sg.DebugLog(2, "No subcommands or none matched. Returning parent:", command.path())
 
 		// Either there are no subcommands, or none of those worked. Return parent command.
 		return command, nil
 	}
-	sg.DebugLog(1, "No (sub)commands matched.")
 	// No commands matched.
 	return nil, nil
 }
@@ -228,16 +213,13 @@ func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *
 // checkCheckPermissions checks if given user has necessary permissions to use the command. The function is called
 // sequentially for topmost command and following the path to the subcommand in question.
 func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed bool, err error) {
-	sg.DebugLog(2, "Permissions check initiated:", c.path())
 	// If user is a root - command is always allowed.
 	if sg.isRoot(m.Author) {
-		sg.DebugLog(2, "Passed! User is root.")
 		return true, nil
 	}
 
 	// Otherwise if user is not a root and command is root-only - command is not allowed.
 	if c.RootOnly {
-		sg.DebugLog(2, "Failed! User is not root while command is root only.")
 		return
 	}
 
@@ -248,17 +230,14 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 	}
 	// Check if we should ignore the command because it's disabled for default channel.
 	if !c.AllowDefaultChannel && channel.ID == channel.GuildID {
-		sg.DebugLog(2, "Failed! Default channel is ignored.")
 		return // passed=false, err=nil
 	}
-	sg.DebugLog(2, "Channel:", channel.Name)
 
 	// Get guild member.
 	member, err := sg.State.Member(channel.GuildID, m.Author.ID)
 	if err != nil {
 		return
 	}
-	sg.DebugLog(2, "GuildID:", channel.GuildID)
 
 	// Now we need to check if we have any settings for every role user has sequentially starting from the topmost one.
 
@@ -272,15 +251,12 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 	if err != nil {
 		return false, err // Just make sure we are safe and return false in case of any errors.
 	}
-	sg.DebugLog(2, "Checking @everyone permission...")
 	isAllowed, exists := sg.permissions.get(sg, c.path(), role.ID)
 	if exists {
 		found = true
 		passed = isAllowed
-		sg.DebugLog(2, "Found custom setting:", passed)
 	}
 
-	sg.DebugLog(2, "Checking the rest of the user roles...")
 	// And now check all the rest of the user roles.
 	for _, roleID := range member.Roles {
 		// Get role itself.
@@ -288,7 +264,6 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 		if err != nil {
 			return false, err // Just make sure we are safe and return false in case of any errors.
 		}
-		sg.DebugLog(3, "Role:", role.Position, role.Name)
 		// Check if role is allowed to use the command.
 		isAllowed, exists := sg.permissions.get(sg, c.path(), role.ID)
 
@@ -298,19 +273,16 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (passed b
 			position = role.Position // Store position of the role.
 			found = true             // Make sure we know we have found a custom setting.
 			passed = isAllowed       // Update return value.
-			sg.DebugLog(3, "Found setting with higher position, overriding:", position, role.Name, passed)
 		}
 	}
 
 	if found {
-		sg.DebugLog(2, "Permissions check finished. Determining role:", position, passed)
 		// If we have found the custom role setting - we just return what we have found.
 		return
 	}
 
 	// There are no special permissions set for any of the user's roles. Fall back to default.
 	passed = c.PermittedByDefault
-	sg.DebugLog(2, "No special permissions set. Returning default:", passed)
 	return
 }
 

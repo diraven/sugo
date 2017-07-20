@@ -3,6 +3,7 @@ package sugo
 
 import (
 	"context"
+	"errors"
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.1.1"
+const VERSION string = "0.1.2"
 
 // Instance struct describes bot.
 type Instance struct {
@@ -30,10 +31,10 @@ type Instance struct {
 	shortcuts iShortcutsStorage
 	// Trigger contains global bot trigger (by default it's bot own mention)
 	Trigger string
-	// Debug determines if bot is in the debug mode (false by default).
-	Debug bool
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
+	// ErrorHandler takes care of unhandled errors.
+	ErrorHandler func(e error) (err error)
 }
 
 // Bot contains bot instance.
@@ -50,72 +51,59 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	sg.done = make(chan os.Signal, 1)
 
 	// Set default permissions storage if one is not specified.
-	sg.DebugLog(0, "Initiating permissions...")
 	if sg.permissions == nil {
 		sg.permissions = &permissionStorage{}
 	}
-	sg.permissions.startup(sg)
-	sg.DebugLog(0, "Done.")
+	if err = sg.permissions.startup(sg); err != nil {
+		return
+	}
 
 	// Set default shortcuts storage if one is not specified.
-	sg.DebugLog(0, "Initiating shortcuts...")
 	if sg.shortcuts == nil {
 		sg.shortcuts = &sShortcutsStorage{}
 	}
-	sg.shortcuts.startup(sg)
-	sg.DebugLog(0, "Done.")
-
-	// Create a new Discord session using the provided bot token.
-	sg.DebugLog(0, "Initiating Discord session...")
-	s, err := discordgo.New("Bot " + token)
-	if err != nil {
-		log.Println("sError creating Discord session... ", err)
+	if err = sg.shortcuts.startup(sg); err != nil {
 		return
 	}
-	sg.DebugLog(0, "Done.")
+
+	// Create a new Discord session using the provided bot token.
+	s, err := discordgo.New("Bot " + token)
+	if err != nil {
+		return errors.New("Error creating Discord session... " + err.Error())
+	}
 
 	// Save Discord session into Instance struct.
 	sg.Session = s
 
 	// Get bot discordgo.User instance.
-	sg.DebugLog(0, "Getting bot user...")
 	self, err := sg.Session.User("@me")
 	if err != nil {
-		log.Println("sError obtaining account details... ", err)
-		return
+		return errors.New("Error obtaining bot account details... " + err.Error())
 	}
 	sg.Self = self
-	sg.DebugLog(0, "Done. ID:", sg.Self.ID)
 
-	sg.DebugLog(0, "Getting root info...")
 	// Get root account info.
 	if rootUID != "" {
 		root, err := sg.Session.User(rootUID)
 		if err != nil {
-			return err
+			return errors.New("Error obtaining root account details... " + err.Error())
 		}
 		sg.root = root
 	}
-	sg.DebugLog(0, "Done. Root:", sg.root.Username)
 
 	// Perform Startup for commands.
-	sg.DebugLog(0, "Performing commands startup...")
-	sg.rootCommand.startup(sg)
-	sg.DebugLog(0, "Done.")
-
-	// Register callback for the messageCreate events.
-	sg.DebugLog(0, "Registering onMessageCreate callback...")
-	sg.Session.AddHandler(onMessageCreate)
-	sg.DebugLog(0, "Done.")
-
-	// Open the websocket and begin listening.
-	sg.DebugLog(0, "Opening socket...")
-	err = sg.Session.Open()
-	if err != nil {
-		log.Println("sError opening connection... ", err)
+	if err = sg.rootCommand.startup(sg); err != nil {
 		return
 	}
-	sg.DebugLog(0, "Done.")
+
+	// Register callback for the messageCreate events.
+	sg.Session.AddHandler(onMessageCreate)
+
+	// Open the websocket and begin listening.
+	if err = sg.Session.Open(); err != nil {
+		return errors.New("Error opening connection... " + err.Error())
+	}
+
 	log.Println("Bot is now running. Press CTRL-C to exit.")
 
 	// Register bot sg.done channel to receive Shutdown signals.
@@ -124,10 +112,8 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Wait for Shutdown signal to arrive.
 	<-sg.done
 
-	sg.DebugLog(0, "Termination signal received. Shutting down...")
 	// Gracefully shut the bot down.
-	sg.teardown()
-	sg.DebugLog(0, "Done.")
+	err = sg.teardown()
 
 	return
 }
@@ -140,24 +126,16 @@ func (sg *Instance) Shutdown() {
 // teardown gracefully releases all resources and saves data before Shutdown.
 func (sg *Instance) teardown() (err error) {
 	// Shutdown permissions storage.
-	sg.DebugLog(1, "Tearing down permissions...")
 	sg.permissions.teardown(sg)
-	sg.DebugLog(1, "Done.")
 
-	// Shutdown permissions storage.
-	sg.DebugLog(1, "Tearing down shortcuts...")
+	// Shutdown shortcuts storage.
 	sg.shortcuts.teardown(sg)
-	sg.DebugLog(1, "Done.")
 
 	// Perform teardown for commands.
-	sg.DebugLog(1, "Tearing down commands...")
 	sg.rootCommand.teardown(sg)
-	sg.DebugLog(1, "Done.")
 
 	// Close discord session.
-	sg.DebugLog(1, "Closing Discord session...")
 	err = sg.Session.Close()
-	sg.DebugLog(1, "Done.")
 	if err != nil {
 		return
 	}
@@ -166,10 +144,8 @@ func (sg *Instance) teardown() (err error) {
 
 // AddCommand is a convenience function to add subcommand to root command.
 func (sg *Instance) AddCommand(c *Command) {
-	sg.DebugLog(0, "Adding command:", c.path())
 	// Save command into the bot's commands list.
 	sg.rootCommand.SubCommands = append(sg.rootCommand.SubCommands, c)
-	sg.DebugLog(0, "Done.")
 }
 
 // commands is a convenience function to that returns list of top-level bot commands.
@@ -223,7 +199,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
 		Bot.Shutdown()
-		log.Fatalln("ERROR:", err)
+		log.Fatal("Bot session error:", err)
 	}
 
 	// Make sure message author is not a bot.
@@ -253,43 +229,38 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Process shortcuts.
-	Bot.DebugLog(0, "Looking for shortcuts...")
 	for _, shortcut := range Bot.shortcuts.all() {
-		log.Println(q)
 		if strings.Index(q, shortcut.Short) == 0 {
 			if len(q) == len(shortcut.Short) || string(q[len(shortcut.Short)]) == " " {
 				q = strings.Replace(q, shortcut.Short, shortcut.Long, 1)
-				Bot.DebugLog(0, "Shortcut found! Replaced \"", shortcut.Short, "\" with \"", shortcut.Long, "\"")
 				break
 			}
 		}
 	}
-	Bot.DebugLog(0, "Done.")
 
 	// Search for applicable command.
 	command, err = Bot.rootCommand.search(Bot, q, mc.Message)
 	if err != nil {
+		// Unhandled error in command.
 		Bot.Shutdown()
-		log.Fatalln("ERROR:", err)
+		log.Fatal("ERROR:", err)
 	}
 	if command != nil {
-		Bot.DebugLog(0, "Got command to execute:", command.path())
 		// Remove command trigger from message string.
 		q = strings.TrimSpace(strings.TrimPrefix(q, command.path()))
 
 		// And execute command.
-		Bot.DebugLog(0, "Executing...")
 		err = command.execute(ctx, q, Bot, mc.Message)
 		if err != nil {
 			if strings.Contains(err.Error(), "\"code\": 50013") {
 				// Insufficient permissions, bot configuration issue.
-				log.Println("ERROR:", err)
+				log.Fatal("ERROR:", err)
 			} else {
+				// Other discord errors.
 				Bot.Shutdown()
-				log.Fatalln("ERROR:", err)
+				log.Fatal("ERROR:", err)
 			}
 		}
-		Bot.DebugLog(0, "Command execution finished:", command.path())
 		return
 	}
 
@@ -358,20 +329,6 @@ func (sg *Instance) RespondSuccessMention(m *discordgo.Message) (message *discor
 	return
 }
 
-// DebugLog puts vars into the log if bot debug is enabled.
-func (sg *Instance) DebugLog(nesting int, v ...interface{}) {
-	if sg.Debug {
-		if nesting > 0 {
-			prefix := make([]interface{}, nesting, nesting)
-			for i := 0; i < nesting; i++ {
-				prefix[i] = ">"
-			}
-			v = append(prefix, v...)
-		}
-		log.Println(v...)
-	}
-}
-
 // helpEmbed returns automatically generated help embed for the given command.
 func (sg *Instance) helpEmbed(c *Command) (embed *discordgo.MessageEmbed, err error) {
 	// If command has custom help embed available, return that one.
@@ -405,4 +362,15 @@ func (sg *Instance) MemberFromMessage(m *discordgo.Message) (mr *discordgo.Membe
 		return
 	}
 	return sg.State.Member(g.ID, m.Author.ID)
+}
+
+// HandleError handles unexpected errors that were returned unhandled elsewhere.
+func (sg *Instance) HandleError(e error) (err error) {
+	if sg.ErrorHandler != nil {
+		err = sg.ErrorHandler(e)
+	} else {
+		log.Println(e)
+		sg.Shutdown()
+	}
+	return
 }

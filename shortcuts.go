@@ -61,8 +61,7 @@ func (p *sShortcutsStorage) del(sg *Instance, i int) {
 
 func (p *sShortcutsStorage) load(sg *Instance) (data_length int, err error) {
 	if _, error_type := os.Stat(SHORTCUTS_DATA_FILENAME); os.IsNotExist(error_type) {
-		sg.DebugLog(0, "No shortcuts file found. Empty storage initialized.")
-		// File to load data from does not exist.
+				// File to load data from does not exist.
 		// Check if perms storage is empty and initialize it.
 		shortcutsStorage := sg.shortcuts.(*sShortcutsStorage)
 		if shortcutsStorage.Shortcuts == nil {
@@ -85,7 +84,6 @@ func (p *sShortcutsStorage) load(sg *Instance) (data_length int, err error) {
 
 	// Log the operation results.
 	data_length = len(data)
-	sg.DebugLog(0, "Shortcuts loaded successfully,", data_length, "bytes read.")
 
 	return
 }
@@ -104,7 +102,6 @@ func (p *sShortcutsStorage) save(sg *Instance) (data_length int, err error) {
 	}
 
 	data_length = len(data)
-	sg.DebugLog(0, "Shortcuts saved successfully,", data_length, "bytes written.")
 
 	return
 }

@@ -51,8 +51,7 @@ func (p *permissionStorage) default_(sg *Instance, commandPath string, roleID st
 
 func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 	if _, error_type := os.Stat(PERMISSIONS_DATA_FILENAME); os.IsNotExist(error_type) {
-		sg.DebugLog(0, "No perms file found. Empty storage initialized.")
-		// File to load data from does not exist.
+				// File to load data from does not exist.
 		// Check if perms storage is empty and initialize it.
 		permsStorage := sg.permissions.(*permissionStorage)
 		if permsStorage.Permissions == nil {
@@ -75,7 +74,6 @@ func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 
 	// Log the operation results.
 	data_length = len(data)
-	sg.DebugLog(0, "Permissions loaded successfully,", data_length, "bytes read.")
 
 	return
 }
@@ -94,7 +92,6 @@ func (p *permissionStorage) save(sg *Instance) (data_length int, err error) {
 	}
 
 	data_length = len(data)
-	sg.DebugLog(0, "Permissions saved successfully,", data_length, "bytes written.")
 
 	return
 }
