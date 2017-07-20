@@ -198,8 +198,8 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
+		Bot.HandleError(errors.New("Bot session error:" + err.Error()))
 		Bot.Shutdown()
-		log.Fatal("Bot session error:", err)
 	}
 
 	// Make sure message author is not a bot.
@@ -242,8 +242,8 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	command, err = Bot.rootCommand.search(Bot, q, mc.Message)
 	if err != nil {
 		// Unhandled error in command.
+		Bot.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + q + ")"))
 		Bot.Shutdown()
-		log.Fatal("ERROR:", err)
 	}
 	if command != nil {
 		// Remove command trigger from message string.
@@ -254,11 +254,11 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		if err != nil {
 			if strings.Contains(err.Error(), "\"code\": 50013") {
 				// Insufficient permissions, bot configuration issue.
-				log.Fatal("ERROR:", err)
+				Bot.HandleError(errors.New("Bot permissions error: " + err.Error() + " (" + q + ")"))
 			} else {
 				// Other discord errors.
+				Bot.HandleError(errors.New("Bot command execute error: " + err.Error() + " (" + q + ")"))
 				Bot.Shutdown()
-				log.Fatal("ERROR:", err)
 			}
 		}
 		return
