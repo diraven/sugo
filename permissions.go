@@ -257,6 +257,12 @@ var CmdPerms = &Command{
 
 				// For each guild role.
 				for _, role := range guild.Roles {
+					// If response is too long already - make a new one.
+					if len(response) > 1500 {
+						response = response + "```"
+						_, err = sg.RespondTextMention(m, response)
+						response = "```\n"
+					}
 					response = response + role.ID + ": " + role.Name + "\n"
 				}
 
