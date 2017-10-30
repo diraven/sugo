@@ -51,7 +51,7 @@ func (p *permissionStorage) default_(sg *Instance, commandPath string, roleID st
 
 func (p *permissionStorage) load(sg *Instance) (data_length int, err error) {
 	if _, error_type := os.Stat(PERMISSIONS_DATA_FILENAME); os.IsNotExist(error_type) {
-				// File to load data from does not exist.
+		// File to load data from does not exist.
 		// Check if perms storage is empty and initialize it.
 		permsStorage := sg.permissions.(*permissionStorage)
 		if permsStorage.Permissions == nil {
@@ -246,24 +246,24 @@ var CmdPerms = &Command{
 			Description: "Shows all server roles with their IDs.",
 			Usage:       "",
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
-				// Try to find role.
-				embed := &discordgo.MessageEmbed{
-					Title: "Roles",
-				}
-
+				// Get guild.
 				guild, err := sg.GuildFromMessage(m)
 				if err != nil {
 					return
 				}
 
+				// Response text.
+				response := "```\n"
+
+				// For each guild role.
 				for _, role := range guild.Roles {
-					embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-						Name:   role.Name,
-						Value:  role.ID,
-						Inline: true,
-					})
+					response = response + role.ID + ": " + role.Name + "\n"
 				}
-				_, err = sg.RespondEmbed(m, embed)
+
+				// End response text.
+				response = response + "```"
+
+				_, err = sg.RespondTextMention(m, response)
 				return
 			},
 		},
