@@ -43,6 +43,22 @@ type Command struct {
 	Teardown  func(c *Command, sg *Instance) (err error)
 }
 
+func (c *Command) getSubcommandsTriggers(sg *Instance, m *discordgo.Message) (triggers []string, err error) {
+	triggers = []string{}
+
+	// Generate triggers list respecting user permissions.
+	for _, trigger := range c.subCommandsTriggers {
+		command, err := c.search(sg, m, trigger)
+		if err != nil {
+			return triggers, err
+		}
+		if command != nil {
+			triggers = append(triggers, trigger)
+		}
+	}
+	return triggers, nil
+}
+
 // startup is internal function called for each command on bot startup.
 func (c *Command) startup(sg *Instance) (err error) {
 	// For every subcommand (if any):
@@ -114,7 +130,7 @@ func (c *Command) fullUsage(sg *Instance) (value string) {
 }
 
 // helpEmbed is a default implementation of help embed builder.
-func (c *Command) helpEmbed(sg *Instance) (embed *discordgo.MessageEmbed) {
+func (c *Command) helpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
 	embed = &discordgo.MessageEmbed{
 		Title:       c.path(),
 		Description: c.Description,
@@ -126,11 +142,15 @@ func (c *Command) helpEmbed(sg *Instance) (embed *discordgo.MessageEmbed) {
 			},
 		},
 	}
+	// Get subcommands triggers respecting user permissions.
+	subcommandsTriggers, _ := c.getSubcommandsTriggers(sg, m)
+
+
 	if len(c.SubCommands) > 0 {
 		embed.Fields = append(embed.Fields,
 			&discordgo.MessageEmbedField{
 				Name:  "Subcommands:",
-				Value: strings.Join(c.subCommandsTriggers, ", "),
+				Value: strings.Join(subcommandsTriggers, ", "),
 			}, &discordgo.MessageEmbedField{
 				Name:  "To get help on 'subcommand' type:",
 				Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger),
@@ -141,7 +161,7 @@ func (c *Command) helpEmbed(sg *Instance) (embed *discordgo.MessageEmbed) {
 }
 
 // match is a system matching function that checks if command trigger matches the start of message content.
-func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched bool, err error) {
+func (c *Command) match(sg *Instance, m *discordgo.Message, q string) (matched bool, err error) {
 	// By default command is not matched.
 	matched = false
 
@@ -161,12 +181,12 @@ func (c *Command) match(q string, sg *Instance, m *discordgo.Message) (matched b
 }
 
 // search searches for matching command (including permissions checks) in the given command's subcommands.
-func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *Command, err error) {
+func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (output *Command, err error) {
 	// For every command in the list provided:
 	for _, command := range c.SubCommands {
 
 		// Check if message matches command.
-		matched, err := command.match(q, sg, m)
+		matched, err := command.match(sg, m, q)
 		if err != nil {
 			return nil, err
 		}
@@ -193,7 +213,7 @@ func (c *Command) search(sg *Instance, q string, m *discordgo.Message) (output *
 			q = strings.TrimSpace(strings.TrimPrefix(q, command.Trigger))
 
 			// Now try to match any of the subcommands.
-			subcommand, err := command.search(sg, q, m)
+			subcommand, err := command.search(sg, m, q)
 			if err != nil {
 				return nil, err
 			}

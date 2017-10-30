@@ -177,7 +177,7 @@ var CmdShortcuts = &Command{
 				long := strings.TrimSpace(ss[1])
 
 				// Try to find command.
-				command, err := sg.rootCommand.search(sg, long, m)
+				command, err := sg.rootCommand.search(sg, m, long)
 				if command == nil {
 					sg.respondCommandNotFound(m)
 					return

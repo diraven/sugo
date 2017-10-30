@@ -160,8 +160,9 @@ func (sg *Instance) commands() []*Command {
 }
 
 // triggers is a convenience function to get all top-level commands triggers.
-func (sg *Instance) triggers() []string {
-	return sg.rootCommand.subCommandsTriggers
+func (sg *Instance) triggers(m *discordgo.Message) []string {
+	triggers, _ := sg.rootCommand.getSubcommandsTriggers(sg, m)
+	return triggers
 }
 
 // isRoot checks if a given user is root.
@@ -238,7 +239,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Search for applicable command.
-	command, err = Bot.rootCommand.search(Bot, q, mc.Message)
+	command, err = Bot.rootCommand.search(Bot, mc.Message, q)
 	if err != nil {
 		// Unhandled error in command.
 		Bot.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + q + ")"))
@@ -341,14 +342,14 @@ func (sg *Instance) RespondFailMention(m *discordgo.Message, text string) (messa
 }
 
 // helpEmbed returns automatically generated help embed for the given command.
-func (sg *Instance) helpEmbed(c *Command) (embed *discordgo.MessageEmbed, err error) {
+func (sg *Instance) helpEmbed(c *Command, m *discordgo.Message) (embed *discordgo.MessageEmbed, err error) {
 	// If command has custom help embed available, return that one.
 	if c.HelpEmbed != nil {
 		embed, err = c.HelpEmbed(c, sg)
 		return
 	}
 	// Else return automatically generated one.
-	embed = c.helpEmbed(sg)
+	embed = c.helpEmbed(sg, m)
 	return
 }
 

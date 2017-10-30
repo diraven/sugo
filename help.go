@@ -20,7 +20,7 @@ var CmdHelp = &Command{
 			// No arguments, just the help itself.
 			_, err = sg.RespondEmbed(m, &discordgo.MessageEmbed{
 				Title:       "Available commands",
-				Description: strings.Join(sg.triggers(), ", "),
+				Description: strings.Join(sg.triggers(m), ", "),
 				Color:       ColorInfo,
 				Fields: []*discordgo.MessageEmbedField{
 					{
@@ -32,13 +32,13 @@ var CmdHelp = &Command{
 			return
 		}
 		// Search for applicable command.
-		command, err := sg.rootCommand.search(sg, q, m)
+		command, err := sg.rootCommand.search(sg, m, q)
 		if err != nil {
 			return
 		}
 		if command != nil {
 			var embed *discordgo.MessageEmbed
-			embed, err = sg.helpEmbed(command)
+			embed, err = sg.helpEmbed(command, m)
 			if err != nil {
 				return
 			}
