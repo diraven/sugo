@@ -82,6 +82,12 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	}
 	sg.Self = self
 
+	// Set default bot trigger if it's not set beforehand.
+	if sg.Trigger == "" {
+		// Default trigger is bot's own mention.
+		sg.Trigger = sg.Self.Mention() + " "
+	}
+
 	// Get root account info.
 	if rootUID != "" {
 		root, err := sg.Session.User(rootUID)
@@ -214,18 +220,11 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 
 	// Make sure message starts with bot trigger.
-	if Bot.Trigger != "" && strings.HasPrefix(strings.TrimSpace(q), Bot.Trigger) {
+	if strings.HasPrefix(strings.TrimSpace(q), Bot.Trigger) {
 		// Remove bot trigger from the string.
 		q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Trigger))
 	} else {
-		// There is either no trigger or its not in the message. Check if we have our bot mentioned.
-		if strings.HasPrefix(strings.TrimSpace(q), Bot.Self.Mention()) {
-			// Remove bot mention from the string.
-			q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Self.Mention()))
-		} else {
-			// Bot was not mentioned.
-			return
-		}
+		return
 	}
 
 	// Process shortcuts.

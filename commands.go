@@ -2,11 +2,11 @@ package sugo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"time"
-	"errors"
 )
 
 // Command struct describes basic command type.
@@ -105,12 +105,12 @@ func (c *Command) path() (value string) {
 }
 
 func (c *Command) FullHelpPath(sg *Instance) (value string) {
-	return sg.Trigger + " help " + c.path()
+	return sg.Trigger + "help " + c.path()
 }
 
 // fullUsage returns full command usage including all parent triggers.
 func (c *Command) fullUsage(sg *Instance) (value string) {
-	return sg.Self.Mention() + " " + c.path() + " " + c.Usage
+	return sg.Trigger + c.path() + " " + c.Usage
 }
 
 // helpEmbed is a default implementation of help embed builder.

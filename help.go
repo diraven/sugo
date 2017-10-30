@@ -25,7 +25,7 @@ var CmdHelp = &Command{
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "To get more info on 'something' try:",
-						Value: sg.Self.Mention() + " help something",
+						Value: sg.Trigger + "help something",
 					},
 				},
 			})
