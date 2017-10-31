@@ -321,7 +321,7 @@ func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageE
 
 // RespondTextMention responds to the channel with text with the original message author mention.
 func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	responseText := m.Author.Mention() + " " + text
+	responseText := m.Author.Mention() + "\n" + text
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	return
 }
