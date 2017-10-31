@@ -140,7 +140,7 @@ var CmdShortcuts = &Command{
 		{
 			Trigger:     "load",
 			Description: "Loads shortcuts from storage.",
-			Usage:       "shortcuts save",
+			Usage:       "save",
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
 				data_length, err := sg.shortcuts.load(sg)
 				if err != nil {
@@ -153,7 +153,7 @@ var CmdShortcuts = &Command{
 		{
 			Trigger:     "save",
 			Description: "Saves shortcuts to storage.",
-			Usage:       "shortcuts load",
+			Usage:       "load",
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
 				data_length, err := sg.shortcuts.save(sg)
 				if err != nil {
@@ -166,7 +166,7 @@ var CmdShortcuts = &Command{
 		{
 			Trigger:     "add",
 			Description: "Adds new or updates existent shortcut.",
-			Usage:       "shortcuts add shortcut -> command [subcommand ...]",
+			Usage:       "shortcut -> command [subcommand ...]",
 			Execute: func(ctx context.Context, c *Command, q string, sg *Instance, m *discordgo.Message) (err error) {
 				ss := strings.Split(q, "->")
 				if len(ss) < 2 {
