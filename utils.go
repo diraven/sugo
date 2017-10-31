@@ -1,14 +1,11 @@
 package sugo
 
 import (
-	"strings"
 	"math"
+	"strings"
 )
 
 func FmtStringsSlice(slice []string, separator string, limit int, moreText string, noMoreText string) (result string) {
-	if moreText == "" {
-		moreText = "..."
-	}
 	// Specifies if there are more items then shown.
 	var more bool
 	// Calculated length.
