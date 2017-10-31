@@ -145,7 +145,6 @@ func (c *Command) helpEmbed(sg *Instance, m *discordgo.Message) (embed *discordg
 	// Get subcommands triggers respecting user permissions.
 	subcommandsTriggers, _ := c.getSubcommandsTriggers(sg, m)
 
-
 	if len(c.SubCommands) > 0 {
 		embed.Fields = append(embed.Fields,
 			&discordgo.MessageEmbedField{
@@ -349,7 +348,7 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 			// If there is at least one subcommand and no other actions taken - explain it to the user.
 			_, err = sg.RespondTextMention(
 				m,
-				"This command itself does not seem to do anything. Try "+c.FullHelpPath(sg)+".",
+				"This command itself does not seem to do anything. Try `"+c.FullHelpPath(sg)+"`.",
 			)
 			return
 		}
