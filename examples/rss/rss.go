@@ -55,7 +55,7 @@ func postNewItems(sg *sugo.Instance) {
 						}
 					}
 				} else {
-					sg.ChannelMessageSend(item.ChannelID, err.Error())
+					sg.ChannelMessageSend(item.ChannelID, strconv.Itoa(i) + ". " + err.Error())
 				}
 			}
 		}
