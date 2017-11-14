@@ -4,6 +4,8 @@ import (
 	"errors"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
+	"github.com/texttheater/golang-levenshtein/levenshtein"
+	"sort"
 	"strings"
 )
 
@@ -51,7 +53,7 @@ func (s *sStorage) getPublicRoleName(guildID string, ruleID string) (string, err
 	return s.Roles[guildID][ruleID], nil
 }
 
-func (s *sStorage) getGuildPublicRoles(guildID string) (map[string]string) {
+func (s *sStorage) getGuildPublicRoles(guildID string) map[string]string {
 	roles, ok := s.Roles[guildID]
 	if ok {
 		return roles
@@ -182,29 +184,73 @@ func (s *sStorage) syncPublicRoles(sg *sugo.Instance, m *discordgo.Message) (err
 	return
 }
 
-func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roleID string, err error) {
+func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roleID string, suggestedRoleIDs []string, err error) {
+	// Edit distance considered similar enough.
+	var expectedEditDistance int = 2
+
+	// Initialize suggested role ids slice.
+	suggestedRoleIDs = []string{}
+
 	// Get a guild.
 	guild, err := sg.GuildFromMessage(m)
 	if err != nil {
 		return
 	}
 
-	// Prepare role storage.
-	var foundRoleID string
 	// Iterate over stored roles.
 	for storedID, storedName := range s.getGuildPublicRoles(guild.ID) {
+		// If we have detected a perfect fit for the query:
 		if q == storedID || strings.Contains(strings.ToLower(storedName), strings.ToLower(q)) {
-			if foundRoleID == "" {
-				foundRoleID = storedID
-			} else {
-				return "", errors.New("multiple roles found for query")
-			}
+			// Add the found role we found into suggestions.
+			suggestedRoleIDs = append(suggestedRoleIDs, storedID)
 		}
 	}
-	if foundRoleID == "" {
-		return "", errors.New("no public roles found for query")
+
+	// If amount of suggested role IDs is exactly one - we have got a perfect fit.
+	if len(suggestedRoleIDs) == 1 {
+		return suggestedRoleIDs[0], suggestedRoleIDs, nil
 	}
-	return foundRoleID, nil
+
+	// If amount of suggested role IDs is more then one - we have found more then 1 role fitting the query.
+	if len(suggestedRoleIDs) > 1 {
+		sort.Strings(suggestedRoleIDs)
+		return "", suggestedRoleIDs, errors.New("multiple roles found for query")
+	}
+
+	// If amount of suggested role IDs is 0 - we have found no fitting roles.
+	if len(suggestedRoleIDs) == 0 {
+		// Try to figure out what did the user want by calculating Levenshtein (edit) distance between query and role names.
+		for storedID, storedName := range s.getGuildPublicRoles(guild.ID) {
+			var d int
+			if strings.Contains(storedName, " ") && !strings.Contains(q, " ") {
+				// If role Name is multi word while query is not, we will try to match query with every word of role name.
+				for _, roleNameWord := range strings.Split(storedName, " ") {
+					d = levenshtein.DistanceForStrings([]rune(roleNameWord), []rune(q), levenshtein.DefaultOptions)
+					// If edit distance is less then equal then expected:
+					if d <= expectedEditDistance {
+						// Add the role id to the suggested list.
+						suggestedRoleIDs = append(suggestedRoleIDs, storedID)
+						break
+					}
+				}
+			} else {
+				// Otherwise just try to match full query with full role name.
+				// Calculate edit distance between full query and full role name.
+				d = levenshtein.DistanceForStrings([]rune(storedName), []rune(q), levenshtein.DefaultOptions)
+				// If edit distance is small enough, we consider role to be a suggestion.
+				if d <= expectedEditDistance {
+					suggestedRoleIDs = append(suggestedRoleIDs, storedID)
+				}
+			}
+		}
+
+		// Now return what we got, even if we have found no suggestions.
+		sort.Strings(suggestedRoleIDs)
+		return "", suggestedRoleIDs, errors.New("no public roles found for query")
+	}
+
+	// This should never happen as slice length can not be negative.
+	panic(suggestedRoleIDs)
 }
 
 func (s *sStorage) findUserPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roleID string, err error) {

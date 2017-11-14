@@ -321,14 +321,15 @@ func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageE
 
 // RespondTextMention responds to the channel with text with the original message author mention.
 func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	responseText := m.Author.Mention() + "\n" + text
+	responseText := m.Author.Mention() + ", " + text
 	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	return
 }
 
 // RespondSuccessMention responds to the channel with white checkmark on a green background with the original message author mention.
 func (sg *Instance) RespondSuccessMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	message, err = sg.RespondTextMention(m, ":white_check_mark: "+text)
+	responseText := ":white_check_mark: " + m.Author.Mention() + ", " + text
+	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	return
 }
 
@@ -337,7 +338,8 @@ func (sg *Instance) RespondFailMention(m *discordgo.Message, text string) (messa
 	if text == "" {
 		text = "Oops... Something went wrong!"
 	}
-	message, err = sg.RespondTextMention(m, ":exclamation: "+text)
+	responseText := ":x: " + m.Author.Mention() + ", " + text
+	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
 	return
 }
 
