@@ -19,6 +19,43 @@ func init() {
 	storage.Roles = make(map[string]map[string]string)
 }
 
+func respondFuzzyRolesSearchIssue(sg *sugo.Instance, m *discordgo.Message, roles map[string]string, err error) error {
+	// Start building response.
+	var response string
+	response = err.Error()
+
+	// If we have got at least one suggested role.
+	if len(roles) > 0 {
+		// Make an array of suggested role names.
+		suggestedRoleNames := []string{}
+		for _, roleName := range roles {
+			suggestedRoleNames = append(suggestedRoleNames, roleName)
+		}
+		response = response + ", try these:\n```"
+		response = response + sugo.FmtStringsSlice(suggestedRoleNames, ", ", 1500, "\n...", "")
+		response = response + "```"
+	}
+
+	_, err = sg.RespondFailMention(m, response)
+	return err
+}
+
+func pickRoleFromMap(roles map[string]string) (roleID string, roleName string) {
+	for roleID, roleName := range roles {
+		return roleID, roleName
+	}
+	return "", ""
+}
+
+func rolesToRoleNames(roles map[string]string) []string {
+	var roleNames []string = []string{}
+	for _, roleName := range roles {
+		roleNames = append(roleNames, roleName)
+	}
+	sort.Strings(roleNames)
+	return roleNames
+}
+
 // CmdRSS allows to manipulate public roles.
 var Cmd = &sugo.Command{
 	Trigger:            "pr",
@@ -28,36 +65,21 @@ var Cmd = &sugo.Command{
 		// Make sure our role list is in sync with the server.
 		storage.syncPublicRoles(sg, m)
 
-		// Get a guild.
-		guild, err := sg.GuildFromMessage(m)
-		if err != nil {
-			return
-		}
-
 		// Try to find role based on query.
-		_, suggestedRoleIDs, _ := storage.findGuildPublicRole(sg, m, q)
+		roles, err := storage.findGuildPublicRole(sg, m, q)
 
 		// Start building response.
 		var response string
 
 		// If we have got at least one suggested role.
-		if len(suggestedRoleIDs) > 0 {
+		if len(roles) > 0 {
 			// Make an array of suggested role names.
-			suggestedRoleNames := []string{}
-			for _, id := range suggestedRoleIDs {
-				name, err := storage.getPublicRoleName(guild.ID, id)
-				if err != nil {
-					return err
-				}
-				suggestedRoleNames = append(suggestedRoleNames, name)
-			}
-
-			response = response + "here is what I found based on your query\n```"
-			response = response + sugo.FmtStringsSlice(suggestedRoleNames, "\n", 1500, "\n...", "")
+			response = response + "```"
+			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
 			response = response + "```"
 			_, err = sg.RespondTextMention(m, response)
 		} else {
-			_, err = sg.RespondTextMention(m, "no public roles found")
+			_, err = sg.RespondTextMention(m, "nothing found")
 		}
 
 		return err
@@ -71,40 +93,24 @@ var Cmd = &sugo.Command{
 				// Make sure our role list is in sync with the server.
 				storage.syncPublicRoles(sg, m)
 
-				userPublicRoles, err := storage.getUserPublicRoles(sg, m)
-				if err != nil {
-					_, err = sg.RespondFailMention(m, err.Error())
-					return
-				}
-
-				// Gather all role names.
-				roleNames := []string{}
-				for _, storedName := range userPublicRoles {
-					// Filter role names based on query if any.
-					if q != "" {
-						if strings.Contains(strings.ToLower(storedName), strings.ToLower(q)) {
-							roleNames = append(roleNames, storedName)
-						}
-					} else {
-						roleNames = append(roleNames, storedName)
-					}
-				}
-
-				// Sort role names.
-				sort.Strings(roleNames)
+				// Try to find role based on query.
+				roles, err := storage.findUserPublicRole(sg, m, q)
 
 				// Start building response.
 				var response string
-				if q != "" {
-					response = "Your Public Roles with \"" + q + "\" in name:\n```\n"
-				} else {
-					response = "Your Public Roles:\n```\n"
-				}
-				response = response + sugo.FmtStringsSlice(roleNames, "\n", 1500, "\n...", "")
-				response = response + "```"
 
-				_, err = sg.RespondTextMention(m, response)
-				return
+				// If we have got at least one suggested role.
+				if len(roles) > 0 {
+					// Make an array of suggested role names.
+					response = response + "```"
+					response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
+					response = response + "```"
+					_, err = sg.RespondTextMention(m, response)
+				} else {
+					_, err = sg.RespondTextMention(m, "you got no such role")
+				}
+
+				return err
 			},
 		},
 		{
@@ -123,54 +129,29 @@ var Cmd = &sugo.Command{
 				}
 
 				// Try to find role based on query.
-				storedRoleID, suggestedRoleIDs, err := storage.findGuildPublicRole(sg, m, q)
+				roles, err := storage.findGuildPublicRole(sg, m, q)
 				if err != nil {
-					// Start building response.
-					var response string
-					response = err.Error()
-
-					// If we have got at least one suggested role.
-					if len(suggestedRoleIDs) > 0 {
-						// Make an array of suggested role names.
-						suggestedRoleNames := []string{}
-						for _, id := range suggestedRoleIDs {
-							name, err := storage.getPublicRoleName(guild.ID, id)
-							if err != nil {
-								return err
-							}
-							suggestedRoleNames = append(suggestedRoleNames, name)
-						}
-						response = response + "\n Did you mean one of following:\n```"
-						response = response + sugo.FmtStringsSlice(suggestedRoleNames, ", ", 1500, "\n...", "")
-						response = response + "```"
-					}
-
-					_, err = sg.RespondFailMention(m, response)
-					return
+					return respondFuzzyRolesSearchIssue(sg, m, roles, err)
 				}
+
+				// There is only one item in the resulting map, so we get it.
+				foundRoleID, _ := pickRoleFromMap(roles)
 
 				// Make members array we will be working with.
 				memberNames := []string{}
 				for _, member := range guild.Members {
 					for _, roleID := range member.Roles {
-						if roleID == storedRoleID {
+						if roleID == foundRoleID {
 							memberNames = append(memberNames, member.User.Username+"#"+member.User.Discriminator)
 						}
 					}
-				}
-
-				// Get stored role name.
-				storedRoleName, err := storage.getPublicRoleName(guild.ID, storedRoleID)
-				if err != nil {
-					_, err = sg.RespondFailMention(m, err.Error())
-					return
 				}
 
 				// Sort people.
 				sort.Strings(memberNames)
 
 				// Start building response.
-				response := "People with public role \"" + storedRoleName + "\":\n```\n"
+				response := "```"
 				response = response + sugo.FmtStringsSlice(memberNames, ", ", 1500, "...", ".")
 				response = response + "```"
 
@@ -183,6 +164,7 @@ var Cmd = &sugo.Command{
 			Description: "Makes existing role public.",
 			Usage:       "rolenameorid",
 			Execute: func(ctx context.Context, c *sugo.Command, q string, sg *sugo.Instance, m *discordgo.Message) (err error) {
+				// Make sure query is not empty.
 				if q == "" {
 					_, err = sg.RespondBadCommandUsage(m, c, "")
 					return
@@ -221,7 +203,7 @@ var Cmd = &sugo.Command{
 
 				// Try to match role.
 				for _, role := range roles {
-					if strings.Contains(strings.ToLower(role.Name), request) || role.ID == request {
+					if strings.ToLower(role.Name) == request || role.ID == request {
 						if matchedRole != nil {
 							_, err = sg.RespondFailMention(
 								m,
@@ -260,7 +242,9 @@ var Cmd = &sugo.Command{
 					return
 				}
 
-				// Get a guild.
+				// Sync roles with the server.
+				storage.syncPublicRoles(sg, m)
+
 				// Get a guild.
 				guild, err := sg.GuildFromMessage(m)
 				if err != nil {
@@ -268,42 +252,14 @@ var Cmd = &sugo.Command{
 					return
 				}
 
-				// Sync roles with the server.
-				storage.syncPublicRoles(sg, m)
-
 				// Try to find role based on query.
-				roleID, suggestedRoleIDs, err := storage.findGuildPublicRole(sg, m, q)
+				roles, err := storage.findGuildPublicRole(sg, m, q)
 				if err != nil {
-					// Start building response.
-					var response string
-					response = err.Error()
-
-					// If we have got at least one suggested role.
-					if len(suggestedRoleIDs) > 0 {
-						// Make an array of suggested role names.
-						suggestedRoleNames := []string{}
-						for _, id := range suggestedRoleIDs {
-							name, err := storage.getPublicRoleName(guild.ID, id)
-							if err != nil {
-								return err
-							}
-							suggestedRoleNames = append(suggestedRoleNames, name)
-						}
-						response = response + "\n Did you mean one of following:\n```"
-						response = response + sugo.FmtStringsSlice(suggestedRoleNames, ", ", 1500, "\n...", "")
-						response = response + "```"
-					}
-
-					_, err = sg.RespondFailMention(m, response)
-					return
+					return respondFuzzyRolesSearchIssue(sg, m, roles, err)
 				}
 
-				// Get stored role name.
-				roleName, err := storage.getPublicRoleName(guild.ID, roleID)
-				if err != nil {
-					_, err = sg.RespondFailMention(m, err.Error())
-					return
-				}
+				// Convert one-item-map to roleID and roleName
+				roleID, roleName := pickRoleFromMap(roles)
 
 				// Delete role.
 				storage.delGuildPublicRole(guild.ID, roleID)
@@ -335,46 +291,22 @@ var Cmd = &sugo.Command{
 				}
 
 				// Try to find role based on query.
-				storedRoleID, suggestedRoleIDs, err := storage.findGuildPublicRole(sg, m, q)
+				roles, err := storage.findGuildPublicRole(sg, m, q)
 				if err != nil {
-					// Start building response.
-					var response string
-					response = err.Error()
-
-					// If we have got at least one suggested role.
-					if len(suggestedRoleIDs) > 0 {
-						// Make an array of suggested role names.
-						suggestedRoleNames := []string{}
-						for _, id := range suggestedRoleIDs {
-							name, err := storage.getPublicRoleName(guild.ID, id)
-							if err != nil {
-								return err
-							}
-							suggestedRoleNames = append(suggestedRoleNames, name)
-						}
-						response = response + "\n Did you mean one of following:\n```"
-						response = response + sugo.FmtStringsSlice(suggestedRoleNames, ", ", 1500, "\n...", "")
-						response = response + "```"
-					}
-
-					_, err = sg.RespondFailMention(m, response)
-					return
+					return respondFuzzyRolesSearchIssue(sg, m, roles, err)
 				}
+
+				// Convert one-item-map to roleID and roleName
+				roleID, roleName := pickRoleFromMap(roles)
 
 				// Try to assign role.
-				err = sg.GuildMemberRoleAdd(guild.ID, m.Author.ID, storedRoleID)
+				err = sg.GuildMemberRoleAdd(guild.ID, m.Author.ID, roleID)
 				if err != nil {
 					_, err = sg.RespondFailMention(m, err.Error())
 					return
 				}
 
-				// Try to get role name.
-				roleName, err := storage.getPublicRoleName(guild.ID, storedRoleID)
-				if err != nil {
-					_, err = sg.RespondFailMention(m, err.Error())
-					return
-				}
-
+				// Respond about successful operation.
 				_, err = sg.RespondSuccessMention(m, "you now have `"+roleName+"` role")
 				return
 			},
@@ -400,27 +332,23 @@ var Cmd = &sugo.Command{
 					return
 				}
 
-				// Try to find public role.
-				storedRoleID, err := storage.findUserPublicRole(sg, m, q)
+				// Try to find user public role based on query.
+				roles, err := storage.findUserPublicRole(sg, m, q)
 				if err != nil {
-					_, err = sg.RespondFailMention(m, err.Error())
-					return
+					return respondFuzzyRolesSearchIssue(sg, m, roles, err)
 				}
+
+				// Convert one-item-map to roleID and roleName
+				roleID, roleName := pickRoleFromMap(roles)
 
 				// Try to remove user role.
-				err = sg.GuildMemberRoleRemove(guild.ID, m.Author.ID, storedRoleID)
+				err = sg.GuildMemberRoleRemove(guild.ID, m.Author.ID, roleID)
 				if err != nil {
 					_, err = sg.RespondFailMention(m, err.Error())
 					return
 				}
 
-				// Try to get role name.
-				roleName, err := storage.getPublicRoleName(guild.ID, storedRoleID)
-				if err != nil {
-					_, err = sg.RespondFailMention(m, err.Error())
-					return
-				}
-
+				// Respond about operation being successful.
 				_, err = sg.RespondSuccessMention(m, "you don't have `"+roleName+"` role any more")
 				return
 			},

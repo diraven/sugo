@@ -5,7 +5,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"github.com/texttheater/golang-levenshtein/levenshtein"
-	"sort"
 	"strings"
 )
 
@@ -53,8 +52,18 @@ func (s *sStorage) getPublicRoleName(guildID string, ruleID string) (string, err
 	return s.Roles[guildID][ruleID], nil
 }
 
-func (s *sStorage) getGuildPublicRoles(guildID string) map[string]string {
-	roles, ok := s.Roles[guildID]
+func (s *sStorage) getGuildPublicRoles(sg *sugo.Instance, m *discordgo.Message) map[string]string {
+	// Make storage to store all public roles we discovered user is in.
+	roles := make(map[string]string)
+
+	// Get guild.
+	guild, err := sg.GuildFromMessage(m)
+	if err != nil {
+		return roles
+	}
+
+	// Get roles.
+	roles, ok := s.Roles[guild.ID]
 	if ok {
 		return roles
 	} else {
@@ -62,23 +71,18 @@ func (s *sStorage) getGuildPublicRoles(guildID string) map[string]string {
 	}
 }
 
-func (s *sStorage) getUserPublicRoles(sg *sugo.Instance, m *discordgo.Message) (roles map[string]string, err error) {
+func (s *sStorage) getUserPublicRoles(sg *sugo.Instance, m *discordgo.Message) map[string]string {
+	// Make storage to store all public roles we discovered user is in.
+	roles := make(map[string]string)
+
 	// Get guild member.
 	member, err := sg.MemberFromMessage(m)
 	if err != nil {
-		return
-	}
-
-	// Make storage to store all public roles we discovered user is in.
-	userPublicRoles := make(map[string]string)
-
-	guild, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return
+		return roles
 	}
 
 	// Get guild public roles.
-	guildPublicRoles := storage.getGuildPublicRoles(guild.ID)
+	guildPublicRoles := storage.getGuildPublicRoles(sg, m)
 
 	// For each member role:
 	for _, roleID := range member.Roles {
@@ -86,12 +90,12 @@ func (s *sStorage) getUserPublicRoles(sg *sugo.Instance, m *discordgo.Message) (
 		storedName, ok := guildPublicRoles[roleID]
 		if ok {
 			// If role is marked as public - add it to the list.
-			userPublicRoles[roleID] = storedName
+			roles[roleID] = storedName
 		}
 	}
 
 	// Return resulting user public roles list.
-	return userPublicRoles, nil
+	return roles
 }
 
 func (s *sStorage) addGuildPublicRole(guildID string, roleID string, roleName string) (err error) {
@@ -154,7 +158,7 @@ func (s *sStorage) syncPublicRoles(sg *sugo.Instance, m *discordgo.Message) (err
 	}
 
 	// Get guild public roles.
-	guildPublicRoles := s.getGuildPublicRoles(guild.ID)
+	guildPublicRoles := s.getGuildPublicRoles(sg, m)
 
 	// Switch to use to determine if role found or not.
 	var roleFound bool
@@ -184,43 +188,36 @@ func (s *sStorage) syncPublicRoles(sg *sugo.Instance, m *discordgo.Message) (err
 	return
 }
 
-func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roleID string, suggestedRoleIDs []string, err error) {
+func (s *sStorage) findRole(roles map[string]string, q string) (suggestedRoles map[string]string, err error) {
 	// Edit distance considered similar enough.
 	var expectedEditDistance int = 2
 
 	// Initialize suggested role ids slice.
-	suggestedRoleIDs = []string{}
-
-	// Get a guild.
-	guild, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return
-	}
+	suggestedRoles = make(map[string]string)
 
 	// Iterate over stored roles.
-	for storedID, storedName := range s.getGuildPublicRoles(guild.ID) {
+	for storedID, storedName := range roles {
 		// If we have detected a perfect fit for the query:
 		if q == storedID || strings.Contains(strings.ToLower(storedName), strings.ToLower(q)) {
 			// Add the found role we found into suggestions.
-			suggestedRoleIDs = append(suggestedRoleIDs, storedID)
+			suggestedRoles[storedID] = storedName
 		}
 	}
 
 	// If amount of suggested role IDs is exactly one - we have got a perfect fit.
-	if len(suggestedRoleIDs) == 1 {
-		return suggestedRoleIDs[0], suggestedRoleIDs, nil
+	if len(suggestedRoles) == 1 {
+		return suggestedRoles, nil
 	}
 
 	// If amount of suggested role IDs is more then one - we have found more then 1 role fitting the query.
-	if len(suggestedRoleIDs) > 1 {
-		sort.Strings(suggestedRoleIDs)
-		return "", suggestedRoleIDs, errors.New("multiple roles found for query")
+	if len(suggestedRoles) > 1 {
+		return suggestedRoles, errors.New("multiple roles found for query")
 	}
 
 	// If amount of suggested role IDs is 0 - we have found no fitting roles.
-	if len(suggestedRoleIDs) == 0 {
+	if len(suggestedRoles) == 0 {
 		// Try to figure out what did the user want by calculating Levenshtein (edit) distance between query and role names.
-		for storedID, storedName := range s.getGuildPublicRoles(guild.ID) {
+		for storedID, storedName := range roles {
 			// Variable to hold edit distance.
 			var d int
 
@@ -231,7 +228,7 @@ func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, 
 					// If edit distance is less then equal then expected:
 					if d <= expectedEditDistance {
 						// Add the role id to the suggested list.
-						suggestedRoleIDs = append(suggestedRoleIDs, storedID)
+						suggestedRoles[storedID] = storedName
 						break
 					}
 				}
@@ -241,37 +238,23 @@ func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, 
 				d = levenshtein.DistanceForStrings([]rune(strings.ToLower(storedName)), []rune(strings.ToLower(q)), levenshtein.DefaultOptions)
 				// If edit distance is small enough, we consider role to be a suggestion.
 				if d <= expectedEditDistance {
-					suggestedRoleIDs = append(suggestedRoleIDs, storedID)
+					suggestedRoles[storedID] = storedName
 				}
 			}
 		}
 
 		// Now return what we got, even if we have found no suggestions.
-		sort.Strings(suggestedRoleIDs)
-		return "", suggestedRoleIDs, errors.New("no public roles found for query")
+		return suggestedRoles, errors.New("nothing found")
 	}
 
-	// This should never happen as slice length can not be negative.
-	panic(suggestedRoleIDs)
+	// This should never happen as map length can not be negative.
+	panic(suggestedRoles)
 }
 
-func (s *sStorage) findUserPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roleID string, err error) {
-	// Prepare role storage.
-	var foundRoleID string
-	// Get all user public roles.
-	roles, err := s.getUserPublicRoles(sg, m)
-	// Iterate over stored roles.
-	for storedID, storedName := range roles {
-		if q == storedID || strings.Contains(strings.ToLower(storedName), strings.ToLower(q)) {
-			if foundRoleID == "" {
-				foundRoleID = storedID
-			} else {
-				return "", errors.New("multiple roles found for query")
-			}
-		}
-	}
-	if foundRoleID == "" {
-		return "", errors.New("no public roles found for query")
-	}
-	return foundRoleID, nil
+func (s *sStorage) findUserPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roles map[string]string, err error) {
+	return s.findRole(s.getUserPublicRoles(sg, m), q)
+}
+
+func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roles map[string]string, err error) {
+	return s.findRole(s.getGuildPublicRoles(sg, m), q)
 }
