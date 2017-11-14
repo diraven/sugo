@@ -186,7 +186,7 @@ func (s *sStorage) syncPublicRoles(sg *sugo.Instance, m *discordgo.Message) (err
 
 func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roleID string, suggestedRoleIDs []string, err error) {
 	// Edit distance considered similar enough.
-	var expectedEditDistance int = 4
+	var expectedEditDistance int = 2
 
 	// Initialize suggested role ids slice.
 	suggestedRoleIDs = []string{}
