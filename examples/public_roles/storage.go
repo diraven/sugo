@@ -186,7 +186,7 @@ func (s *sStorage) syncPublicRoles(sg *sugo.Instance, m *discordgo.Message) (err
 
 func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roleID string, suggestedRoleIDs []string, err error) {
 	// Edit distance considered similar enough.
-	var expectedEditDistance int = 2
+	var expectedEditDistance int = 4
 
 	// Initialize suggested role ids slice.
 	suggestedRoleIDs = []string{}
@@ -221,11 +221,13 @@ func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, 
 	if len(suggestedRoleIDs) == 0 {
 		// Try to figure out what did the user want by calculating Levenshtein (edit) distance between query and role names.
 		for storedID, storedName := range s.getGuildPublicRoles(guild.ID) {
+			// Variable to hold edit distance.
 			var d int
+
 			if strings.Contains(storedName, " ") && !strings.Contains(q, " ") {
 				// If role Name is multi word while query is not, we will try to match query with every word of role name.
 				for _, roleNameWord := range strings.Split(storedName, " ") {
-					d = levenshtein.DistanceForStrings([]rune(roleNameWord), []rune(q), levenshtein.DefaultOptions)
+					d = levenshtein.DistanceForStrings([]rune(strings.ToLower(roleNameWord)), []rune(strings.ToLower(q)), levenshtein.DefaultOptions)
 					// If edit distance is less then equal then expected:
 					if d <= expectedEditDistance {
 						// Add the role id to the suggested list.
@@ -236,7 +238,7 @@ func (s *sStorage) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, 
 			} else {
 				// Otherwise just try to match full query with full role name.
 				// Calculate edit distance between full query and full role name.
-				d = levenshtein.DistanceForStrings([]rune(storedName), []rune(q), levenshtein.DefaultOptions)
+				d = levenshtein.DistanceForStrings([]rune(strings.ToLower(storedName)), []rune(strings.ToLower(q)), levenshtein.DefaultOptions)
 				// If edit distance is small enough, we consider role to be a suggestion.
 				if d <= expectedEditDistance {
 					suggestedRoleIDs = append(suggestedRoleIDs, storedID)
