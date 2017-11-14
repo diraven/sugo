@@ -107,7 +107,11 @@ var Cmd = &sugo.Command{
 					response = response + "```"
 					_, err = sg.RespondTextMention(m, response)
 				} else {
-					_, err = sg.RespondTextMention(m, "you got no such role")
+					if q == "" {
+						_, err = sg.RespondTextMention(m, "you got no roles")
+					} else {
+						_, err = sg.RespondTextMention(m, "you got no such roles")
+					}
 				}
 
 				return err
