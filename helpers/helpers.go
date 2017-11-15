@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/bwmarrin/discordgo"
 )
 
 // TimeToDiscordTimestamp returns time in a format that Discord API accepts.
@@ -32,6 +33,16 @@ func ConsumePrefix(s string, p string) string {
 // PointerToString returns pointer to the string given.
 func PointerToString(inputStr string) (pointerToStr *string) {
 	return &inputStr
+}
+
+// GetRoleById returns discordgo.Role based on role ID provided or nil if role not found
+func GetRoleById(guild *discordgo.Guild, roleID string) *discordgo.Role {
+	for _, role := range guild.Roles {
+		if role.ID == roleID {
+			return role
+		}
+	}
+	return nil
 }
 
 // DiscordIDCreationTime gets the time of creation of any ID.

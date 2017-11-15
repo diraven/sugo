@@ -12,9 +12,6 @@ var whoCmd = &sugo.Command{
 	Description:        "Lists people that have public role specified.",
 	PermittedByDefault: true,
 	Execute: func(ctx context.Context, c *sugo.Command, q string, sg *sugo.Instance, m *discordgo.Message) (err error) {
-		// Make sure our role list is in sync with the server.
-		storage.syncPublicRoles(sg, m)
-
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
@@ -28,14 +25,11 @@ var whoCmd = &sugo.Command{
 			return respondFuzzyRolesSearchIssue(sg, m, roles, err)
 		}
 
-		// There is only one item in the resulting map, so we get it.
-		foundRoleID, foundRoleName := pickRoleFromMap(roles)
-
 		// Make members array we will be working with.
 		memberNames := []string{}
 		for _, member := range guild.Members {
 			for _, roleID := range member.Roles {
-				if roleID == foundRoleID {
+				if roleID == roles[0].ID {
 					memberNames = append(memberNames, member.User.Username+"#"+member.User.Discriminator)
 				}
 			}
@@ -45,7 +39,7 @@ var whoCmd = &sugo.Command{
 		sort.Strings(memberNames)
 
 		// Start building response.
-		response := "people with `" + foundRoleName + "` role ```"
+		response := "people with `" + roles[0].Name + "` role ```\n"
 		response = response + sugo.FmtStringsSlice(memberNames, ", ", 1500, "...", ".")
 		response = response + "```"
 

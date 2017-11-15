@@ -11,9 +11,6 @@ var myCmd = &sugo.Command{
 	Description:        "Lists public roles you are in.",
 	PermittedByDefault: true,
 	Execute: func(ctx context.Context, c *sugo.Command, q string, sg *sugo.Instance, m *discordgo.Message) (err error) {
-		// Make sure our role list is in sync with the server.
-		storage.syncPublicRoles(sg, m)
-
 		// Try to find role based on query.
 		roles, err := storage.findUserPublicRole(sg, m, q)
 
@@ -23,7 +20,7 @@ var myCmd = &sugo.Command{
 		// If we have got at least one suggested role.
 		if len(roles) > 0 {
 			// Make an array of suggested role names.
-			response = response + "```"
+			response = response + "```\n"
 			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
 			response = response + "```"
 			_, err = sg.RespondTextMention(m, response)

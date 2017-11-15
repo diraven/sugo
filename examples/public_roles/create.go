@@ -18,9 +18,6 @@ var createCmd = &sugo.Command{
 			return
 		}
 
-		// Make sure our role list is in sync with the server.
-		storage.syncPublicRoles(sg, m)
-
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
@@ -58,7 +55,7 @@ var createCmd = &sugo.Command{
 		sg.GuildRoleEdit(guild.ID, role.ID, q, 0, false, 0, true)
 
 		// And add new role to the list of the public roles.
-		storage.addGuildPublicRole(guild.ID, role.ID, role.Name)
+		storage.addGuildPublicRole(guild.ID, role)
 
 		// And notify user about success.
 		_, err = sg.RespondSuccessMention(m, "new role `"+role.Name+"` was created and made public")

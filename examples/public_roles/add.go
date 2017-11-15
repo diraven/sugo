@@ -18,9 +18,6 @@ var addCmd = &sugo.Command{
 			return
 		}
 
-		// Make sure our role list is in sync with the server.
-		storage.syncPublicRoles(sg, m)
-
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
@@ -72,7 +69,7 @@ var addCmd = &sugo.Command{
 		}
 
 		// Otherwise add new role to the public roles list.
-		err = storage.addGuildPublicRole(guild.ID, matchedRole.ID, matchedRole.Name)
+		err = storage.addGuildPublicRole(guild.ID, matchedRole)
 		if err != nil {
 			_, err = sg.RespondFailMention(m, err.Error())
 			return

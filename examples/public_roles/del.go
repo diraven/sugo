@@ -17,9 +17,6 @@ var delCmd = &sugo.Command{
 			return
 		}
 
-		// Sync roles with the server.
-		storage.syncPublicRoles(sg, m)
-
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
@@ -33,14 +30,11 @@ var delCmd = &sugo.Command{
 			return respondFuzzyRolesSearchIssue(sg, m, roles, err)
 		}
 
-		// Convert one-item-map to roleID and roleName
-		roleID, roleName := pickRoleFromMap(roles)
-
 		// Delete role.
-		storage.delGuildPublicRole(guild.ID, roleID)
+		storage.delGuildPublicRole(guild.ID, roles[0].ID)
 
 		// Notify user about success of the operation.
-		_, err = sg.RespondSuccessMention(m, "role `"+roleName+"` is not public any more")
+		_, err = sg.RespondSuccessMention(m, "role `"+roles[0].Name+"` is not public any more")
 		return
 	},
 }

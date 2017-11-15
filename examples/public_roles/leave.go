@@ -18,9 +18,6 @@ var leaveCmd = &sugo.Command{
 			return
 		}
 
-		// Sync public roles to make sure we won't try to assign role that does not exist any more.
-		storage.syncPublicRoles(sg, m)
-
 		// Try to get guild of question.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
@@ -33,18 +30,15 @@ var leaveCmd = &sugo.Command{
 			return respondFuzzyRolesSearchIssue(sg, m, roles, err)
 		}
 
-		// Convert one-item-map to roleID and roleName
-		roleID, roleName := pickRoleFromMap(roles)
-
 		// Try to remove user role.
-		err = sg.GuildMemberRoleRemove(guild.ID, m.Author.ID, roleID)
+		err = sg.GuildMemberRoleRemove(guild.ID, m.Author.ID, roles[0].ID)
 		if err != nil {
 			_, err = sg.RespondFailMention(m, err.Error())
 			return
 		}
 
 		// Respond about operation being successful.
-		_, err = sg.RespondSuccessMention(m, "you don't have `"+roleName+"` role any more")
+		_, err = sg.RespondSuccessMention(m, "you don't have `"+roles[0].Name+"` role any more")
 		return
 	},
 }
