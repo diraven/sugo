@@ -75,7 +75,7 @@ var Cmd = &sugo.Command{
 		// If we have got at least one suggested role.
 		if len(roles) > 0 {
 			// Make an array of suggested role names.
-			response = response + "```"
+			response = response + "```\n"
 			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
 			response = response + "```"
 			_, err = sg.RespondTextMention(m, response)
@@ -92,6 +92,7 @@ var Cmd = &sugo.Command{
 		delCmd,
 		joinCmd,
 		leaveCmd,
+		createCmd,
 	},
 	Startup: func(c *sugo.Command, sg *sugo.Instance) (err error) {
 		// Check if file exists.

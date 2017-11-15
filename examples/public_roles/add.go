@@ -2,8 +2,8 @@ package public_roles
 
 import (
 	"context"
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 	"strings"
 )
 
@@ -72,7 +72,11 @@ var addCmd = &sugo.Command{
 		}
 
 		// Otherwise add new role to the public roles list.
-		storage.addGuildPublicRole(guild.ID, matchedRole.ID, matchedRole.Name)
+		err = storage.addGuildPublicRole(guild.ID, matchedRole.ID, matchedRole.Name)
+		if err != nil {
+			_, err = sg.RespondFailMention(m, err.Error())
+			return
+		}
 
 		// And notify user about success.
 		_, err = sg.RespondSuccessMention(m, "role `"+matchedRole.Name+"` is public now")
