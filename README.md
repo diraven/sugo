@@ -20,41 +20,40 @@ Typical bot initialization would look like the following:
 package main
 
 import (
-	"github.com/diraven/sugo"
-	"github.com/diraven/sugo_contrib/altaxi"
-	"github.com/diraven/sugo_contrib/ed"
-	"github.com/diraven/sugo_contrib/std"
 	"os"
+	"github.com/diraven/sugo"
+	"github.com/diraven/sugo/modules/aliases"
+	"github.com/diraven/sugo/modules/test"
+	"github.com/diraven/sugo/modules/permissions"
+	"github.com/diraven/sugo/modules/help"
+	"github.com/diraven/sugo/modules/elitedangerous"
+	"github.com/diraven/sugo/modules/greet"
+	"github.com/diraven/sugo/modules/guildwars2"
+	"github.com/diraven/sugo/modules/clean"
+	"github.com/diraven/sugo/modules/info"
+	"github.com/diraven/sugo/modules/public_roles"
+	"github.com/diraven/sugo/modules/feeds"
+	"github.com/diraven/sugo/modules/sys"
 )
 
 func main() {
-	// You can set bot trigger if you like. If trigger is not set - by default bot will only react to messages starting
-	// with bot's mention.
-	//sugo.Bot.Trigger = "!"
+	sugo.Bot.RegisterModules(
+		aliases.Module,
+		clean.Module,
+		elitedangerous.Module,
+		feeds.Module,
+		greet.Module,
+		guildwars2.Module,
+		help.Module,
+		info.Module,
+		permissions.Module,
+		public_roles.Module,
+		sys.Module,
+		test.Module,
+	)
 
-	// If you don't like default command trigger (for example if it clashes with some other one), you can change it like
-	// so:
-	std.Info.Trigger = "info" // Change "info" to whatever you see appropriate.
-	sugo.Bot.AddCommand(std.Info)
-
-	// And add some other commands to your bot.
-	sugo.Bot.AddCommand(sugo.CmdHelp)
-	sugo.Bot.AddCommand(sugo.CmdPerms)
-	sugo.Bot.AddCommand(std.Greet)
-	sugo.Bot.AddCommand(std.SYS)
-	sugo.Bot.AddCommand(std.Test)
-
-	// Elite: Dangerous commands.
-	sugo.Bot.AddCommand(ed.Command)
-
-	// AltisLife taxi-related commands.
-	sugo.Bot.AddCommand(altaxi.Command)
-
-	// Now just start the bot up and see what happens.
-	// Make sure to provide at least token via SUGO_TOKEN environment variable.
-	err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID"))
-	if err != nil {
-		// TODO: Report error.
+	if err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID")); err != nil {
+		// TODO: Report e rrors
 	}
 }
 ```

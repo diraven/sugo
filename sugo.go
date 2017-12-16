@@ -4,66 +4,64 @@ package sugo
 import (
 	"context"
 	"errors"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+	"github.com/bwmarrin/discordgo"
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // VERSION contains current version of the Sugo framework.
-const VERSION string = "0.1.5"
+const VERSION = "0.2.0"
 
 // Instance struct describes bot.
 type Instance struct {
 	// Bot has everything discordgo.Session has.
 	*discordgo.Session
-	// Self contains a giscordgo.User instance of the bot.
-	Self *discordgo.User
 	// root is a user that always has all permissions granted.
 	root *discordgo.User
-	// rootCommand is the starting point for all the rest of commands.
-	rootCommand *Command
-	// permissionStorage contains struct to get and set per-role command permissions.
-	permissions iPermissionsStorage
-	// shortcuts contains all the commands shortcuts
-	shortcuts iShortcutsStorage
-	// Trigger contains global bot trigger (by default it's bot own mention)
+	// modules contains all modules loaded by bot.
+	modules []*Module
+	// Self contains a giscordgo.User instance of the bot.
+	Self *discordgo.User
+	// Trigger contains bot trigger.
 	Trigger string
+	// ErrorHandler takes care of errors unhandled elsewhere in the code.
+	ErrorHandler func(e error) (err error)
+	// DB is literally what it says it is. DataBase.
+	DB *sql.DB
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
-	// ErrorHandler takes care of unhandled errors.
-	ErrorHandler func(e error) (err error)
+	// triggers contains all the top level triggers for commands.
+	triggers []string
 }
+
+// Context keys.
+type CtxKey string
 
 // Bot contains bot instance.
 var Bot = &Instance{}
 
 func init() {
-	// Initialize bot root command, we won't be able to add subcommands to it otherwise.
-	Bot.rootCommand = &Command{}
+	// Initialize bot modules list.
+	Bot.modules = []*Module{}
 }
 
 // Startup starts the bot up.
-func (sg *Instance) Startup(token string, rootUID string) (err error) {
+func (sg *Instance) Startup(token string, rootUID string) error {
 	// Intitialize Shutdown channel.
 	sg.done = make(chan os.Signal, 1)
 
-	// Set default permissions storage if one is not specified.
-	if sg.permissions == nil {
-		sg.permissions = &permissionStorage{}
-	}
-	if err = sg.permissions.startup(sg); err != nil {
-		return
-	}
+	// Variable to store errors.
+	var err error
 
-	// Set default shortcuts storage if one is not specified.
-	if sg.shortcuts == nil {
-		sg.shortcuts = &sShortcutsStorage{}
-	}
-	if err = sg.shortcuts.startup(sg); err != nil {
-		return
+	// Initialize database.
+	sg.DB, err = sql.Open("sqlite3", "./data.sqlite3")
+	if err != nil {
+		return err
 	}
 
 	// Create a new Discord session using the provided bot token.
@@ -97,9 +95,11 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 		sg.root = root
 	}
 
-	// Perform Startup for commands.
-	if err = sg.rootCommand.startup(sg); err != nil {
-		return
+	// Perform Startup for all modules.
+	for _, module := range sg.modules {
+		if err = module.startup(sg); err != nil {
+			return err
+		}
 	}
 
 	// Register callback for the messageCreate events.
@@ -121,7 +121,7 @@ func (sg *Instance) Startup(token string, rootUID string) (err error) {
 	// Gracefully shut the bot down.
 	err = sg.teardown()
 
-	return
+	return err
 }
 
 // Shutdown sends Shutdown signal to the bot's Shutdown channel.
@@ -130,40 +130,37 @@ func (sg *Instance) Shutdown() {
 }
 
 // teardown gracefully releases all resources and saves data before Shutdown.
-func (sg *Instance) teardown() (err error) {
-	// Shutdown permissions storage.
-	sg.permissions.teardown(sg)
+func (sg *Instance) teardown() error {
+	var err error
 
-	// Shutdown shortcuts storage.
-	sg.shortcuts.teardown(sg)
+	// Perform teardown for all modules.
+	for _, module := range sg.modules {
+		if err = module.teardown(sg); err != nil {
+			log.Println(err)
+		}
+	}
 
-	// Perform teardown for commands.
-	sg.rootCommand.teardown(sg)
+	// Close DB connection.
+	sg.DB.Close()
 
 	// Close discord session.
-	err = sg.Session.Close()
-	if err != nil {
-		return
+	if err = sg.Session.Close(); err != nil {
+		return err
 	}
-	return
+	return nil
 }
 
-// AddCommand is a convenience function to add subcommand to root command.
-func (sg *Instance) AddCommand(c *Command) {
-	// Save command into the bot's commands list.
-	sg.rootCommand.SubCommands = append(sg.rootCommand.SubCommands, c)
-}
-
-// commands is a convenience function to that returns list of top-level bot commands.
-func (sg *Instance) commands() []*Command {
-	return sg.rootCommand.SubCommands
+// RegisterModules is a convenience function to register sugo modules.
+func (sg *Instance) RegisterModules(m ...*Module) {
+	// Save module into bot's modules list.
+	sg.modules = append(sg.modules, m...)
 }
 
 // triggers is a convenience function to get all top-level commands triggers.
-func (sg *Instance) triggers(m *discordgo.Message) []string {
-	triggers, _ := sg.rootCommand.getSubcommandsTriggers(sg, m)
-	return triggers
-}
+//func (sg *Instance) triggers(m *discordgo.Message) []string {
+//	triggers, _ := sg.rootCommand.getSubcommandsTriggers(sg, m)
+//	return triggers
+//}
 
 // isRoot checks if a given user is root.
 func (sg *Instance) isRoot(user *discordgo.User) (result bool) {
@@ -180,28 +177,37 @@ func (sg *Instance) isRoot(user *discordgo.User) (result bool) {
 	return
 }
 
-// userHasPermission checks if given user has given permission on a given channel.
-//func (sg *Instance) userHasPermission(permission int, c *discordgo.Channel, u *discordgo.User) (result bool, err error) {
-//	perms, err := sg.UserChannelPermissions(u.ID, c.ID)
-//	if err != nil {
-//		return
-//	}
-//	result = (perms | permission) == perms
-//	return
-//}
+// GetTriggers returns top level triggers.
+func (sg *Instance) GetTriggers() []string {
+	return sg.triggers
+}
 
-// botHasPermission checks if bot has given permission on a given channel.
-//func (sg *Instance) botHasPermission(permission int, c *discordgo.Channel) (result bool, err error) {
-//	result, err = sg.userHasPermission(permission, c, sg.Self)
-//	return
-//}
+// FindCommand searches for the command in the given modules, includes all permissions checks.
+func (sg *Instance) FindCommand(m *discordgo.Message, q string) (*Command, error) {
+	var err error
+	var cmd *Command
+
+	// For every module available.
+	for _, module := range sg.modules {
+		// Try to find the command in question.
+		if cmd, err = module.RootCommand.search(sg, m, q); err != nil {
+			return nil, err
+		}
+		if cmd != nil {
+			// Command found.
+			return cmd, nil
+		}
+	}
+	// No commands found.
+	return nil, nil
+}
 
 // onMessageCreate contains all the message processing logic for the bot.
 func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
-	var err error                                  // Used to capture and report errors.
-	var ctx context.Context = context.Background() // Root context.
-	var command *Command                           // Used to store the command we will execute.
-	var q string = mc.Content                      // Command query string.
+	var err error                  // Used to capture and report errors.
+	var ctx = context.Background() // Root context.
+	var command *Command           // Used to store the command we will execute.
+	var q = mc.Content             // Command query string.
 
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
@@ -228,18 +234,35 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
-	// Process shortcuts.
-	for _, shortcut := range Bot.shortcuts.all() {
-		if strings.Index(q, shortcut.Short) == 0 {
-			if len(q) == len(shortcut.Short) || string(q[len(shortcut.Short)]) == " " {
-				q = strings.Replace(q, shortcut.Short, shortcut.Long, 1)
-				break
+	// Fill context with necessary data.
+	// Get Channel.
+	channel, err := Bot.ChannelFromMessage(mc.Message)
+	if err != nil {
+		Bot.HandleError(err)
+	}
+	// Save into context.
+	ctx = context.WithValue(ctx, CtxKey("channel"), channel)
+
+	// Get Guild.
+	guild, err := Bot.GuildFromMessage(mc.Message)
+	if err != nil {
+		Bot.HandleError(err)
+	}
+	// Save into context.
+	ctx = context.WithValue(ctx, CtxKey("guild"), guild)
+
+	// OnBeforeCommandSearch entrypoint for modules.
+	for _, module := range Bot.modules {
+		if module.OnBeforeCommandSearch != nil {
+			q, err = module.OnBeforeCommandSearch(Bot, mc.Message, q)
+			if err != nil {
+				Bot.HandleError(errors.New("OnBeforeCommandSearch error: " + err.Error() + " (" + q + ")"))
 			}
 		}
 	}
 
 	// Search for applicable command.
-	command, err = Bot.rootCommand.search(Bot, mc.Message, q)
+	command, err = Bot.FindCommand(mc.Message, q)
 	if err != nil {
 		// Unhandled error in command.
 		Bot.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + q + ")"))
@@ -247,7 +270,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	}
 	if command != nil {
 		// Remove command trigger from message string.
-		q = strings.TrimSpace(strings.TrimPrefix(q, command.path()))
+		q = strings.TrimSpace(strings.TrimPrefix(q, command.Path()))
 
 		// And execute command.
 		err = command.execute(ctx, q, Bot, mc.Message)
@@ -264,7 +287,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
-	//Bot.respondCommandNotFound(mc.Message)
+	Bot.RespondCommandNotFound(mc.Message)
 
 	// Command not found.
 }
@@ -298,9 +321,9 @@ func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command, tex
 	return
 }
 
-// respondCommandNotFound responds to the channel with "command not found" message mentioning person that invoked
+// RespondCommandNotFound responds to the channel with "command not found" message mentioning person that invoked
 // command.
-func (sg *Instance) respondCommandNotFound(m *discordgo.Message) (message *discordgo.Message, err error) {
+func (sg *Instance) RespondCommandNotFound(m *discordgo.Message) (message *discordgo.Message, err error) {
 	embed := &discordgo.MessageEmbed{
 		Title: "Command not found.",
 		Color: ColorDanger,
@@ -343,8 +366,8 @@ func (sg *Instance) RespondFailMention(m *discordgo.Message, text string) (messa
 	return
 }
 
-// helpEmbed returns automatically generated help embed for the given command.
-func (sg *Instance) helpEmbed(c *Command, m *discordgo.Message) (embed *discordgo.MessageEmbed, err error) {
+// HelpEmbed returns help embed for the given command.
+func (sg *Instance) HelpEmbed(c *Command, m *discordgo.Message) (embed *discordgo.MessageEmbed, err error) {
 	// If command has custom help embed available, return that one.
 	if c.HelpEmbed != nil {
 		embed, err = c.HelpEmbed(c, sg)
