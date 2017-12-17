@@ -148,7 +148,7 @@ var Module = &sugo.Module{
 			_ = sg.ChannelMessagesBulkDelete(m.ChannelID, messageIDs)
 
 			// Notify user about deletion.
-			msg, err := sg.RespondWarning(m, "", "done, this message will self-destruct in 10 seconds")
+			msg, err := sg.RespondWarning(m, "", "cleaning done, this message will self-destruct in 10 seconds")
 			if err != nil {
 				return err
 			}
