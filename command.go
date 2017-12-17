@@ -39,12 +39,10 @@ type Command struct {
 
 	// Custom execute code for subcommand.
 	Execute func(ctx context.Context, sg *Instance, c *Command, m *discordgo.Message, q string) error
-
-	// Custom HelpEmbed response for subcommand.
-	HelpEmbed func(c *Command, sg *Instance) (*discordgo.MessageEmbed, error)
 }
 
-func (c *Command) getSubcommandsTriggers(sg *Instance, m *discordgo.Message) ([]string, error) {
+// getSubcommandsTriggers return all subcommands triggers available for given user.
+func (c *Command) GetSubcommandsTriggers(sg *Instance, m *discordgo.Message) ([]string, error) {
 	var triggers []string
 
 	// Generate triggers list respecting user permissions.
@@ -105,41 +103,6 @@ func (c *Command) Path() (value string) {
 
 func (c *Command) FullHelpPath(sg *Instance) (value string) {
 	return "help " + c.Path()
-}
-
-// fullUsage returns full command usage including all parent triggers.
-func (c *Command) fullUsage(sg *Instance) (value string) {
-	return c.Path() + " " + c.Usage
-}
-
-// helpEmbed is a default implementation of help embed builder.
-func (c *Command) helpEmbed(sg *Instance, m *discordgo.Message) (*discordgo.MessageEmbed, error) {
-	embed := &discordgo.MessageEmbed{
-		Title:       c.Path(),
-		Description: c.Description,
-		Color:       ColorInfo,
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:  "Usage:",
-				Value: c.fullUsage(sg),
-			},
-		},
-	}
-	// Get subcommands triggers respecting user permissions.
-	subcommandsTriggers, _ := c.getSubcommandsTriggers(sg, m)
-
-	if len(c.SubCommands) > 0 {
-		embed.Fields = append(embed.Fields,
-			&discordgo.MessageEmbedField{
-				Name:  "Subcommands:",
-				Value: strings.Join(subcommandsTriggers, ", "),
-			}, &discordgo.MessageEmbedField{
-				Name:  "To get help on 'subcommand' type:",
-				Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger),
-			})
-	}
-	return embed, nil
-
 }
 
 // match is a system matching function that checks if command trigger matches the start of message content.

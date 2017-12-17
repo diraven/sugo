@@ -5,7 +5,37 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"github.com/diraven/sugo"
+	"fmt"
 )
+
+func generateHelpEmbed(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message) (*discordgo.MessageEmbed, error) {
+	embed := &discordgo.MessageEmbed{
+		Title:       c.Path(),
+		Description: c.Description,
+		Color:       sugo.ColorInfo,
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:  "Usage:",
+				Value: c.Path() + " " + c.Usage,
+			},
+		},
+	}
+	// Get subcommands triggers respecting user permissions.
+	subcommandsTriggers, _ := c.GetSubcommandsTriggers(sg, m)
+
+	if len(c.SubCommands) > 0 {
+		embed.Fields = append(embed.Fields,
+			&discordgo.MessageEmbedField{
+				Name:  "Subcommands:",
+				Value: strings.Join(subcommandsTriggers, ", "),
+			}, &discordgo.MessageEmbedField{
+				Name:  "To get help on 'subcommand' type:",
+				Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger),
+			})
+	}
+	return embed, nil
+
+}
 
 // Help shows help section for appropriate command.
 var Module = &sugo.Module{
@@ -43,10 +73,12 @@ var Module = &sugo.Module{
 			}
 			if command != nil {
 				var embed *discordgo.MessageEmbed
-				embed, err = sg.HelpEmbed(command, m)
+
+				embed, err = generateHelpEmbed(sg, c, m)
 				if err != nil {
 					return err
 				}
+
 				_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 				return err
 			}
