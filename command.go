@@ -3,7 +3,6 @@ package sugo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"time"

@@ -1,10 +1,7 @@
 package sugo
 
 import (
-	"strings"
 	"github.com/bwmarrin/discordgo"
-	"context"
-	"errors"
 )
 
 // onMessageCreate contains all the message processing logic for the bot.

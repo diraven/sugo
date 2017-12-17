@@ -2,13 +2,8 @@
 package sugo
 
 import (
-	"context"
-	"errors"
 	"log"
 	"os"
-	"os/signal"
-	"strings"
-	"syscall"
 	"github.com/bwmarrin/discordgo"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
@@ -48,36 +43,6 @@ func init() {
 	Bot.Modules = []*Module{}
 }
 
-// Shutdown sends Shutdown signal to the bot's Shutdown channel.
-func (sg *Instance) Shutdown() {
-	sg.done <- os.Interrupt
-}
-
-// teardown gracefully releases all resources and saves data before Shutdown.
-func (sg *Instance) teardown() error {
-	// Perform teardown for all Modules.
-	for _, module := range sg.Modules {
-		if err := module.teardown(sg); err != nil {
-			log.Println(err)
-		}
-	}
-
-	// Close DB connection.
-	sg.DB.Close()
-
-	// Close discord session.
-	if err := sg.Session.Close(); err != nil {
-		return err
-	}
-	return nil
-}
-
-// triggers is a convenience function to get all top-level commands triggers.
-//func (sg *Instance) triggers(m *discordgo.Message) []string {
-//	triggers, _ := sg.rootCommand.getSubcommandsTriggers(sg, m)
-//	return triggers
-//}
-
 // isRoot checks if a given user is root.
 func (sg *Instance) isRoot(user *discordgo.User) (result bool) {
 	// By default user is not root.
@@ -116,29 +81,6 @@ func (sg *Instance) FindCommand(m *discordgo.Message, q string) (*Command, error
 	}
 	// No commands found.
 	return nil, nil
-}
-
-// ChannelFromMessage returns a *discordgo.Channel struct from given *discordgo.Message struct.
-func (sg *Instance) ChannelFromMessage(m *discordgo.Message) (*discordgo.Channel, error) {
-	return sg.State.Channel(m.ChannelID)
-}
-
-// GuildFromMessage returns a *discordgo.Guild struct from given *discordgo.Message struct.
-func (sg *Instance) GuildFromMessage(m *discordgo.Message) (*discordgo.Guild, error) {
-	c, err := sg.ChannelFromMessage(m)
-	if err != nil {
-		return nil, err
-	}
-	return sg.State.Guild(c.GuildID)
-}
-
-// MemberFromMessage returns a *discordgo.Member struct from given *discordgo.Message struct.
-func (sg *Instance) MemberFromMessage(m *discordgo.Message) (*discordgo.Member, error) {
-	g, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return nil, err
-	}
-	return sg.State.Member(g.ID, m.Author.ID)
 }
 
 // HandleError handles unexpected errors that were returned unhandled elsewhere.
