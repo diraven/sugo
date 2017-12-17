@@ -23,7 +23,7 @@ var rootCommand = &sugo.Command{
 		}
 
 		// Notify user about currently set bot trigger.
-		if _, err := sg.RespondSuccess(m, "current bot trigger is set to: +trigger"); err != nil {
+		if _, err := sg.RespondSuccess(m, "current bot trigger is set to: "+trigger); err != nil {
 			return err
 		}
 
