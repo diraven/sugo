@@ -16,20 +16,20 @@ func startup(sg *sugo.Instance) error {
 			user_id TEXT,
 			the_type TINYINT,
 			game TEXT,
-			created_at INTEGER
+			created_at TEXT
 		);
 	`)
 	if err != nil {
 		return err
 	}
 
-	//// Index to enforce channel_id and url uniqueness.
-	//_, err = sg.DB.Exec(`
-	//	CREATE UNIQUE INDEX IF NOT EXISTS channel_url ON feeds (channel_id, url);
-	//`)
-	//if err != nil {
-	//	return err
-	//}
+	// Index to enforce guild, user, game and created_at uniqueness.
+	_, err = sg.DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS guild_user_game_created_at ON stats_playing (guild_id, user_id, game, created_at);
+	`)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

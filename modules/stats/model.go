@@ -16,7 +16,7 @@ func (s *tStats) logPlaying(sg *sugo.Instance, guildID string, userID string, th
 		) VALUES (
 			?, ?, ?, ?, ?
 		);
-	`, guildID, userID, theType, game, time.Now().Unix())
+	`, guildID, userID, theType, game, time.Now().Format("2006-01-02"))
 
 	if err != nil {
 		return err
