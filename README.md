@@ -26,9 +26,9 @@ import (
 	"github.com/diraven/sugo/modules/test"
 	"github.com/diraven/sugo/modules/permissions"
 	"github.com/diraven/sugo/modules/help"
-	"github.com/diraven/sugo/modules/elitedangerous"
+	"github.com/diraven/sugo/modules/elite_dangerous"
 	"github.com/diraven/sugo/modules/greet"
-	"github.com/diraven/sugo/modules/guildwars2"
+	"github.com/diraven/sugo/modules/guild_wars2"
 	"github.com/diraven/sugo/modules/clean"
 	"github.com/diraven/sugo/modules/info"
 	"github.com/diraven/sugo/modules/public_roles"
@@ -37,23 +37,23 @@ import (
 )
 
 func main() {
-	sugo.Bot.RegisterModules(
+	sugo.Bot.Modules = []*sugo.Module{
 		aliases.Module,
 		clean.Module,
-		elitedangerous.Module,
+		elite_dangerous.Module,
 		feeds.Module,
 		greet.Module,
-		guildwars2.Module,
+		guild_wars2.Module,
 		help.Module,
 		info.Module,
 		permissions.Module,
 		public_roles.Module,
 		sys.Module,
 		test.Module,
-	)
+	}
 
 	if err := sugo.Bot.Startup(os.Getenv("SUGO_TOKEN"), os.Getenv("SUGO_ROOT_UID")); err != nil {
-		// TODO: Report e rrors
+		// TODO: Report errors
 	}
 }
 ```

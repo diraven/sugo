@@ -9,7 +9,7 @@ import (
 var leaveCmd = &sugo.Command{
 	Trigger:            "leave",
 	Description:        "Removes person to the public role.",
-	Usage:              "rolenameorid",
+	Usage:              "role_name_or_id",
 	PermittedByDefault: true,
 	ParamsAllowed: true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
@@ -36,12 +36,12 @@ var leaveCmd = &sugo.Command{
 		// Try to remove user role.
 		err = sg.GuildMemberRoleRemove(guild.ID, m.Author.ID, roles[0].ID)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
 		// Respond about operation being successful.
-		_, err = sg.RespondSuccessMention(m, "you don't have `"+roles[0].Name+"` role any more")
+		_, err = sg.RespondSuccess(m, "you don't have `"+roles[0].Name+"` role any more")
 		return err
 	},
 }

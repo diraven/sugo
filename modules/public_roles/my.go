@@ -26,12 +26,12 @@ var myCmd = &sugo.Command{
 			response = response + "```\n"
 			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
 			response = response + "```"
-			_, err = sg.RespondTextMention(m, response)
+			_, err = sg.Respond(m, response)
 		} else {
 			if q == "" {
-				_, err = sg.RespondTextMention(m, "you got no roles")
+				_, err = sg.Respond(m, "you got no roles")
 			} else {
-				_, err = sg.RespondTextMention(m, "you got no such roles")
+				_, err = sg.Respond(m, "you got no such roles")
 			}
 		}
 

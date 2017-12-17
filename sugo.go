@@ -23,8 +23,8 @@ type Instance struct {
 	*discordgo.Session
 	// root is a user that always has all permissions granted.
 	root *discordgo.User
-	// modules contains all modules loaded by bot.
-	modules []*Module
+	// Modules contains all Modules loaded by bot.
+	Modules []*Module
 	// Self contains a giscordgo.User instance of the bot.
 	Self *discordgo.User
 	// Trigger contains bot trigger.
@@ -46,8 +46,8 @@ type CtxKey string
 var Bot = &Instance{}
 
 func init() {
-	// Initialize bot modules list.
-	Bot.modules = []*Module{}
+	// Initialize bot Modules list.
+	Bot.Modules = []*Module{}
 }
 
 // Startup starts the bot up.
@@ -95,8 +95,8 @@ func (sg *Instance) Startup(token string, rootUID string) error {
 		sg.root = root
 	}
 
-	// Perform Startup for all modules.
-	for _, module := range sg.modules {
+	// Perform Startup for all Modules.
+	for _, module := range sg.Modules {
 		if err = module.startup(sg); err != nil {
 			return err
 		}
@@ -133,8 +133,8 @@ func (sg *Instance) Shutdown() {
 func (sg *Instance) teardown() error {
 	var err error
 
-	// Perform teardown for all modules.
-	for _, module := range sg.modules {
+	// Perform teardown for all Modules.
+	for _, module := range sg.Modules {
 		if err = module.teardown(sg); err != nil {
 			log.Println(err)
 		}
@@ -148,12 +148,6 @@ func (sg *Instance) teardown() error {
 		return err
 	}
 	return nil
-}
-
-// RegisterModules is a convenience function to register sugo modules.
-func (sg *Instance) RegisterModules(m ...*Module) {
-	// Save module into bot's modules list.
-	sg.modules = append(sg.modules, m...)
 }
 
 // triggers is a convenience function to get all top-level commands triggers.
@@ -182,13 +176,13 @@ func (sg *Instance) GetTriggers() []string {
 	return sg.triggers
 }
 
-// FindCommand searches for the command in the given modules, includes all permissions checks.
+// FindCommand searches for the command in the given Modules, includes all permissions checks.
 func (sg *Instance) FindCommand(m *discordgo.Message, q string) (*Command, error) {
 	var err error
 	var cmd *Command
 
 	// For every module available.
-	for _, module := range sg.modules {
+	for _, module := range sg.Modules {
 		// Try to find the command in question.
 		if cmd, err = module.RootCommand.search(sg, m, q); err != nil {
 			return nil, err
@@ -251,8 +245,8 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Save into context.
 	ctx = context.WithValue(ctx, CtxKey("guild"), guild)
 
-	// OnBeforeCommandSearch entrypoint for modules.
-	for _, module := range Bot.modules {
+	// OnBeforeCommandSearch entry point for Modules.
+	for _, module := range Bot.Modules {
 		if module.OnBeforeCommandSearch != nil {
 			q, err = module.OnBeforeCommandSearch(Bot, mc.Message, q)
 			if err != nil {
@@ -306,63 +300,69 @@ func (sg *Instance) RespondText(m *discordgo.Message, text string) (message *dis
 // _, err = sg.RespondBadCommandUsage(m, c)
 func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command, text string) (message *discordgo.Message, err error) {
 	if text == "" {
-		text = "Try \"" + c.FullHelpPath(sg) + "\" for details."
+		text = "try \"" + c.FullHelpPath(sg) + "\" for details"
 	}
-	embed := &discordgo.MessageEmbed{
-		Title:       "Incorrect command usage.",
-		Description: text,
-		Color:       ColorDanger,
-	}
-
-	message, err = sg.RespondEmbed(m, embed)
-	if err != nil {
-		return
-	}
-	return
+	msg, err := sg.RespondDanger(m, "bad command usage\n"+text)
+	return msg, err
 }
 
 // RespondCommandNotFound responds to the channel with "command not found" message mentioning person that invoked
 // command.
 func (sg *Instance) RespondCommandNotFound(m *discordgo.Message) (message *discordgo.Message, err error) {
-	embed := &discordgo.MessageEmbed{
-		Title: "Command not found.",
-		Color: ColorDanger,
-	}
-
-	message, err = sg.RespondEmbed(m, embed)
+	message, err = sg.RespondDanger(m, "command not found")
 	if err != nil {
 		return
 	}
 	return
 }
 
-// RespondEmbed responds to the channel with embed without mention of the original message author.
-func (sg *Instance) RespondEmbed(m *discordgo.Message, embed *discordgo.MessageEmbed) (message *discordgo.Message, err error) {
-	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
+// Respond responds to the channel with an embed without any icons.
+func (sg *Instance) Respond(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+		Title:       "@" + m.Author.Username,
+		Description: text,
+		Color: ColorDefault,
+	})
 	return
 }
 
-// RespondTextMention responds to the channel with text with the original message author mention.
-func (sg *Instance) RespondTextMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	responseText := m.Author.Mention() + ", " + text
-	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
+// RespondInfo responds to the channel with the "info" embed.
+func (sg *Instance) RespondInfo(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+		Title:       ":information_source:  @" + m.Author.Username,
+		Description: text,
+		Color: ColorInfo,
+	})
 	return
 }
 
-// RespondSuccessMention responds to the channel with white checkmark on a green background with the original message author mention.
-func (sg *Instance) RespondSuccessMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	responseText := ":white_check_mark: " + m.Author.Mention() + ", " + text
-	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
+// RespondInfo responds to the channel with the "success" embed.
+func (sg *Instance) RespondSuccess(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+		Title:       ":white_check_mark:  @" + m.Author.Username,
+		Description: text,
+		Color: ColorSuccess,
+	})
 	return
 }
 
-// RespondFailMention responds to the channel with white checkmark on a green background with the original message author mention.
-func (sg *Instance) RespondFailMention(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
-	if text == "" {
-		text = "Oops... Something went wrong!"
-	}
-	responseText := ":x: " + m.Author.Mention() + ", " + text
-	message, err = sg.ChannelMessageSend(m.ChannelID, responseText)
+// RespondInfo responds to the channel with the "warning" embed.
+func (sg *Instance) RespondWarning(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+		Title:       ":warning: @" + m.Author.Username,
+		Description: text,
+		Color: ColorWarning,
+	})
+	return
+}
+
+// RespondInfo responds to the channel with the "Danger" embed.
+func (sg *Instance) RespondDanger(m *discordgo.Message, text string) (message *discordgo.Message, err error) {
+	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+		Title:       ":no_entry: @" + m.Author.Username,
+		Description: text,
+		Color: ColorDanger,
+	})
 	return
 }
 

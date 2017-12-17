@@ -7,6 +7,8 @@ import (
 	"github.com/diraven/sugo"
 )
 
+// TODO Fix the greeting module.
+
 // Greet responds to the user with greeting and invitation to use help command.
 var Module = &sugo.Module{
 	RootCommand: &sugo.Command{
@@ -15,7 +17,7 @@ var Module = &sugo.Module{
 		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
 
-			_, err = sg.RespondTextMention(m, "Hi! My name is "+
+			_, err = sg.Respond(m, "Hi! My name is "+
 				fmt.Sprintf("%s and I'm here to help you out... ", sg.Self.Username)+
 				fmt.Sprintf("Try '%s help' for more info.", sg.Trigger))
 			return err

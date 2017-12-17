@@ -25,7 +25,7 @@ var Module = &sugo.Module{
 			now := time.Now().UTC()
 			var memStats runtime.MemStats
 			runtime.ReadMemStats(&memStats)
-			_, err = sg.RespondEmbed(m, &discordgo.MessageEmbed{
+			_, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 				URL:         "https://github.com/diraven/sugo",
 				Title:       "https://github.com/diraven/sugo",
 				Description: "A Discord bot written in Go.",
@@ -36,33 +36,38 @@ var Module = &sugo.Module{
 				},
 				Fields: []*discordgo.MessageEmbedField{
 					{
-						Name:   "sugo",
+						Name:   "sugo ver.",
 						Value:  sugo.VERSION,
 						Inline: true,
 					},
 					{
-						Name:   "discordgo",
+						Name:   "discordgo ver.",
 						Value:  discordgo.VERSION,
 						Inline: true,
 					},
 					{
-						Name:   "go",
+						Name:   "go ver.",
 						Value:  runtime.Version(),
 						Inline: true,
 					},
 					{
-						Name:   "Memory Usage:",
+						Name:   "memory usage",
 						Value:  fmt.Sprintf("%s", humanize.Bytes(memStats.Sys)),
 						Inline: true,
 					},
 					{
-						Name:   "Goroutines:",
+						Name:   "goroutines",
 						Value:  fmt.Sprintf("%d", runtime.NumGoroutine()),
 						Inline: true,
 					},
 					{
-						Name:   "Guilds:",
+						Name:   "guilds",
 						Value:  fmt.Sprintf("%d", len(sg.State.Guilds)),
+						Inline: true,
+					},
+					{
+						Name:   "modules",
+						Value:  fmt.Sprintf("%d", len(sg.Modules)),
 						Inline: true,
 					},
 				},

@@ -29,14 +29,14 @@ var rootCommand = &sugo.Command{
 			Description: result,
 		}
 
-		sg.RespondEmbed(m, embed)
+		sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 		return nil
 	},
 	SubCommands: []*sugo.Command{
 		{
 			Trigger:       "set",
 			Description:   "Adds new or updates existent alias.",
-			Usage:         "somealias -> command [subcommand ...]",
+			Usage:         "some_alias -> command [subcommand ...]",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
@@ -59,14 +59,14 @@ var rootCommand = &sugo.Command{
 				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
 
 				aliases.set(sg, guild, alias, commandPath)
-				_, err = sg.RespondSuccessMention(m, "")
+				_, err = sg.RespondSuccess(m, "")
 				return err
 			},
 		},
 		{
 			Trigger:     "del",
 			Description: "Deletes specified alias.",
-			Usage:       "somealias",
+			Usage:       "some_alias",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
@@ -75,12 +75,12 @@ var rootCommand = &sugo.Command{
 				alias := aliases.get(sg, guild, q)
 
 				if alias == "" {
-					_, err = sg.RespondFailMention(m, "Alias \""+q+"\" was not found.")
+					_, err = sg.RespondDanger(m, "Alias \""+q+"\" was not found.")
 					return err
 				}
 
 				aliases.del(sg, guild, alias)
-				_, err = sg.RespondSuccessMention(m, "")
+				_, err = sg.RespondSuccess(m, "")
 				return err
 			},
 		},
@@ -102,19 +102,19 @@ var rootCommand = &sugo.Command{
 
 				alias1 := aliases.get(sg, guild, ss[0])
 				if alias1 == "" {
-					sg.RespondTextMention(m, "Alias \""+ss[0]+"\" not found.")
+					sg.RespondDanger(m, "alias \""+ss[0]+"\" not found")
 					return err
 				}
 
 				alias2 := aliases.get(sg, guild, ss[1])
 				if alias2 == "" {
-					sg.RespondTextMention(m, "Alias \""+ss[1]+"\" not found.")
+					sg.RespondDanger(m, "alias \""+ss[1]+"\" not found")
 					return err
 				}
 
 				aliases.swap(sg, guild, alias1, alias2)
 
-				_, err = sg.RespondSuccessMention(m, "")
+				_, err = sg.RespondSuccess(m, "")
 				return err
 			},
 		},

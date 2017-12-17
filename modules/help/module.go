@@ -13,7 +13,7 @@ var Module = &sugo.Module{
 		Trigger:            "help",
 		PermittedByDefault: true,
 		Description:        "Shows help section for the appropriate command.",
-		Usage:              "somecommand",
+		Usage:              "some_command",
 		ParamsAllowed: true,
 		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
@@ -23,7 +23,7 @@ var Module = &sugo.Module{
 
 			if q == "" {
 				// No arguments, just the help itself.
-				_, err = sg.RespondEmbed(m, &discordgo.MessageEmbed{
+				_, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 					Title:       "Available commands",
 					Description: strings.Join(sg.GetTriggers(), ", "),
 					Color:       sugo.ColorInfo,
@@ -47,10 +47,10 @@ var Module = &sugo.Module{
 				if err != nil {
 					return err
 				}
-				_, err = sg.RespondEmbed(m, embed)
+				_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 				return err
 			}
-			_, err = sg.RespondTextMention(m, "I know nothing about this command, sorry...")
+			_, err = sg.Respond(m, "I know nothing about this command, sorry...")
 			return err
 		},
 	},

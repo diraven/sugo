@@ -9,7 +9,7 @@ import (
 var delCmd = &sugo.Command{
 	Trigger:     "del",
 	Description: "Makes given role not public (does not delete the role itself).",
-	Usage:       "rolenameorid",
+	Usage:       "role_name_or_id",
 	ParamsAllowed: true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
@@ -23,7 +23,7 @@ var delCmd = &sugo.Command{
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
@@ -37,7 +37,7 @@ var delCmd = &sugo.Command{
 		publicRoles.del(sg, guild.ID, roles[0].ID)
 
 		// Notify user about success of the operation.
-		_, err = sg.RespondSuccessMention(m, "role `"+roles[0].Name+"` is not public any more")
+		_, err = sg.RespondSuccess(m, "role `"+roles[0].Name+"` is not public any more")
 		return err
 	},
 }

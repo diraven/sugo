@@ -46,7 +46,7 @@ var statsCmd = &sugo.Command{
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
@@ -95,10 +95,10 @@ var statsCmd = &sugo.Command{
 				}
 			}
 			response = response + "```"
-			_, err = sg.RespondTextMention(m, response)
+			_, err = sg.Respond(m, response)
 
 		} else {
-			_, err = sg.RespondFailMention(m, "no data")
+			_, err = sg.RespondDanger(m, "no data available")
 		}
 
 		return err

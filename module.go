@@ -26,7 +26,7 @@ type Module struct {
 func (m *Module) startup(sg *Instance) error {
 	var err error
 
-	// For modules with commands - fill parent fields and triggers cache as well as validate triggers.
+	// For Modules with commands - fill parent fields and triggers cache as well as validate triggers.
 	if m.RootCommand != nil {
 		// Make sure trigger is unique.
 		for _, v := range sg.triggers {

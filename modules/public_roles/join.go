@@ -9,7 +9,7 @@ import (
 var joinCmd = &sugo.Command{
 	Trigger:            "join",
 	Description:        "Joins person to the public role.",
-	Usage:              "rolenameorid",
+	Usage:              "role_name_or_id",
 	PermittedByDefault: true,
 	ParamsAllowed: true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
@@ -36,12 +36,12 @@ var joinCmd = &sugo.Command{
 		// Try to assign role.
 		err = sg.GuildMemberRoleAdd(guild.ID, m.Author.ID, roles[0].ID)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
 		// Respond about successful operation.
-		_, err = sg.RespondSuccessMention(m, "you now have `"+roles[0].Name+"` role")
+		_, err = sg.RespondSuccess(m, "you now have `"+roles[0].Name+"` role")
 		return err
 	},
 }

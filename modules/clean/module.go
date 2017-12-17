@@ -81,12 +81,12 @@ var Module = &sugo.Module{
 				}
 			}
 
-			last_message_id := m.ID                // To store last message id.
-			tmp_messages := []*discordgo.Message{} // To store 100 current messages that are being scanned.
-			messageIDs := []string{}               // Resulting slice of messages to  be deleted.
-			limit := batchSize                     // Default limit per batch.
+			lastMessageID := m.ID                // To store last message id.
+			var tmpMessages []*discordgo.Message // To store 100 current messages that are being scanned.
+			var messageIDs []string              // Resulting slice of messages to  be deleted.
+			limit := batchSize                   // Default limit per batch.
 
-			if userID == "" && count < batchSize { // If user ID is not specified - we retreive and delete exact count of messages specified.
+			if userID == "" && count < batchSize { // If user ID is not specified - we retrieve and delete exact count of messages specified.
 				limit = count
 			}
 
@@ -94,14 +94,14 @@ var Module = &sugo.Module{
 		messageLoop:
 			for {
 				// Get next 100 messages.
-				tmp_messages, err = sg.ChannelMessages(m.ChannelID, limit, last_message_id, "", "")
+				tmpMessages, err = sg.ChannelMessages(m.ChannelID, limit, lastMessageID, "", "")
 				if err != nil {
 					return err
 					break messageLoop
 				}
 
 				// For each message.
-				for _, message := range tmp_messages {
+				for _, message := range tmpMessages {
 					// Get message creation date.
 					var then time.Time
 					then, err = helpers.DiscordTimestampToTime(string(message.Timestamp))
@@ -111,7 +111,7 @@ var Module = &sugo.Module{
 
 					if time.Since(then).Hours() >= 24*14 {
 						// We are unable to delete messages older then 14 days.
-						_, err = sg.RespondFailMention(m, "Unfortunately I'm unable to delete messages older then 2 weeks.")
+						_, err = sg.RespondDanger(m, "unable to delete messages older then 2 weeks")
 						if err != nil {
 							return err
 						}
@@ -135,12 +135,12 @@ var Module = &sugo.Module{
 
 				}
 
-				if len(tmp_messages) < batchSize {
+				if len(tmpMessages) < batchSize {
 					break messageLoop // We have no messages left to scan.
 				}
 
-				if len(tmp_messages) == batchSize {
-					last_message_id = tmp_messages[batchSize-1].ID // Next time start scanning from the message specified.
+				if len(tmpMessages) == batchSize {
+					lastMessageID = tmpMessages[batchSize-1].ID // Next time start scanning from the message specified.
 				}
 			}
 
@@ -151,7 +151,7 @@ var Module = &sugo.Module{
 			_ = sg.ChannelMessagesBulkDelete(m.ChannelID, messageIDs)
 
 			// Notify user about deletion.
-			mymsg, err := sg.RespondSuccessMention(m, "Done. This message will self-destruct in 10 seconds.")
+			msg, err := sg.RespondSuccess(m, "done, this message will self-destruct in 10 seconds")
 			if err != nil {
 				return err
 			}
@@ -160,7 +160,7 @@ var Module = &sugo.Module{
 			time.Sleep(10 * time.Second)
 
 			// Delete notification. Ignore errors (such as message already deleted by someone) for now.
-			_ = sg.ChannelMessageDelete(mymsg.ChannelID, mymsg.ID)
+			_ = sg.ChannelMessageDelete(msg.ChannelID, msg.ID)
 			return err
 		},
 	},

@@ -18,7 +18,7 @@ var whoCmd = &sugo.Command{
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
@@ -29,7 +29,7 @@ var whoCmd = &sugo.Command{
 		}
 
 		// Make members array we will be working with.
-		memberNames := []string{}
+		var memberNames []string
 		for _, member := range guild.Members {
 			for _, roleID := range member.Roles {
 				if roleID == roles[0].ID {
@@ -46,7 +46,7 @@ var whoCmd = &sugo.Command{
 		response = response + sugo.FmtStringsSlice(memberNames, ", ", 1500, "...", ".")
 		response = response + "```"
 
-		_, err = sg.RespondTextMention(m, response)
+		_, err = sg.Respond(m, response)
 		return err
 	},
 }

@@ -26,9 +26,9 @@ var rootCommand = &sugo.Command{
 			response = response + "```\n"
 			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
 			response = response + "```"
-			_, err = sg.RespondTextMention(m, response)
+			_, err = sg.Respond(m, response)
 		} else {
-			_, err = sg.RespondTextMention(m, "nothing found")
+			_, err = sg.RespondDanger(m, "nothing found")
 		}
 
 		return err

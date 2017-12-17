@@ -1,4 +1,4 @@
-package elitedangerous
+package elite_dangerous
 
 import (
 	"context"
@@ -34,7 +34,7 @@ var factions = &sugo.Command{
 
 		// Make sure there is a query specified.
 		if strings.TrimSpace(q) == "" {
-			_, err = sg.RespondTextMention(m, "Please, specify the system to show data for. See \""+c.FullHelpPath(sg)+"\" for details.")
+			_, err = sg.RespondBadCommandUsage(m, c, "")
 			return err
 		}
 
@@ -43,7 +43,7 @@ var factions = &sugo.Command{
 		systemID, err = getSystemID(ctx, q)
 		if err != nil {
 			if _, ok := err.(timeoutError); ok {
-				_, err = sg.RespondTextMention(m, fmt.Sprint(err))
+				_, err = sg.RespondDanger(m, err.Error())
 				if err != nil {
 					return err
 				}
@@ -52,7 +52,7 @@ var factions = &sugo.Command{
 		}
 		// If there are no systems found - we will end up with systemID=0
 		if systemID == 0 {
-			_, err = sg.RespondTextMention(m, "Oops... Looks like no systems found.")
+			_, err = sg.RespondDanger(m, "oops... looks like no systems found")
 			if err != nil {
 				return err
 			}
@@ -68,7 +68,7 @@ var factions = &sugo.Command{
 		// It is possible that embed is nil if ctx timeout is reached.
 		if embed == nil {
 			if _, ok := err.(timeoutError); ok {
-				_, err = sg.RespondTextMention(m, fmt.Sprint(err))
+				_, err = sg.RespondDanger(m, err.Error())
 				if err != nil {
 					return err
 				}
@@ -76,7 +76,7 @@ var factions = &sugo.Command{
 			return err
 		}
 
-		_, err = sg.RespondEmbed(m, embed)
+		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 		if err != nil {
 			return err
 		}

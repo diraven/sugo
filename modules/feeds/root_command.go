@@ -21,7 +21,7 @@ var rootCommand = &sugo.Command{
 			embed.Description = embed.Description + item.Url + "\n"
 		}
 
-		_, err = sg.RespondEmbed(m, embed)
+		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 		return err
 	},
 	SubCommands: []*sugo.Command{
@@ -36,14 +36,14 @@ var rootCommand = &sugo.Command{
 				// Validate feed url.
 				_, err = fp.ParseURL(q)
 				if err != nil {
-					_, err = sg.RespondFailMention(m, err.Error())
+					_, err = sg.RespondDanger(m, err.Error())
 					return err
 				}
 
 				// Add requested URL to the list.
 				feeds.add(sg, m.ChannelID, q)
 
-				_, err = sg.RespondSuccessMention(m, "")
+				_, err = sg.RespondSuccess(m, "")
 				return err
 			},
 		},
@@ -59,7 +59,7 @@ var rootCommand = &sugo.Command{
 					return err
 				}
 
-				if _, err = sg.RespondSuccessMention(m, ""); err != nil {
+				if _, err = sg.RespondSuccess(m, ""); err != nil {
 					return err
 				}
 

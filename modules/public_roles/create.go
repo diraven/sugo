@@ -10,7 +10,7 @@ import (
 var createCmd = &sugo.Command{
 	Trigger:     "create",
 	Description: "Creates new role on server and makes it public.",
-	Usage:       "rolename",
+	Usage:       "role_name",
 	ParamsAllowed: true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
@@ -24,14 +24,14 @@ var createCmd = &sugo.Command{
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
 		// Get all guild roles.
 		roles, err := sg.GuildRoles(guild.ID)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
@@ -39,7 +39,7 @@ var createCmd = &sugo.Command{
 		for _, role := range roles {
 			if strings.ToLower(role.Name) == strings.ToLower(q) {
 				// We have found the role with the same name.
-				_, err = sg.RespondFailMention(
+				_, err = sg.RespondDanger(
 					m,
 					"role with such name already exists",
 				)
@@ -50,7 +50,7 @@ var createCmd = &sugo.Command{
 		// If we did not find any match, try to create new role.
 		role, err := sg.GuildRoleCreate(guild.ID)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
@@ -61,7 +61,7 @@ var createCmd = &sugo.Command{
 		publicRoles.add(sg, guild.ID, role.ID)
 
 		// And notify user about success.
-		_, err = sg.RespondSuccessMention(m, "new role `"+role.Name+"` was created and made public")
+		_, err = sg.RespondSuccess(m, "new role `"+role.Name+"` was created and made public")
 		return err
 	},
 }

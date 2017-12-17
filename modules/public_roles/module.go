@@ -16,7 +16,7 @@ func respondFuzzyRolesSearchIssue(sg *sugo.Instance, m *discordgo.Message, roles
 	// If we have got at least one suggested role.
 	if len(roles) > 0 {
 		// Make an array of suggested role names.
-		suggestedRoles := []*discordgo.Role{}
+		var suggestedRoles []*discordgo.Role
 		for _, role := range roles {
 			suggestedRoles = append(suggestedRoles, role)
 		}
@@ -25,7 +25,7 @@ func respondFuzzyRolesSearchIssue(sg *sugo.Instance, m *discordgo.Message, roles
 		response = response + "```"
 	}
 
-	_, err = sg.RespondFailMention(m, response)
+	_, err = sg.RespondWarning(m, response)
 	return err
 }
 

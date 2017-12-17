@@ -10,7 +10,7 @@ import (
 var addCmd = &sugo.Command{
 	Trigger:       "add",
 	Description:   "Makes existing role public.",
-	Usage:         "rolenameorid",
+	Usage:         "role_name_or_id",
 	ParamsAllowed: true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
@@ -24,14 +24,14 @@ var addCmd = &sugo.Command{
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
 		// Get all guild roles.
 		roles, err := sg.GuildRoles(guild.ID)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
@@ -53,7 +53,7 @@ var addCmd = &sugo.Command{
 		for _, role := range roles {
 			if strings.ToLower(role.Name) == strings.ToLower(request) || role.ID == request {
 				if matchedRole != nil {
-					_, err = sg.RespondFailMention(
+					_, err = sg.RespondDanger(
 						m,
 						"too many roles found, try again with a different search",
 					)
@@ -67,19 +67,19 @@ var addCmd = &sugo.Command{
 		// If we did not find any match:
 		if matchedRole == nil {
 			// Notify user about fail.
-			_, err = sg.RespondFailMention(m, "no roles found for query")
+			_, err = sg.RespondDanger(m, "no roles found for query")
 			return err
 		}
 
 		// Otherwise add new role to the public roles list.
 		err = publicRoles.add(sg, guild.ID, matchedRole.ID)
 		if err != nil {
-			_, err = sg.RespondFailMention(m, err.Error())
+			_, err = sg.RespondDanger(m, err.Error())
 			return err
 		}
 
 		// And notify user about success.
-		_, err = sg.RespondSuccessMention(m, "role `"+matchedRole.Name+"` is public now")
+		_, err = sg.RespondSuccess(m, "role `"+matchedRole.Name+"` is public now")
 		return err
 	},
 }

@@ -1,4 +1,4 @@
-package guildwars2
+package guild_wars2
 
 import (
 	"context"
@@ -17,7 +17,7 @@ var infoUrls = map[string]string{
 
 // System returns info about given system.
 var itemInfo = &sugo.Command{
-	Trigger:            "iteminfo",
+	Trigger:            "item_info",
 	PermittedByDefault: true,
 	Description:        "Provides urls to the websites containing given item info.",
 	Usage:              "Item Name",
@@ -46,7 +46,7 @@ var itemInfo = &sugo.Command{
 		}
 
 		// Respond with the embed we just built.
-		_, err = sg.RespondEmbed(m, embed)
+		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 		return err
 	},
 }

@@ -48,13 +48,13 @@ func (c *Command) getSubcommandsTriggers(sg *Instance, m *discordgo.Message) (tr
 	triggers = []string{}
 
 	// Generate triggers list respecting user permissions.
-	for _, subcmd := range c.SubCommands {
-		command, err := sg.FindCommand(m, subcmd.Path())
+	for _, subCommand := range c.SubCommands {
+		command, err := sg.FindCommand(m, subCommand.Path())
 		if err != nil {
 			return triggers, err
 		}
 		if command != nil {
-			triggers = append(triggers, subcmd.Trigger)
+			triggers = append(triggers, subCommand.Trigger)
 		}
 	}
 	return triggers, nil
@@ -191,9 +191,9 @@ func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (output *
 	// Check if there are any subcommands.
 	if len(c.SubCommands) > 0 {
 		// We do have subcommands.
-		for _, subc := range c.SubCommands {
+		for _, subCommand := range c.SubCommands {
 			// Now try to match any of the subcommands.
-			result, err := subc.search(sg, m, q)
+			result, err := subCommand.search(sg, m, q)
 			if err != nil {
 				return nil, err
 			}
@@ -237,10 +237,10 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, er
 		return false, nil
 	}
 
-	// Now check if we have any additional modules handling permission checks and use those.
-	var allowedFound bool // specifies if any of the modules returned explicit result
+	// Now check if we have any additional Modules handling permission checks and use those.
+	var allowedFound bool // specifies if any of the Modules returned explicit result
 
-	for _, module := range sg.modules {
+	for _, module := range sg.Modules {
 		if module.OnPermissionsCheck != nil {
 			passed, err := module.OnPermissionsCheck(sg, c, m)
 			if err != nil {
@@ -260,11 +260,11 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, er
 		}
 	}
 
-	if allowedFound { // At this point if there are modules found with explicit return - they did allow the command.
+	if allowedFound { // At this point if there are Modules found with explicit return - they did allow the command.
 		return true, nil
 	}
 
-	// There are no special permissions set for any of the modules. Just back to default.
+	// There are no special permissions set for any of the Modules. Just back to default.
 	return c.PermittedByDefault, nil
 }
 
@@ -290,7 +290,7 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 
 	if c.TextResponse != "" {
 		// Send command text response if set.
-		_, err = sg.RespondTextMention(m, c.TextResponse)
+		_, err = sg.Respond(m, c.TextResponse)
 		if err != nil {
 			return
 		}
@@ -299,7 +299,7 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 
 	if c.EmbedResponse != nil {
 		// Send command embed response if set.
-		_, err = sg.RespondEmbed(m, c.EmbedResponse)
+		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, c.EmbedResponse)
 		if err != nil {
 			return
 		}
@@ -309,15 +309,15 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 	if !actionPerformed {
 		if len(c.SubCommands) > 0 {
 			// If there is at least one subcommand and no other actions taken - explain it to the user.
-			_, err = sg.RespondTextMention(
+			_, err = sg.RespondWarning(
 				m,
-				"This command itself does not seem to do anything. Try `"+c.FullHelpPath(sg)+"`.",
+				"this command itself does not seem to do anything, try `"+c.FullHelpPath(sg)+"`",
 			)
 			return
 		}
 
 		// We did nothing and there are no subcommands...
-		_, err = Bot.RespondTextMention(m, "Looks like this command just does nothing... What is it here for?")
+		_, err = Bot.Respond(m, "looks like this command just does nothing... what is it here for anyways?")
 		return
 	}
 
