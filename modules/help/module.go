@@ -66,6 +66,7 @@ var Module = &sugo.Module{
 				})
 				return err
 			}
+
 			// Search for applicable command.
 			command, err := sg.FindCommand(m, q)
 			if err != nil {
@@ -74,7 +75,7 @@ var Module = &sugo.Module{
 			if command != nil {
 				var embed *discordgo.MessageEmbed
 
-				embed, err = generateHelpEmbed(sg, c, m)
+				embed, err = generateHelpEmbed(sg, command, m)
 				if err != nil {
 					return err
 				}
