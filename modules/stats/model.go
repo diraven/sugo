@@ -35,7 +35,7 @@ func (s *tStats) getMostPlayedGames(sg *sugo.Instance, guildID string) ([]string
 	rows, err := sg.DB.Query(`
 		SELECT game, COUNT(*) as "count"
 		FROM stats_playing
-		WHERE DATETIME(created_at, 'unixepoch') > DATETIME('now', '-1 month')
+		WHERE DATE(created_at) > DATE('now', '-1 month')
 		GROUP BY game
 		ORDER BY count
 		  DESC
