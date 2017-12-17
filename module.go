@@ -29,15 +29,18 @@ type Module struct {
 func (m *Module) startup(sg *Instance) error {
 	// For Modules with commands - fill parent fields and triggers cache as well as validate triggers.
 	if m.RootCommand != nil {
-		// Make sure trigger is unique.
-		for _, v := range sg.triggers {
-			if v == m.RootCommand.Trigger {
-				return errors.New("trigger is already registered: " + m.RootCommand.Trigger)
+		// if trigger is set:
+		if m.RootCommand.Trigger != "" {
+			// Make sure trigger is unique.
+			for _, v := range sg.triggers {
+				if v == m.RootCommand.Trigger {
+					return errors.New("trigger is already registered: " + m.RootCommand.Trigger)
+				}
 			}
-		}
 
-		// Add top level trigger to the bot triggers cache.
-		sg.triggers = append(sg.triggers, m.RootCommand.Trigger)
+			// Add top level trigger to the bot triggers cache.
+			sg.triggers = append(sg.triggers, m.RootCommand.Trigger)
+		}
 
 		// For every subcommand (if any):
 		for _, v := range m.RootCommand.SubCommands {
