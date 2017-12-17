@@ -11,12 +11,8 @@ func TimeToDiscordTimestamp(t time.Time) (s string) {
 }
 
 // DiscordTimestampToTime returns time.Time parsed from discord API time string.
-func DiscordTimestampToTime(s string) (t time.Time, err error) {
-	t, err = time.Parse(time.RFC3339, s)
-	if err != nil {
-		return
-	}
-	return
+func DiscordTimestampToTime(s string) (time.Time, error) {
+	return time.Parse(time.RFC3339, s)
 }
 
 //func ConsumePrefix(s string, p string) string {
@@ -43,7 +39,7 @@ func DiscordTimestampToTime(s string) (t time.Time, err error) {
 //}
 //
 //// DiscordIDCreationTime gets the time of creation of any ID.
-//func DiscordIDCreationTime(ID string) (t time.Time, err error) {
+//func DiscordIDCreationTime(ID string) (time.Time, error) {
 //	i, err := strconv.ParseInt(ID, 10, 64)
 //	if err != nil {
 //		return

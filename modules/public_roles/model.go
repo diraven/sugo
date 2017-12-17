@@ -183,12 +183,12 @@ func (pr *tPublicRoles) getUserPublicRoles(sg *sugo.Instance, m *discordgo.Messa
 	return roles
 }
 
-func (pr *tPublicRoles) findRole(roles discordgo.Roles, q string) (suggestedRoles discordgo.Roles, err error) {
+func (pr *tPublicRoles) findRole(roles discordgo.Roles, q string) (discordgo.Roles, error) {
 	// Edit distance considered similar enough.
 	var expectedEditDistance = 2
 
 	// Initialize suggested roles slice.
-	suggestedRoles = discordgo.Roles{}
+	suggestedRoles := discordgo.Roles{}
 
 	// Iterate over stored roles.
 	for _, role := range roles {
@@ -246,10 +246,10 @@ func (pr *tPublicRoles) findRole(roles discordgo.Roles, q string) (suggestedRole
 	panic(suggestedRoles)
 }
 
-func (pr *tPublicRoles) findUserPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roles discordgo.Roles, err error) {
+func (pr *tPublicRoles) findUserPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (discordgo.Roles, error) {
 	return pr.findRole(pr.getUserPublicRoles(sg, m), q)
 }
 
-func (pr *tPublicRoles) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (roles discordgo.Roles, err error) {
+func (pr *tPublicRoles) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (discordgo.Roles, error) {
 	return pr.findRole(pr.getGuildPublicRoles(sg, m), q)
 }

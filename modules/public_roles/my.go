@@ -12,8 +12,6 @@ var myCmd = &sugo.Command{
 	PermittedByDefault: true,
 	ParamsAllowed:      true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-		var err error
-
 		// Try to find role based on query.
 		roles, err := publicRoles.findUserPublicRole(sg, m, q)
 

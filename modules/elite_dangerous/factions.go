@@ -92,14 +92,14 @@ type sSystem struct {
 var searchURLFormat = "https://eddb.io/system/search?system[name]=%s"
 var systemURLFormat = "https://eddb.io/system/factions/%d"
 
-func getSystemID(ctx context.Context, q string) (systemID int, err error) {
+func getSystemID(ctx context.Context, q string) (int, error) {
 	// Generate search url for the given query string.
 	urlString := fmt.Sprintf(searchURLFormat, url.QueryEscape(q))
 
 	// Prepare new request.
 	req, err := http.NewRequest("GET", urlString, nil)
 	if err != nil {
-		return
+		return 0, err
 	}
 
 	// Add context to the request (it will take care of timeout if one set).
@@ -111,36 +111,37 @@ func getSystemID(ctx context.Context, q string) (systemID int, err error) {
 		defer r.Body.Close()
 	} else {
 		err = timeoutError{}
-		return
+		return 0, err
 	}
 	if err != nil {
-		return
+		return 0, err
 	}
 
 	// Decode response.
 	var systems []sSystem
 	err = json.NewDecoder(r.Body).Decode(&systems)
 	if err != nil {
-		return
+		return 0, err
 	}
 
 	// Check how many systems we have got.
+	var systemID int
 	if len(systems) > 0 {
 		// At least one system is found.
 		systemID = systems[0].ID
 	}
 
-	return
+	return systemID, nil
 }
 
-func getSystemEmbed(ctx context.Context, id int) (embed *discordgo.MessageEmbed, err error) {
+func getSystemEmbed(ctx context.Context, id int) (*discordgo.MessageEmbed, error) {
 	// Generate url to get system data from.
 	urlString := fmt.Sprintf(systemURLFormat, id)
 
 	// Build request with the url generated.
 	req, err := http.NewRequest("GET", urlString, nil)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	// Supply request with context.
@@ -150,20 +151,20 @@ func getSystemEmbed(ctx context.Context, id int) (embed *discordgo.MessageEmbed,
 		defer r.Body.Close()
 	} else {
 		err = timeoutError{}
-		return
+		return nil, err
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	// Parse the server response.
 	d, err := goquery.NewDocumentFromReader(r.Body)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	// Build system embed.
-	embed = &discordgo.MessageEmbed{
+	embed := &discordgo.MessageEmbed{
 		URL:    urlString,
 		Title:  d.Find("title").Text(),
 		Fields: []*discordgo.MessageEmbedField{},
@@ -178,5 +179,5 @@ func getSystemEmbed(ctx context.Context, id int) (embed *discordgo.MessageEmbed,
 		})
 	})
 
-	return
+	return embed, nil
 }

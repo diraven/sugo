@@ -28,7 +28,7 @@ type Instance struct {
 	// Self contains a giscordgo.User instance of the bot.
 	Self *discordgo.User
 	// ErrorHandler takes care of errors unhandled elsewhere in the code.
-	ErrorHandler func(e error) (err error)
+	ErrorHandler func(error) error
 	// DB is literally what it says it is. DataBase.
 	DB *sql.DB
 	// done is channel that receives Shutdown signals.
@@ -113,7 +113,7 @@ func (sg *Instance) Startup(token string, rootUID string) error {
 	// Gracefully shut the bot down.
 	err = sg.teardown()
 
-	return err
+	return nil
 }
 
 // Shutdown sends Shutdown signal to the bot's Shutdown channel.
@@ -123,11 +123,9 @@ func (sg *Instance) Shutdown() {
 
 // teardown gracefully releases all resources and saves data before Shutdown.
 func (sg *Instance) teardown() error {
-	var err error
-
 	// Perform teardown for all Modules.
 	for _, module := range sg.Modules {
-		if err = module.teardown(sg); err != nil {
+		if err := module.teardown(sg); err != nil {
 			log.Println(err)
 		}
 	}
@@ -136,7 +134,7 @@ func (sg *Instance) teardown() error {
 	sg.DB.Close()
 
 	// Close discord session.
-	if err = sg.Session.Close(); err != nil {
+	if err := sg.Session.Close(); err != nil {
 		return err
 	}
 	return nil
@@ -290,7 +288,7 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 
 // RespondBadCommandUsage responds to the channel with "incorrect command usage" message mentioning person that invoked
 // command.
-func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command, title string, description string) (message *discordgo.Message, err error) {
+func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command, title string, description string) (*discordgo.Message, error) {
 	if title == "" {
 		title = "bad command usage"
 	}
@@ -303,12 +301,8 @@ func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command, tit
 
 // RespondCommandNotFound responds to the channel with "command not found" message mentioning person that invoked
 // command.
-func (sg *Instance) RespondCommandNotFound(m *discordgo.Message) (message *discordgo.Message, err error) {
-	message, err = sg.RespondDanger(m, "command not found", "")
-	if err != nil {
-		return
-	}
-	return
+func (sg *Instance) RespondCommandNotFound(m *discordgo.Message) (*discordgo.Message, error) {
+	return sg.RespondDanger(m, "command not found", "")
 }
 
 // Respond responds to the channel with an embed without any icons.
@@ -348,47 +342,45 @@ func (sg *Instance) RespondDanger(m *discordgo.Message, title string, descriptio
 }
 
 // HelpEmbed returns help embed for the given command.
-func (sg *Instance) HelpEmbed(c *Command, m *discordgo.Message) (embed *discordgo.MessageEmbed, err error) {
+func (sg *Instance) HelpEmbed(c *Command, m *discordgo.Message) (*discordgo.MessageEmbed, error) {
 	// If command has custom help embed available, return that one.
 	if c.HelpEmbed != nil {
-		embed, err = c.HelpEmbed(c, sg)
-		return
+		return c.HelpEmbed(c, sg)
 	}
 	// Else return automatically generated one.
-	embed = c.helpEmbed(sg, m)
-	return
+	return c.helpEmbed(sg, m)
 }
 
 // ChannelFromMessage returns a *discordgo.Channel struct from given *discordgo.Message struct.
-func (sg *Instance) ChannelFromMessage(m *discordgo.Message) (c *discordgo.Channel, err error) {
+func (sg *Instance) ChannelFromMessage(m *discordgo.Message) (*discordgo.Channel, error) {
 	return sg.State.Channel(m.ChannelID)
 }
 
 // GuildFromMessage returns a *discordgo.Guild struct from given *discordgo.Message struct.
-func (sg *Instance) GuildFromMessage(m *discordgo.Message) (g *discordgo.Guild, err error) {
+func (sg *Instance) GuildFromMessage(m *discordgo.Message) (*discordgo.Guild, error) {
 	c, err := sg.ChannelFromMessage(m)
 	if err != nil {
-		return
+		return nil, err
 	}
 	return sg.State.Guild(c.GuildID)
 }
 
 // MemberFromMessage returns a *discordgo.Member struct from given *discordgo.Message struct.
-func (sg *Instance) MemberFromMessage(m *discordgo.Message) (mr *discordgo.Member, err error) {
+func (sg *Instance) MemberFromMessage(m *discordgo.Message) (*discordgo.Member, error) {
 	g, err := sg.GuildFromMessage(m)
 	if err != nil {
-		return
+		return nil, err
 	}
 	return sg.State.Member(g.ID, m.Author.ID)
 }
 
 // HandleError handles unexpected errors that were returned unhandled elsewhere.
-func (sg *Instance) HandleError(e error) (err error) {
+func (sg *Instance) HandleError(e error) error {
 	if sg.ErrorHandler != nil {
-		err = sg.ErrorHandler(e)
+		return sg.ErrorHandler(e)
 	} else {
 		log.Println(e)
 		sg.Shutdown()
 	}
-	return
+	return nil
 }

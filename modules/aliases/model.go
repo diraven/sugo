@@ -94,24 +94,17 @@ func (as *tAliasesStorage) swap(sg *sugo.Instance, g *discordgo.Guild, a1 string
 }
 
 func (as *tAliasesStorage) del(sg *sugo.Instance, g *discordgo.Guild, a string) error {
-	var err error
-
-	_, err = sg.DB.Exec(`
+	if _, err := sg.DB.Exec(`
 		DELETE FROM aliases
 			WHERE alias=? AND guild_id=?;
-	`, a, g.ID)
-	if err != nil {
+	`, a, g.ID); err != nil {
 		return err
 	}
 
-	err = as.reload(sg)
-	return err
+	return as.reload(sg)
 }
 
 func (as *tAliasesStorage) reload(sg *sugo.Instance) error {
-	// Variable to store errors if any.
-	var err error
-
 	// Initialize storage.
 	*as = tAliasesStorage{}
 
@@ -136,5 +129,5 @@ func (as *tAliasesStorage) reload(sg *sugo.Instance) error {
 		(*(*as)[guildID])[alias] = commandPath
 	}
 
-	return err
+	return nil
 }

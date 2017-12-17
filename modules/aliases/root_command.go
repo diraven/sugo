@@ -12,8 +12,6 @@ var rootCommand = &sugo.Command{
 	RootOnly:    true,
 	Description: "Allows to manipulate aliases. Lists all aliases.",
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-		var err error
-
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
 			return err
@@ -39,11 +37,9 @@ var rootCommand = &sugo.Command{
 			Usage:         "some_alias -> command [subcommand ...]",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				var err error
-
 				ss := strings.Split(q, "->")
 				if len(ss) < 2 {
-					_, err = sg.RespondBadCommandUsage(m, c, "", "")
+					_, err := sg.RespondBadCommandUsage(m, c, "", "")
 					return err
 				}
 				alias := strings.TrimSpace(ss[0])
@@ -51,16 +47,22 @@ var rootCommand = &sugo.Command{
 
 				// Try to find command.
 				command, err := sg.FindCommand(m, commandPath)
+				if err != nil {
+					return err
+				}
 				if command == nil {
-					_, err = sg.RespondCommandNotFound(m)
+					_, err := sg.RespondCommandNotFound(m)
 					return err
 				}
 
 				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
 
 				aliases.set(sg, guild, alias, commandPath)
-				_, err = sg.RespondSuccess(m, "", "")
-				return err
+				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+					return err
+				}
+
+				return nil
 			},
 		},
 		{
@@ -69,19 +71,20 @@ var rootCommand = &sugo.Command{
 			Usage:         "some_alias",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				var err error
-
 				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
 				alias := aliases.get(sg, guild, q)
 
 				if alias == "" {
-					_, err = sg.RespondDanger(m, "", "Alias \""+q+"\" was not found.")
+					_, err := sg.RespondDanger(m, "", "Alias \""+q+"\" was not found.")
 					return err
 				}
 
 				aliases.del(sg, guild, alias)
-				_, err = sg.RespondSuccess(m, "", "")
-				return err
+				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+					return err
+				}
+
+				return nil
 			},
 		},
 		{
@@ -90,32 +93,33 @@ var rootCommand = &sugo.Command{
 			Usage:         "1 2",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				var err error
-
 				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
 
 				ss := strings.Split(q, " ")
 				if len(ss) < 2 {
-					_, err = sg.RespondBadCommandUsage(m, c, "", "")
+					_, err := sg.RespondBadCommandUsage(m, c, "", "")
 					return err
 				}
 
 				alias1 := aliases.get(sg, guild, ss[0])
 				if alias1 == "" {
-					sg.RespondDanger(m, "", "alias `"+ss[0]+"` not found")
+					_, err := sg.RespondDanger(m, "", "alias `"+ss[0]+"` not found")
 					return err
 				}
 
 				alias2 := aliases.get(sg, guild, ss[1])
 				if alias2 == "" {
-					sg.RespondDanger(m, "", "alias `"+ss[1]+"` not found")
+					_, err := sg.RespondDanger(m, "", "alias `"+ss[1]+"` not found")
 					return err
 				}
 
 				aliases.swap(sg, guild, alias1, alias2)
 
-				_, err = sg.RespondSuccess(m, "", "")
-				return err
+				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+					return err
+				}
+
+				return nil
 			},
 		},
 	},

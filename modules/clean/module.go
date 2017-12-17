@@ -18,8 +18,6 @@ var Module = &sugo.Module{
 		Description:         "Removes last n messages, or last n messages of the given @user (if specified) (100 max).",
 		Usage:               "[@user] [messages_count]",
 		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-			var err error
-
 			// Command has to have 1 or 2 parameters.
 			ss := strings.Split(q, " ")
 
@@ -38,6 +36,7 @@ var Module = &sugo.Module{
 					// Get user id.
 					userID = m.Mentions[0].ID
 				} else { // Get amount of messages to delete.
+					var err error
 					count, err = strconv.Atoi(ss[0]) // Try to parse count.
 					if err != nil {
 						return err
@@ -46,37 +45,34 @@ var Module = &sugo.Module{
 				break
 			case 2: // Means we've got both user mention and amount of messages to delete.
 				if len(m.Mentions) == 0 { // Query must have mention.
-					_, err = sg.RespondBadCommandUsage(m, c, "", "")
-					if err != nil {
+					if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
 						return err
 					}
 				}
 				userID = m.Mentions[0].ID
 
 				// Try to get count of messages to delete.
+				var err error
 				count, err = strconv.Atoi(ss[0]) // Try first argument.
 				if err != nil { // If first argument did not work.
 					count, err = strconv.Atoi(ss[1]) // Try second one.
 					if err != nil {
-						_, err = sg.RespondBadCommandUsage(m, c, "", "")
-						if err != nil {
+						if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
 							return err
 						}
 					}
 				}
 				break
 			default:
-				_, err = sg.RespondBadCommandUsage(m, c, "", "")
-				if err != nil {
+				if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
 					return err
 				}
-				return err
+				return nil
 			}
 
 			// Validate count.
 			if count > maxCount {
-				_, err = sg.RespondBadCommandUsage(m, c, "", "max messages count I can delete is "+strconv.Itoa(maxCount))
-				if err != nil {
+				if _, err := sg.RespondBadCommandUsage(m, c, "", "max messages count I can delete is "+strconv.Itoa(maxCount)); err != nil {
 					return err
 				}
 			}
@@ -94,6 +90,7 @@ var Module = &sugo.Module{
 		messageLoop:
 			for {
 				// Get next 100 messages.
+				var err error
 				tmpMessages, err = sg.ChannelMessages(m.ChannelID, limit, lastMessageID, "", "")
 				if err != nil {
 					return err

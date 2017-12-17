@@ -15,7 +15,7 @@ type Module struct {
 	// false - command is considered denied
 	// true - command is considered allowed
 	// nil - use default command permissions
-	OnPermissionsCheck func(sg *Instance, c *Command, m *discordgo.Message) (passed *bool, err error)
+	OnPermissionsCheck func(sg *Instance, c *Command, m *discordgo.Message) (*bool, error)
 
 	// OnBeforeCommandSearch is called before command search is performed, but after query string is prepared
 	// returned value replaces query string that will be used for command search.
@@ -27,8 +27,6 @@ type Module struct {
 
 // startup is internal function called for each module on bot startup.
 func (m *Module) startup(sg *Instance) error {
-	var err error
-
 	// For Modules with commands - fill parent fields and triggers cache as well as validate triggers.
 	if m.RootCommand != nil {
 		// Make sure trigger is unique.
@@ -51,7 +49,7 @@ func (m *Module) startup(sg *Instance) error {
 			v.parent = m.RootCommand
 
 			// Run system startup for subcommand.
-			if err = v.startup(sg); err != nil {
+			if err := v.startup(sg); err != nil {
 				return err
 			}
 		}
@@ -59,7 +57,7 @@ func (m *Module) startup(sg *Instance) error {
 
 	// Run custom startup for module if set.
 	if m.Startup != nil {
-		if err = m.Startup(sg); err != nil {
+		if err := m.Startup(sg); err != nil {
 			return err
 		}
 	}
@@ -69,13 +67,11 @@ func (m *Module) startup(sg *Instance) error {
 
 // teardown is internal function called for each module on bot graceful Shutdown.
 func (m *Module) teardown(sg *Instance) error {
-	var err error
-
 	// Run public teardown for module if set.
 	if m.Teardown != nil {
-		if err = m.Teardown(sg); err != nil {
+		if err := m.Teardown(sg); err != nil {
 			return err
 		}
 	}
-	return err
+	return nil
 }

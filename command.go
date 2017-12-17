@@ -41,11 +41,11 @@ type Command struct {
 	Execute func(ctx context.Context, sg *Instance, c *Command, m *discordgo.Message, q string) error
 
 	// Custom HelpEmbed response for subcommand.
-	HelpEmbed func(c *Command, sg *Instance) (embed *discordgo.MessageEmbed, err error)
+	HelpEmbed func(c *Command, sg *Instance) (*discordgo.MessageEmbed, error)
 }
 
-func (c *Command) getSubcommandsTriggers(sg *Instance, m *discordgo.Message) (triggers []string, err error) {
-	triggers = []string{}
+func (c *Command) getSubcommandsTriggers(sg *Instance, m *discordgo.Message) ([]string, error) {
+	var triggers []string
 
 	// Generate triggers list respecting user permissions.
 	for _, subCommand := range c.SubCommands {
@@ -61,7 +61,7 @@ func (c *Command) getSubcommandsTriggers(sg *Instance, m *discordgo.Message) (tr
 }
 
 // startup is internal function called for each command on bot startup.
-func (c *Command) startup(sg *Instance) (err error) {
+func (c *Command) startup(sg *Instance) error {
 	// For every subcommand (if any):
 	for _, v := range c.SubCommands {
 		// Check if command is already registered elsewhere.
@@ -72,27 +72,27 @@ func (c *Command) startup(sg *Instance) (err error) {
 		v.parent = c
 
 		// Run system startup for subcommand.
-		if err = v.startup(sg); err != nil {
-			return
+		if err := v.startup(sg); err != nil {
+			return err
 		}
 	}
 
-	return
+	return nil
 }
 
 // teardown is internal function called for each command on bot graceful Shutdown.
-func (c *Command) teardown(sg *Instance) (err error) {
+func (c *Command) teardown(sg *Instance) error {
 	// !!!! Here be some internal code to tear commands down... some day. May be.
 
 	// For every subcommand (if any):
 	for _, v := range c.SubCommands {
 		// Run system teardown for subcommand.
-		if err = v.teardown(sg); err != nil {
-			return
+		if err := v.teardown(sg); err != nil {
+			return err
 		}
 	}
 
-	return
+	return nil
 }
 
 // Path returns sequence of triggers from outermost to innermost command for the given one.
@@ -113,8 +113,8 @@ func (c *Command) fullUsage(sg *Instance) (value string) {
 }
 
 // helpEmbed is a default implementation of help embed builder.
-func (c *Command) helpEmbed(sg *Instance, m *discordgo.Message) (embed *discordgo.MessageEmbed) {
-	embed = &discordgo.MessageEmbed{
+func (c *Command) helpEmbed(sg *Instance, m *discordgo.Message) (*discordgo.MessageEmbed, error) {
+	embed := &discordgo.MessageEmbed{
 		Title:       c.Path(),
 		Description: c.Description,
 		Color:       ColorInfo,
@@ -138,38 +138,30 @@ func (c *Command) helpEmbed(sg *Instance, m *discordgo.Message) (embed *discordg
 				Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger),
 			})
 	}
-	return embed
+	return embed, nil
 
 }
 
 // match is a system matching function that checks if command trigger matches the start of message content.
-func (c *Command) match(sg *Instance, m *discordgo.Message, q string) (matched bool, err error) {
-	// By default command is not matched.
-	matched = false
-
+func (c *Command) match(sg *Instance, m *discordgo.Message, q string) bool {
 	// If trigger is not set, check if command is empty.
 	if c.Trigger == "" && q == "" {
-		return true, nil
+		return true
 	}
 
 	// Trigger is set, see if it's in the message.
 	if c.Trigger != "" {
 		if strings.HasPrefix(q, c.Trigger) {
-			matched = true
-			return true, nil
+			return true
 		}
 	}
-	return
+	return false
 }
 
 // search searches for matching command (including permissions checks) in the given command's subcommands.
-func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (output *Command, err error) {
+func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (*Command, error) {
 	// Check if message matches command.
-	matched, err := c.match(sg, m, q)
-	if err != nil {
-		return nil, err
-	}
-	if !matched {
+	if !c.match(sg, m, q) {
 		// Message did not match command.
 		return nil, nil
 	}
@@ -269,7 +261,7 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, er
 }
 
 // execute is a default command execution function.
-func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discordgo.Message) (err error) {
+func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discordgo.Message) error {
 	var actionPerformed bool
 
 	// Set timeout to the context if requested by user.
@@ -281,27 +273,27 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 
 	if c.Execute != nil {
 		// Run custom command Execute if set.
-		err = c.Execute(ctx, sg, c, m, q)
-		if err != nil {
-			return
+
+		if err := c.Execute(ctx, sg, c, m, q); err != nil {
+			return err
 		}
 		actionPerformed = true
 	}
 
 	if c.TextResponse != "" {
 		// Send command text response if set.
-		_, err = sg.Respond(m, "", c.TextResponse, ColorPrimary, "")
-		if err != nil {
-			return
+
+		if _, err := sg.Respond(m, "", c.TextResponse, ColorPrimary, ""); err != nil {
+			return err
 		}
 		actionPerformed = true
 	}
 
 	if c.EmbedResponse != nil {
 		// Send command embed response if set.
-		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, c.EmbedResponse)
-		if err != nil {
-			return
+
+		if _, err := sg.ChannelMessageSendEmbed(m.ChannelID, c.EmbedResponse); err != nil {
+			return err
 		}
 		actionPerformed = true
 	}
@@ -309,15 +301,15 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 	if !actionPerformed {
 		if len(c.SubCommands) > 0 {
 			// If there is at least one subcommand and no other actions taken - explain it to the user.
-			_, err = sg.RespondBadCommandUsage(
+			_, err := sg.RespondBadCommandUsage(
 				m, c, "", "")
-			return
+			return err
 		}
 
 		// We did nothing and there are no subcommands...
-		_, err = Bot.RespondInfo(m, "", "looks like this command just does nothing... what is it here for anyways?")
-		return
+		_, err := Bot.RespondInfo(m, "", "looks like this command just does nothing... what is it here for anyways?")
+		return err
 	}
 
-	return
+	return nil
 }
