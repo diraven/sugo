@@ -38,7 +38,7 @@ var whoCmd = &sugo.Command{
 		}
 
 		// Start building response.
-		response := sugo.FmtStringsSlice(memberMentions, ", ", 1500, "...", "")
+		response := sugo.FmtStringsSlice(memberMentions, ", ", "", 1500, "...", "")
 
 		_, err = sg.RespondInfo(m, "", "people with `"+roles[0].Name+"` role:\n\n"+response)
 		return err

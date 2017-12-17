@@ -20,9 +20,9 @@ func respondFuzzyRolesSearchIssue(sg *sugo.Instance, m *discordgo.Message, roles
 		for _, role := range roles {
 			suggestedRoles = append(suggestedRoles, role)
 		}
-		response = response + ", try these:\n```\n"
-		response = response + sugo.FmtStringsSlice(rolesToRoleNames(suggestedRoles), ", ", 1500, "\n...", "")
-		response = response + "```"
+		response = response + ", try these:\n\n"
+		response = response + sugo.FmtStringsSlice(rolesToRoleNames(suggestedRoles), ", ", "`", 1500, "...", "")
+		response = response
 	}
 
 	_, err = sg.RespondWarning(m, "", response)

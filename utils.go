@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func FmtStringsSlice(slice []string, separator string, limit int, moreText string, noMoreText string) (result string) {
+func FmtStringsSlice(slice []string, separator string, decorator string, limit int, moreText string, noMoreText string) (result string) {
 	// Specifies if there are more items then shown.
 	var more bool
 	// Calculated length.
@@ -17,7 +17,7 @@ func FmtStringsSlice(slice []string, separator string, limit int, moreText strin
 		// If we are not over the limit yet:
 		if length < limit-int(math.Max(float64(len(moreText)), float64(len(noMoreText)))) {
 			// Increase length.
-			length = length + len(item) + len(separator)
+			length = length + len(item) + len(separator) + 2*len(decorator)
 			// Increase counter.
 			i = i + 1
 		} else {
@@ -25,6 +25,10 @@ func FmtStringsSlice(slice []string, separator string, limit int, moreText strin
 			more = true
 			break
 		}
+	}
+
+	for i := range slice {
+		slice[i] = decorator + slice[i] + decorator
 	}
 
 	result = strings.Join(slice[0:i], separator)

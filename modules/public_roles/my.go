@@ -15,15 +15,11 @@ var myCmd = &sugo.Command{
 		// Try to find role based on query.
 		roles, err := publicRoles.findUserPublicRole(sg, m, q)
 
-		// Start building response.
-		var response string
-
 		// If we have got at least one suggested role.
 		if len(roles) > 0 {
 			// Make an array of suggested role names.
-			response = response + "```\n"
-			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
-			response = response + "```"
+			response := "public roles you are in:\n\n"
+			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), ", ","`", 1500, "...", "")
 			_, err = sg.RespondInfo(m, "", response)
 		} else {
 			if q == "" {
