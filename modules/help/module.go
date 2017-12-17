@@ -30,7 +30,7 @@ func generateHelpEmbed(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message)
 				Value: strings.Join(subcommandsTriggers, ", "),
 			}, &discordgo.MessageEmbedField{
 				Name:  "To get help on 'subcommand' type:",
-				Value: fmt.Sprintf("`@%s` help %s subcommand", sg.Self.Username, c.Trigger),
+				Value: fmt.Sprintf("help %s subcommand", c.Trigger),
 			})
 	}
 	return embed, nil
