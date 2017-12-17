@@ -27,7 +27,7 @@ var itemInfo = &sugo.Command{
 
 		// Make sure there is a query specified.
 		if strings.TrimSpace(q) == "" {
-			_, err = sg.RespondBadCommandUsage(m, c, "")
+			_, err = sg.RespondBadCommandUsage(m, c, "", "")
 			return err
 		}
 

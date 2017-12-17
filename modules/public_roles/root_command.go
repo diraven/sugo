@@ -10,7 +10,7 @@ var rootCommand = &sugo.Command{
 	Trigger:            "public_roles",
 	Description:        "Allows to manipulate public roles.",
 	PermittedByDefault: true,
-	ParamsAllowed: true,
+	ParamsAllowed:      true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
@@ -26,9 +26,9 @@ var rootCommand = &sugo.Command{
 			response = response + "```\n"
 			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
 			response = response + "```"
-			_, err = sg.Respond(m, response)
+			_, err = sg.RespondInfo(m, "public roles", response)
 		} else {
-			_, err = sg.RespondDanger(m, "nothing found")
+			_, err = sg.RespondDanger(m, "", "nothing found")
 		}
 
 		return err

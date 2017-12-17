@@ -11,13 +11,13 @@ var leaveCmd = &sugo.Command{
 	Description:        "Removes person to the public role.",
 	Usage:              "role_name_or_id",
 	PermittedByDefault: true,
-	ParamsAllowed: true,
+	ParamsAllowed:      true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Make sure request is not empty.
 		if q == "" {
-			_, err = sg.RespondBadCommandUsage(m, c, "")
+			_, err = sg.RespondBadCommandUsage(m, c, "", "")
 			return err
 		}
 
@@ -36,12 +36,12 @@ var leaveCmd = &sugo.Command{
 		// Try to remove user role.
 		err = sg.GuildMemberRoleRemove(guild.ID, m.Author.ID, roles[0].ID)
 		if err != nil {
-			_, err = sg.RespondDanger(m, err.Error())
+			_, err = sg.RespondDanger(m, "", err.Error())
 			return err
 		}
 
 		// Respond about operation being successful.
-		_, err = sg.RespondSuccess(m, "you don't have `"+roles[0].Name+"` role any more")
+		_, err = sg.RespondSuccess(m, "", "you don't have `"+roles[0].Name+"` role any more")
 		return err
 	},
 }

@@ -25,7 +25,7 @@ func respondFuzzyRolesSearchIssue(sg *sugo.Instance, m *discordgo.Message, roles
 		response = response + "```"
 	}
 
-	_, err = sg.RespondWarning(m, response)
+	_, err = sg.RespondWarning(m, "", response)
 	return err
 }
 
@@ -40,6 +40,6 @@ func rolesToRoleNames(roles []*discordgo.Role) []string {
 
 // Module allows to manipulate public roles.
 var Module = &sugo.Module{
-	Startup: startup,
+	Startup:     startup,
 	RootCommand: rootCommand,
 }

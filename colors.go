@@ -4,7 +4,7 @@ package sugo
 const ColorDefault = 0x636c72
 
 // ColorPrimary is dark-blue-ish.
-//const ColorPrimary = 0x0275d8
+const ColorPrimary = 0x0275d8
 
 // ColorSuccess is green-ish.
 const ColorSuccess = 0x5cb85c

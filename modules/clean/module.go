@@ -46,7 +46,7 @@ var Module = &sugo.Module{
 				break
 			case 2: // Means we've got both user mention and amount of messages to delete.
 				if len(m.Mentions) == 0 { // Query must have mention.
-					_, err = sg.RespondBadCommandUsage(m, c, "")
+					_, err = sg.RespondBadCommandUsage(m, c, "", "")
 					if err != nil {
 						return err
 					}
@@ -58,7 +58,7 @@ var Module = &sugo.Module{
 				if err != nil { // If first argument did not work.
 					count, err = strconv.Atoi(ss[1]) // Try second one.
 					if err != nil {
-						_, err = sg.RespondBadCommandUsage(m, c, "")
+						_, err = sg.RespondBadCommandUsage(m, c, "", "")
 						if err != nil {
 							return err
 						}
@@ -66,7 +66,7 @@ var Module = &sugo.Module{
 				}
 				break
 			default:
-				_, err = sg.RespondBadCommandUsage(m, c, "")
+				_, err = sg.RespondBadCommandUsage(m, c, "", "")
 				if err != nil {
 					return err
 				}
@@ -75,7 +75,7 @@ var Module = &sugo.Module{
 
 			// Validate count.
 			if count > maxCount {
-				_, err = sg.RespondBadCommandUsage(m, c, "Max messages count is "+strconv.Itoa(maxCount)+".")
+				_, err = sg.RespondBadCommandUsage(m, c, "", "max messages count I can delete is "+strconv.Itoa(maxCount))
 				if err != nil {
 					return err
 				}
@@ -111,7 +111,7 @@ var Module = &sugo.Module{
 
 					if time.Since(then).Hours() >= 24*14 {
 						// We are unable to delete messages older then 14 days.
-						_, err = sg.RespondDanger(m, "unable to delete messages older then 2 weeks")
+						_, err = sg.RespondDanger(m, "", "unable to delete messages older then 2 weeks")
 						if err != nil {
 							return err
 						}
@@ -151,7 +151,7 @@ var Module = &sugo.Module{
 			_ = sg.ChannelMessagesBulkDelete(m.ChannelID, messageIDs)
 
 			// Notify user about deletion.
-			msg, err := sg.RespondSuccess(m, "done, this message will self-destruct in 10 seconds")
+			msg, err := sg.RespondWarning(m, "", "done, this message will self-destruct in 10 seconds")
 			if err != nil {
 				return err
 			}

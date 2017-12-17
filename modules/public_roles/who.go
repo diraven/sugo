@@ -4,21 +4,20 @@ import (
 	"context"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
-	"sort"
 )
 
 var whoCmd = &sugo.Command{
 	Trigger:            "who",
 	Description:        "Lists people that have public role specified.",
 	PermittedByDefault: true,
-	ParamsAllowed: true,
+	ParamsAllowed:      true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondDanger(m, err.Error())
+			_, err = sg.RespondDanger(m, "", err.Error())
 			return err
 		}
 
@@ -29,24 +28,19 @@ var whoCmd = &sugo.Command{
 		}
 
 		// Make members array we will be working with.
-		var memberNames []string
+		var memberMentions []string
 		for _, member := range guild.Members {
 			for _, roleID := range member.Roles {
 				if roleID == roles[0].ID {
-					memberNames = append(memberNames, member.User.Username+"#"+member.User.Discriminator)
+					memberMentions = append(memberMentions, member.User.Mention())
 				}
 			}
 		}
 
-		// Sort people.
-		sort.Strings(memberNames)
-
 		// Start building response.
-		response := "people with `" + roles[0].Name + "` role ```\n"
-		response = response + sugo.FmtStringsSlice(memberNames, ", ", 1500, "...", ".")
-		response = response + "```"
+		response := sugo.FmtStringsSlice(memberMentions, ", ", 1500, "...", "")
 
-		_, err = sg.Respond(m, response)
+		_, err = sg.RespondInfo(m, "people with `"+roles[0].Name+"` role", response)
 		return err
 	},
 }

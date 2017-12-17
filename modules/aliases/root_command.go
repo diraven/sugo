@@ -43,7 +43,7 @@ var rootCommand = &sugo.Command{
 
 				ss := strings.Split(q, "->")
 				if len(ss) < 2 {
-					_, err = sg.RespondBadCommandUsage(m, c, "")
+					_, err = sg.RespondBadCommandUsage(m, c, "", "")
 					return err
 				}
 				alias := strings.TrimSpace(ss[0])
@@ -59,14 +59,14 @@ var rootCommand = &sugo.Command{
 				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
 
 				aliases.set(sg, guild, alias, commandPath)
-				_, err = sg.RespondSuccess(m, "")
+				_, err = sg.RespondSuccess(m, "", "")
 				return err
 			},
 		},
 		{
-			Trigger:     "del",
-			Description: "Deletes specified alias.",
-			Usage:       "some_alias",
+			Trigger:       "del",
+			Description:   "Deletes specified alias.",
+			Usage:         "some_alias",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
@@ -75,19 +75,19 @@ var rootCommand = &sugo.Command{
 				alias := aliases.get(sg, guild, q)
 
 				if alias == "" {
-					_, err = sg.RespondDanger(m, "Alias \""+q+"\" was not found.")
+					_, err = sg.RespondDanger(m, "", "Alias \""+q+"\" was not found.")
 					return err
 				}
 
 				aliases.del(sg, guild, alias)
-				_, err = sg.RespondSuccess(m, "")
+				_, err = sg.RespondSuccess(m, "", "")
 				return err
 			},
 		},
 		{
-			Trigger:     "swap",
-			Description: "Swaps specified shortcuts.",
-			Usage:       "1 2",
+			Trigger:       "swap",
+			Description:   "Swaps specified shortcuts.",
+			Usage:         "1 2",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
@@ -96,25 +96,25 @@ var rootCommand = &sugo.Command{
 
 				ss := strings.Split(q, " ")
 				if len(ss) < 2 {
-					_, err = sg.RespondBadCommandUsage(m, c, "")
+					_, err = sg.RespondBadCommandUsage(m, c, "", "")
 					return err
 				}
 
 				alias1 := aliases.get(sg, guild, ss[0])
 				if alias1 == "" {
-					sg.RespondDanger(m, "alias \""+ss[0]+"\" not found")
+					sg.RespondDanger(m, "", "alias `"+ss[0]+"` not found")
 					return err
 				}
 
 				alias2 := aliases.get(sg, guild, ss[1])
 				if alias2 == "" {
-					sg.RespondDanger(m, "alias \""+ss[1]+"\" not found")
+					sg.RespondDanger(m, "", "alias `"+ss[1]+"` not found")
 					return err
 				}
 
 				aliases.swap(sg, guild, alias1, alias2)
 
-				_, err = sg.RespondSuccess(m, "")
+				_, err = sg.RespondSuccess(m, "", "")
 				return err
 			},
 		},

@@ -14,7 +14,7 @@ var Module = &sugo.Module{
 		PermittedByDefault: true,
 		Description:        "Shows help section for the appropriate command.",
 		Usage:              "some_command",
-		ParamsAllowed: true,
+		ParamsAllowed:      true,
 		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
 
@@ -50,7 +50,7 @@ var Module = &sugo.Module{
 				_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
 				return err
 			}
-			_, err = sg.Respond(m, "I know nothing about this command, sorry...")
+			_, err = sg.RespondWarning(m, "", "I know nothing about this command, sorry...")
 			return err
 		},
 	},

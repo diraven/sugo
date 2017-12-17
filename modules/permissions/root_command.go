@@ -23,7 +23,7 @@ var rootCommand = &sugo.Command{
 				role, q := findRole(sg, m, q)
 				if role == nil {
 					// Role not found.
-					sg.RespondDanger(m, "role not found")
+					sg.RespondDanger(m, "", "role not found")
 					return nil
 				}
 
@@ -42,7 +42,7 @@ var rootCommand = &sugo.Command{
 				}
 
 				// Notify user of success.
-				sg.RespondSuccess(m, "")
+				sg.RespondSuccess(m, "", "")
 				return nil
 			},
 		},
@@ -57,7 +57,7 @@ var rootCommand = &sugo.Command{
 				// Try to find role.
 				role, q := findRole(sg, m, q)
 				if role == nil {
-					sg.RespondDanger(m, "role not found")
+					sg.RespondDanger(m, "", "role not found")
 					return err
 				}
 
@@ -69,7 +69,7 @@ var rootCommand = &sugo.Command{
 				}
 
 				permissions.set(sg, role.ID, command.Path(), false)
-				sg.RespondSuccess(m, "")
+				sg.RespondSuccess(m, "", "")
 				return err
 			},
 		},
@@ -84,7 +84,7 @@ var rootCommand = &sugo.Command{
 				// Try to find role.
 				role, q := findRole(sg, m, q)
 				if role == nil {
-					sg.RespondDanger(m, "role not found")
+					sg.RespondDanger(m, "", "role not found")
 					return err
 				}
 
@@ -96,7 +96,7 @@ var rootCommand = &sugo.Command{
 				}
 
 				permissions.setDefault(sg, role.ID, command.Path())
-				sg.RespondSuccess(m, "")
+				sg.RespondSuccess(m, "", "")
 				return err
 			},
 		},
@@ -120,7 +120,7 @@ var rootCommand = &sugo.Command{
 					// If response is too long already - make a new one.
 					if len(response) > 1500 {
 						response = response + "```"
-						_, err = sg.Respond(m, response)
+						_, err = sg.RespondInfo(m, "", response)
 						response = "```\n"
 					}
 					response = response + role.ID + ": " + role.Name + "\n"
@@ -129,7 +129,7 @@ var rootCommand = &sugo.Command{
 				// End response text.
 				response = response + "```"
 
-				_, err = sg.Respond(m, response)
+				_, err = sg.RespondInfo(m, "", response)
 				return err
 			},
 		},

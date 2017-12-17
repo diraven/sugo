@@ -290,7 +290,7 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 
 	if c.TextResponse != "" {
 		// Send command text response if set.
-		_, err = sg.Respond(m, c.TextResponse)
+		_, err = sg.Respond(m, "", c.TextResponse, ColorPrimary, "")
 		if err != nil {
 			return
 		}
@@ -309,15 +309,13 @@ func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discor
 	if !actionPerformed {
 		if len(c.SubCommands) > 0 {
 			// If there is at least one subcommand and no other actions taken - explain it to the user.
-			_, err = sg.RespondWarning(
-				m,
-				"this command itself does not seem to do anything, try `"+c.FullHelpPath(sg)+"`",
-			)
+			_, err = sg.RespondBadCommandUsage(
+				m, c, "", "")
 			return
 		}
 
 		// We did nothing and there are no subcommands...
-		_, err = Bot.Respond(m, "looks like this command just does nothing... what is it here for anyways?")
+		_, err = Bot.RespondInfo(m, "", "looks like this command just does nothing... what is it here for anyways?")
 		return
 	}
 

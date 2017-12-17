@@ -47,11 +47,21 @@ var Module = &sugo.Module{
 				PermittedByDefault: true,
 				Description:        "subTest2 command.",
 				Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-					if _, err := sg.Respond(m, "default"); err != nil {return err}
-					if _, err := sg.RespondInfo(m, "info"); err != nil {return err}
-					if _, err := sg.RespondSuccess(m, "success"); err != nil {return err}
-					if _, err := sg.RespondWarning(m, "warning"); err != nil {return err}
-					if _, err := sg.RespondDanger(m, "failure"); err != nil {return err}
+					if _, err := sg.Respond(m, "", "default", sugo.ColorPrimary, ""); err != nil {
+						return err
+					}
+					if _, err := sg.RespondInfo(m, "", "info"); err != nil {
+						return err
+					}
+					if _, err := sg.RespondSuccess(m, "", "success"); err != nil {
+						return err
+					}
+					if _, err := sg.RespondWarning(m, "", "warning"); err != nil {
+						return err
+					}
+					if _, err := sg.RespondDanger(m, "", "failure"); err != nil {
+						return err
+					}
 					return nil
 				},
 			},

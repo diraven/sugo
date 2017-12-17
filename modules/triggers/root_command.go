@@ -23,7 +23,7 @@ var rootCommand = &sugo.Command{
 		}
 
 		// Notify user about currently set bot trigger.
-		if _, err := sg.RespondSuccess(m, "current bot trigger is set to: "+trigger); err != nil {
+		if _, err := sg.RespondSuccess(m, "", "current bot trigger is set to: "+trigger); err != nil {
 			return err
 		}
 
@@ -41,7 +41,7 @@ var rootCommand = &sugo.Command{
 
 				// Make sure prefix does not start with < as it might cause problems with mention-based triggers.
 				if strings.HasPrefix(q, "<") {
-					if _, err := sg.RespondDanger(m, "`<` is not allowed to be part of bot trigger"); err != nil {
+					if _, err := sg.RespondDanger(m, "", "`<` is not allowed to be part of bot trigger"); err != nil {
 						return err
 					}
 				}
@@ -52,7 +52,7 @@ var rootCommand = &sugo.Command{
 				}
 
 				// Notify user about success.
-				if _, err := sg.RespondSuccess(m, ""); err != nil {
+				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
 					return err
 				}
 
@@ -74,7 +74,7 @@ var rootCommand = &sugo.Command{
 				}
 
 				// Notify user about success.
-				if _, err := sg.RespondSuccess(m, ""); err != nil {
+				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
 					return err
 				}
 

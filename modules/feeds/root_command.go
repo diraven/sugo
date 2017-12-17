@@ -26,9 +26,9 @@ var rootCommand = &sugo.Command{
 	},
 	SubCommands: []*sugo.Command{
 		{
-			Trigger:     "add",
-			Description: "Adds new feed.",
-			Usage:       "http://example.com/rss/",
+			Trigger:       "add",
+			Description:   "Adds new feed.",
+			Usage:         "http://example.com/rss/",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
@@ -36,21 +36,21 @@ var rootCommand = &sugo.Command{
 				// Validate feed url.
 				_, err = fp.ParseURL(q)
 				if err != nil {
-					_, err = sg.RespondDanger(m, err.Error())
+					_, err = sg.RespondDanger(m, "", err.Error())
 					return err
 				}
 
 				// Add requested URL to the list.
 				feeds.add(sg, m.ChannelID, q)
 
-				_, err = sg.RespondSuccess(m, "")
+				_, err = sg.RespondSuccess(m, "", "")
 				return err
 			},
 		},
 		{
-			Trigger:     "del",
-			Description: "Deletes specified feed.",
-			Usage:       "http://example.com/rss",
+			Trigger:       "del",
+			Description:   "Deletes specified feed.",
+			Usage:         "http://example.com/rss",
 			ParamsAllowed: true,
 			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
@@ -59,7 +59,7 @@ var rootCommand = &sugo.Command{
 					return err
 				}
 
-				if _, err = sg.RespondSuccess(m, ""); err != nil {
+				if _, err = sg.RespondSuccess(m, "", ""); err != nil {
 					return err
 				}
 

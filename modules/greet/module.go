@@ -17,7 +17,7 @@ var Module = &sugo.Module{
 		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
 
-			_, err = sg.Respond(m, "Hi! My name is "+
+			_, err = sg.RespondInfo(m, "", "Hi! My name is "+
 				fmt.Sprintf("%s and I'm here to help you out... ", sg.Self.Username)+
 				"Try `help` for more info.",
 			)

@@ -39,14 +39,14 @@ var statsCmd = &sugo.Command{
 	Description:        "Lists public roles with the highest/lowest count of people.",
 	Usage:              "top/bottom",
 	PermittedByDefault: true,
-	ParamsAllowed: true,
+	ParamsAllowed:      true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondDanger(m, err.Error())
+			_, err = sg.RespondDanger(m, "", err.Error())
 			return err
 		}
 
@@ -95,10 +95,10 @@ var statsCmd = &sugo.Command{
 				}
 			}
 			response = response + "```"
-			_, err = sg.Respond(m, response)
+			_, err = sg.RespondInfo(m, "", response)
 
 		} else {
-			_, err = sg.RespondDanger(m, "no data available")
+			_, err = sg.RespondDanger(m, "", "no data available")
 		}
 
 		return err

@@ -17,21 +17,21 @@ var addCmd = &sugo.Command{
 
 		// Make sure query is not empty.
 		if q == "" {
-			_, err = sg.RespondBadCommandUsage(m, c, "")
+			_, err = sg.RespondBadCommandUsage(m, c, "", "")
 			return err
 		}
 
 		// Get a guild.
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
-			_, err = sg.RespondDanger(m, err.Error())
+			_, err = sg.RespondDanger(m, "", err.Error())
 			return err
 		}
 
 		// Get all guild roles.
 		roles, err := sg.GuildRoles(guild.ID)
 		if err != nil {
-			_, err = sg.RespondDanger(m, err.Error())
+			_, err = sg.RespondDanger(m, "", err.Error())
 			return err
 		}
 
@@ -54,7 +54,7 @@ var addCmd = &sugo.Command{
 			if strings.ToLower(role.Name) == strings.ToLower(request) || role.ID == request {
 				if matchedRole != nil {
 					_, err = sg.RespondDanger(
-						m,
+						m, "",
 						"too many roles found, try again with a different search",
 					)
 					return err
@@ -67,19 +67,19 @@ var addCmd = &sugo.Command{
 		// If we did not find any match:
 		if matchedRole == nil {
 			// Notify user about fail.
-			_, err = sg.RespondDanger(m, "no roles found for query")
+			_, err = sg.RespondDanger(m, "", "no roles found for query")
 			return err
 		}
 
 		// Otherwise add new role to the public roles list.
 		err = publicRoles.add(sg, guild.ID, matchedRole.ID)
 		if err != nil {
-			_, err = sg.RespondDanger(m, err.Error())
+			_, err = sg.RespondDanger(m, "", err.Error())
 			return err
 		}
 
 		// And notify user about success.
-		_, err = sg.RespondSuccess(m, "role `"+matchedRole.Name+"` is public now")
+		_, err = sg.RespondSuccess(m, "", "role `"+matchedRole.Name+"` is public now")
 		return err
 	},
 }

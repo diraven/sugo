@@ -10,7 +10,7 @@ var myCmd = &sugo.Command{
 	Trigger:            "my",
 	Description:        "Lists public roles you are in.",
 	PermittedByDefault: true,
-	ParamsAllowed: true,
+	ParamsAllowed:      true,
 	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
@@ -26,12 +26,12 @@ var myCmd = &sugo.Command{
 			response = response + "```\n"
 			response = response + sugo.FmtStringsSlice(rolesToRoleNames(roles), "\n", 1500, "\n...", "")
 			response = response + "```"
-			_, err = sg.Respond(m, response)
+			_, err = sg.RespondInfo(m, "", response)
 		} else {
 			if q == "" {
-				_, err = sg.Respond(m, "you got no roles")
+				_, err = sg.RespondWarning(m, "", "you got no roles")
 			} else {
-				_, err = sg.Respond(m, "you got no such roles")
+				_, err = sg.RespondWarning(m, "", "you got no such roles")
 			}
 		}
 
