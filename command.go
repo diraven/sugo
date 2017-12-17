@@ -104,12 +104,12 @@ func (c *Command) Path() (value string) {
 }
 
 func (c *Command) FullHelpPath(sg *Instance) (value string) {
-	return sg.Trigger + "help " + c.Path()
+	return "help " + c.Path()
 }
 
 // fullUsage returns full command usage including all parent triggers.
 func (c *Command) fullUsage(sg *Instance) (value string) {
-	return sg.Trigger + c.Path() + " " + c.Usage
+	return c.Path() + " " + c.Usage
 }
 
 // helpEmbed is a default implementation of help embed builder.

@@ -20,6 +20,9 @@ type Module struct {
 	// OnBeforeCommandSearch is called before command search is performed, but after query string is prepared
 	// returned value replaces query string that will be used for command search.
 	OnBeforeCommandSearch func(sg *Instance, m *discordgo.Message, q string) (string, error)
+
+	// OnBeforeCommandSearch is called before query is tested for bot mention.
+	OnBeforeBotTriggerDetect func(sg *Instance, m *discordgo.Message, q string) (string, error)
 }
 
 // startup is internal function called for each module on bot startup.

@@ -30,7 +30,7 @@ var Module = &sugo.Module{
 					Fields: []*discordgo.MessageEmbedField{
 						{
 							Name:  "To get more info on 'something' try:",
-							Value: sg.Trigger + "help something",
+							Value: "help something",
 						},
 					},
 				})

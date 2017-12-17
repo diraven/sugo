@@ -19,7 +19,8 @@ var Module = &sugo.Module{
 
 			_, err = sg.Respond(m, "Hi! My name is "+
 				fmt.Sprintf("%s and I'm here to help you out... ", sg.Self.Username)+
-				fmt.Sprintf("Try '%s help' for more info.", sg.Trigger))
+				"Try `help` for more info.",
+			)
 			return err
 		},
 	},

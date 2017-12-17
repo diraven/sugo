@@ -27,8 +27,6 @@ type Instance struct {
 	Modules []*Module
 	// Self contains a giscordgo.User instance of the bot.
 	Self *discordgo.User
-	// Trigger contains bot trigger.
-	Trigger string
 	// ErrorHandler takes care of errors unhandled elsewhere in the code.
 	ErrorHandler func(e error) (err error)
 	// DB is literally what it says it is. DataBase.
@@ -79,12 +77,6 @@ func (sg *Instance) Startup(token string, rootUID string) error {
 		return errors.New("Error obtaining bot account details... " + err.Error())
 	}
 	sg.Self = self
-
-	// Set default bot trigger if it's not set beforehand.
-	if sg.Trigger == "" {
-		// Default trigger is bot's own mention.
-		sg.Trigger = sg.Self.Mention() + " "
-	}
 
 	// Get root account info.
 	if rootUID != "" {
@@ -214,16 +206,26 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		return
 	}
 
+	// OnBeforeBotTriggerDetect entry point for Modules.
+	for _, module := range Bot.Modules {
+		if module.OnBeforeBotTriggerDetect != nil {
+			q, err = module.OnBeforeBotTriggerDetect(Bot, mc.Message, q)
+			if err != nil {
+				Bot.HandleError(errors.New("OnBeforeMentionDetect error: " + err.Error() + " (" + q + ")"))
+			}
+		}
+	}
+
 	// If bot nick was changed on the server - it will have ! in it's mention, so we need to remove that in order
 	// for mention detection to work right.
 	if strings.HasPrefix(q, "<@!") {
 		q = strings.Replace(q, "<@!", "<@", 1)
 	}
 
-	// Make sure message starts with bot trigger.
-	if strings.HasPrefix(strings.TrimSpace(q), Bot.Trigger) {
+	// Make sure message starts with bot mention.
+	if strings.HasPrefix(strings.TrimSpace(q), Bot.Self.Mention()) {
 		// Remove bot trigger from the string.
-		q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Trigger))
+		q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Self.Mention()))
 	} else {
 		return
 	}
@@ -321,7 +323,7 @@ func (sg *Instance) Respond(m *discordgo.Message, text string) (message *discord
 	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 		Title:       "@" + m.Author.Username,
 		Description: text,
-		Color: ColorDefault,
+		Color:       ColorDefault,
 	})
 	return
 }
@@ -331,7 +333,7 @@ func (sg *Instance) RespondInfo(m *discordgo.Message, text string) (message *dis
 	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 		Title:       ":information_source:  @" + m.Author.Username,
 		Description: text,
-		Color: ColorInfo,
+		Color:       ColorInfo,
 	})
 	return
 }
@@ -341,7 +343,7 @@ func (sg *Instance) RespondSuccess(m *discordgo.Message, text string) (message *
 	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 		Title:       ":white_check_mark:  @" + m.Author.Username,
 		Description: text,
-		Color: ColorSuccess,
+		Color:       ColorSuccess,
 	})
 	return
 }
@@ -351,7 +353,7 @@ func (sg *Instance) RespondWarning(m *discordgo.Message, text string) (message *
 	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 		Title:       ":warning: @" + m.Author.Username,
 		Description: text,
-		Color: ColorWarning,
+		Color:       ColorWarning,
 	})
 	return
 }
@@ -361,7 +363,7 @@ func (sg *Instance) RespondDanger(m *discordgo.Message, text string) (message *d
 	message, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 		Title:       ":no_entry: @" + m.Author.Username,
 		Description: text,
-		Color: ColorDanger,
+		Color:       ColorDanger,
 	})
 	return
 }
