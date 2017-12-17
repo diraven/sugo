@@ -22,6 +22,8 @@ func (s *tStats) logPlaying(sg *sugo.Instance, guildID string, userID string, th
 		return err
 	}
 
+	// TODO Consider adding automatic clean up (such as remove all data records older then a month).
+
 	return nil
 }
 
