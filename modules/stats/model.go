@@ -68,7 +68,7 @@ func (s *tStats) logMessage(sg *sugo.Instance, guildID string, userID string) er
 		) VALUES (
 			?, ?, ?
 		);
-	`, guildID, userID, time.Now().Format("2006-01-02 15:04:05"))
+	`, guildID, userID, time.Now().Format("2006-01-02"))
 
 	if err != nil {
 		return err
