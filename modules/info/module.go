@@ -9,6 +9,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"runtime"
 	"time"
+	"os"
 )
 
 // Info shows some general bot info.
@@ -23,6 +24,13 @@ var Module = &sugo.Module{
 
 			// Set command response.
 			now := time.Now().UTC()
+
+			// Get DB file size.
+			fi, err := os.Stat("data.sqlite3")
+			if err != nil {
+				return err
+			}
+
 			var memStats runtime.MemStats
 			runtime.ReadMemStats(&memStats)
 			_, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
@@ -68,6 +76,11 @@ var Module = &sugo.Module{
 					{
 						Name:   "modules",
 						Value:  fmt.Sprintf("%d", len(sg.Modules)),
+						Inline: true,
+					},
+					{
+						Name:   "DB size",
+						Value:  humanize.Bytes(uint64(fi.Size())),
 						Inline: true,
 					},
 				},
