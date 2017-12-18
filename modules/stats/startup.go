@@ -36,12 +36,12 @@ func startup(sg *sugo.Instance) error {
 		return err
 	}
 
-	//// Indexes.
-	//if _, err := sg.DB.Exec(`
-	//	CREATE UNIQUE INDEX IF NOT EXISTS guild_user_game_created_at ON stats_playing (guild_id, user_id, game, created_at);
-	//`); err != nil {
-	//	return err
-	//}
+	// Indexes.
+	if _, err := sg.DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS guild_user_created_at ON stats_messaging (guild_id, user_id, created_at);
+	`); err != nil {
+		return err
+	}
 
 	return nil
 }
