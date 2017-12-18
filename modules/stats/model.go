@@ -104,11 +104,11 @@ func (s *tStats) getMostMessagingUsers(sg *sugo.Instance, guildID string) ([]*di
 		if err := rows.Scan(&userID, &count); err != nil {
 			return nil, err
 		}
-		user, err := sg.User(userID)
+		member, err := sg.State.Member(guildID, userID)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+		users = append(users, member.User)
 	}
 
 	return users, nil
