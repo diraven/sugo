@@ -5,12 +5,8 @@ import (
 )
 
 func startup(sg *sugo.Instance) error {
-	// Variable to store errors if any.
-	var err error
-
-	// Prepare database structure to store the data.
-	// Public Roles table.
-	_, err = sg.DB.Exec(`
+	// Table.
+	if _, err := sg.DB.Exec(`
 		CREATE TABLE IF NOT EXISTS stats_playing (
 			guild_id TEXT,
 			user_id TEXT,
@@ -18,18 +14,34 @@ func startup(sg *sugo.Instance) error {
 			game TEXT,
 			created_at TEXT
 		);
-	`)
-	if err != nil {
+	`); err != nil {
 		return err
 	}
 
-	// Index to enforce guild, user, game and created_at uniqueness.
-	_, err = sg.DB.Exec(`
+	// Indexes.
+	if _, err := sg.DB.Exec(`
 		CREATE UNIQUE INDEX IF NOT EXISTS guild_user_game_created_at ON stats_playing (guild_id, user_id, game, created_at);
-	`)
-	if err != nil {
+	`); err != nil {
 		return err
 	}
+
+	// Table.
+	if _, err := sg.DB.Exec(`
+		CREATE TABLE IF NOT EXISTS stats_messaging (
+			guild_id TEXT,
+			user_id TEXT,
+			created_at TEXT
+		);
+	`); err != nil {
+		return err
+	}
+
+	//// Indexes.
+	//if _, err := sg.DB.Exec(`
+	//	CREATE UNIQUE INDEX IF NOT EXISTS guild_user_game_created_at ON stats_playing (guild_id, user_id, game, created_at);
+	//`); err != nil {
+	//	return err
+	//}
 
 	return nil
 }

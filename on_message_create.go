@@ -14,6 +14,15 @@ func onMessageCreate(s *discordgo.Session, mc *discordgo.MessageCreate) {
 	var command *Command           // Used to store the command we will execute.
 	var q = mc.Content             // Command query string.
 
+	// OnMessageCreate entry point for Modules.
+	for _, module := range Bot.Modules {
+		if module.OnMessageCreate != nil {
+			if err = module.OnMessageCreate(Bot, mc); err != nil {
+				Bot.HandleError(errors.New("OnMessageCreate error: " + err.Error()))
+			}
+		}
+	}
+
 	// Make sure we are in the correct bot instance.
 	if Bot.Session != s {
 		Bot.HandleError(errors.New("Bot session error:" + err.Error()))

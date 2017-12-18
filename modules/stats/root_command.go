@@ -44,5 +44,31 @@ var rootCommand = &sugo.Command{
 				return nil
 			},
 		},
+		{
+			Trigger:     "messaging",
+			Description: "Shows stats about most active users.",
+			//Usage:         "http://example.com/rss/",
+			//ParamsAllowed: true,
+			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+				var response string
+
+				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+
+				users, err := stats.getMostMessagingUsers(sg, guild.ID)
+				if err != nil {
+					return err
+				}
+
+				for i, user := range users {
+					response = response + strconv.Itoa(i+1) + ". " + user.Mention() + "\n"
+				}
+
+				if _, err := sg.RespondInfo(m, "most active users", response); err != nil {
+					return err
+				}
+
+				return nil
+			},
+		},
 	},
 }

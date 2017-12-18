@@ -3,11 +3,12 @@ package stats
 import (
 	"github.com/diraven/sugo"
 	"time"
+	"github.com/bwmarrin/discordgo"
 )
 
 type tStats struct{}
 
-// logs user status update.
+// logPlaying logs user status update and game he/she played if any.
 func (s *tStats) logPlaying(sg *sugo.Instance, guildID string, userID string, theType int, game string) error {
 	// Add new feed.
 	_, err := sg.DB.Exec(`
@@ -56,6 +57,61 @@ func (s *tStats) getMostPlayedGames(sg *sugo.Instance, guildID string) ([]string
 	}
 
 	return gamesNames, nil
+}
+
+// logPlaying logs user status update and game he/she played if any.
+func (s *tStats) logMessage(sg *sugo.Instance, guildID string, userID string) error {
+	// Add new feed.
+	_, err := sg.DB.Exec(`
+		INSERT OR REPLACE INTO stats_messaging (
+			guild_id, user_id, created_at
+		) VALUES (
+			?, ?, ?
+		);
+	`, guildID, userID, time.Now().Format("2006-01-02 15:04:05"))
+
+	if err != nil {
+		return err
+	}
+
+	// TODO Consider adding automatic clean up (such as remove all data records older then a month).
+
+	return nil
+}
+
+func (s *tStats) getMostMessagingUsers(sg *sugo.Instance, guildID string) ([]*discordgo.User, error) {
+	// Variable to hold results.
+	var users []*discordgo.User
+
+	// Get rows from DB.
+	rows, err := sg.DB.Query(`
+		SELECT user_id, COUNT(*) as "count"
+		FROM stats_messaging
+		WHERE DATE(created_at) > DATE('now', '-1 month') AND guild_id=?
+		GROUP BY user_id
+		ORDER BY count
+		  DESC
+		LIMIT 10;
+	`, guildID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect the data into the usable format.
+	for rows.Next() {
+		var userID string
+		var count int
+		if err := rows.Scan(&userID, &count); err != nil {
+			return nil, err
+		}
+		user, err := sg.User(userID)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
 //// add makes role public.

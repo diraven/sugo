@@ -24,8 +24,11 @@ type Module struct {
 	// OnBeforeCommandSearch is called before query is tested for bot mention.
 	OnBeforeBotTriggerDetect func(sg *Instance, m *discordgo.Message, q string) (string, error)
 
-	// onPresenceUpdate happens every time member presence is updated for guild.
+	// OnPresenceUpdate happens every time member presence is updated for guild.
 	OnPresenceUpdate func(sg *Instance, pu *discordgo.PresenceUpdate) error
+
+	// OnMessageCreate happens for every message bot sees created.
+	OnMessageCreate func(sg *Instance, mc *discordgo.MessageCreate) error
 }
 
 // startup is internal function called for each module on bot startup.

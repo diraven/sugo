@@ -11,4 +11,5 @@ var Module = &sugo.Module{
 	Startup:     startup,
 	RootCommand: rootCommand,
 	OnPresenceUpdate: onPresenceUpdate,
+	OnMessageCreate: onMessageCreate,
 }
