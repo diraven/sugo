@@ -55,7 +55,11 @@ var createCmd = &sugo.Command{
 		}
 
 		// Set new role properties.
-		sg.GuildRoleEdit(guild.ID, role.ID, q, 0, false, 0, true)
+		role, err = sg.GuildRoleEdit(guild.ID, role.ID, q, 0, false, 0, true)
+		if err != nil {
+			_, err = sg.RespondDanger(m, "", err.Error())
+			return err
+		}
 
 		// And add new role to the list of the public roles.
 		publicRoles.add(sg, guild.ID, role.ID)
