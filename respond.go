@@ -28,7 +28,7 @@ func (sg *Instance) RespondNotImplemented(m *discordgo.Message) (*discordgo.Mess
 // RespondCommandNotFound responds to the channel with "command not found" message mentioning person that invoked
 // command.
 func (sg *Instance) RespondCommandNotFound(m *discordgo.Message) (*discordgo.Message, error) {
-	return sg.RespondDanger(m, "command not found", "")
+	return sg.RespondWarning(m, "command not found", "")
 }
 
 // Respond responds to the channel with an embed without any icons.
