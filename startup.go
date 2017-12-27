@@ -59,6 +59,9 @@ func (sg *Instance) Startup(token string, rootUID string) error {
 	// Register callback for the messageCreate events.
 	sg.Session.AddHandler(onMessageCreate)
 
+	// Register callback for the messageUpdate events.
+	//sg.Session.AddHandler(onMessageUpdate)
+
 	// Register callback for the presenceUpdate events.
 	sg.Session.AddHandler(onPresenceUpdate)
 

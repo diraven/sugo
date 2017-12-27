@@ -5,18 +5,18 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func onMessageCreate(sg *sugo.Instance, mc *discordgo.MessageCreate) error {
-	guild, err := sg.GuildFromMessage(mc.Message)
+func onMessageCreate(sg *sugo.Instance, m *discordgo.Message) error {
+	guild, err := sg.GuildFromMessage(m)
 	if err != nil {
 		return err
 	}
 
 	// Ignore bots.
-	if mc.Author.Bot {
+	if m.Author.Bot {
 		return nil
 	}
 
-	stats.logMessage(sg, guild.ID, mc.Author.ID)
+	stats.logMessage(sg, guild.ID, m.Author.ID)
 
 	return nil
 }

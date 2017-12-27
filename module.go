@@ -28,7 +28,7 @@ type Module struct {
 	OnPresenceUpdate func(sg *Instance, pu *discordgo.PresenceUpdate) error
 
 	// OnMessageCreate happens for every message bot sees created.
-	OnMessageCreate func(sg *Instance, mc *discordgo.MessageCreate) error
+	OnMessageCreate func(sg *Instance, mc *discordgo.Message) error
 }
 
 // startup is internal function called for each module on bot startup.

@@ -7,6 +7,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
+	"strings"
+	"context"
+	"errors"
 )
 
 // VERSION contains current version of the Sugo framework.
@@ -91,5 +94,109 @@ func (sg *Instance) HandleError(e error) error {
 		log.Println(e)
 		sg.Shutdown()
 	}
+	return nil
+}
+
+// processMessage processes given message.
+func (sg *Instance) processMessage(m *discordgo.Message) error {
+	var err error                  // Used to capture and report errors.
+	var ctx = context.Background() // Root context.
+	var command *Command           // Used to store the command we will execute.
+	var q = m.Content              // Command query string.
+
+	// OnMessageCreate entry point for Modules.
+	for _, module := range Bot.Modules {
+		if module.OnMessageCreate != nil {
+			if err = module.OnMessageCreate(Bot, m); err != nil {
+				Bot.HandleError(errors.New("OnMessageCreate error: " + err.Error()))
+			}
+		}
+	}
+
+	// Make sure message author is not a bot.
+	if m.Author.Bot {
+		return nil
+	}
+
+	// OnBeforeBotTriggerDetect entry point for Modules.
+	for _, module := range Bot.Modules {
+		if module.OnBeforeBotTriggerDetect != nil {
+			q, err = module.OnBeforeBotTriggerDetect(Bot, m, q)
+			if err != nil {
+				Bot.HandleError(errors.New("OnBeforeMentionDetect error: " + err.Error() + " (" + q + ")"))
+			}
+		}
+	}
+
+	// If bot nick was changed on the server - it will have ! in it's mention, so we need to remove that in order
+	// for mention detection to work right.
+	if strings.HasPrefix(q, "<@!") {
+		q = strings.Replace(q, "<@!", "<@", 1)
+	}
+
+	// Make sure message starts with bot mention.
+	if strings.HasPrefix(strings.TrimSpace(q), Bot.Self.Mention()) {
+		// Remove bot trigger from the string.
+		q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Self.Mention()))
+	} else {
+		return nil
+	}
+
+	// Fill context with necessary data.
+	// Get Channel.
+	channel, err := Bot.ChannelFromMessage(m)
+	if err != nil {
+		Bot.HandleError(err)
+	}
+	// Save into context.
+	ctx = context.WithValue(ctx, CtxKey("channel"), channel)
+
+	// Get Guild.
+	guild, err := Bot.GuildFromMessage(m)
+	if err != nil {
+		Bot.HandleError(err)
+	}
+	// Save into context.
+	ctx = context.WithValue(ctx, CtxKey("guild"), guild)
+
+	// OnBeforeCommandSearch entry point for Modules.
+	for _, module := range Bot.Modules {
+		if module.OnBeforeCommandSearch != nil {
+			q, err = module.OnBeforeCommandSearch(Bot, m, q)
+			if err != nil {
+				Bot.HandleError(errors.New("OnBeforeCommandSearch error: " + err.Error() + " (" + q + ")"))
+			}
+		}
+	}
+
+	// Search for applicable command.
+	command, err = Bot.FindCommand(m, q)
+	if err != nil {
+		// Unhandled error in command.
+		Bot.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + q + ")"))
+		Bot.Shutdown()
+	}
+	if command != nil {
+		// Remove command trigger from message string.
+		q = strings.TrimSpace(strings.TrimPrefix(q, command.Path()))
+
+		// And execute command.
+		err = command.execute(ctx, q, Bot, m)
+		if err != nil {
+			if strings.Contains(err.Error(), "\"code\": 50013") {
+				// Insufficient permissions, bot configuration issue.
+				Bot.HandleError(errors.New("Bot permissions error: " + err.Error() + " (" + q + ")"))
+			} else {
+				// Other discord errors.
+				Bot.HandleError(errors.New("Bot command execute error: " + err.Error() + " (" + q + ")"))
+				Bot.Shutdown()
+			}
+		}
+		return nil
+	}
+
+	Bot.RespondCommandNotFound(m)
+
+	// Command not found.
 	return nil
 }
