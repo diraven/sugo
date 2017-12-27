@@ -13,11 +13,7 @@ func (p *tPermissionsStorage) get(sg *sugo.Instance, roleID string, commandPath 
 	var key string
 	key = roleID + ":" + commandPath
 	isAllowed, ok := p.Permissions[key]
-	if ok {
-		return isAllowed, true
-	} else {
-		return isAllowed, false
-	}
+	return isAllowed, ok
 }
 
 // set sets given permission status.

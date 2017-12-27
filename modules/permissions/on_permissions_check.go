@@ -49,7 +49,7 @@ func onPermissionsCheck(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message
 			return &passed, err // Just make sure we are safe and return false in case of any errors.
 		}
 		// Check if role is allowed to use the command.
-		isAllowed, exists := permissions.get(sg, c.Path(), role.ID)
+		isAllowed, exists := permissions.get(sg, role.ID, c.Path())
 
 		// If custom role setting exists and it's position less then the one we have already found (role that is higher
 		// takes precedence over the lower ones):
