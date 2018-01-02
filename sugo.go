@@ -195,8 +195,6 @@ func (sg *Instance) processMessage(m *discordgo.Message) error {
 		return nil
 	}
 
-	Bot.RespondCommandNotFound(m)
-
 	// Command not found.
 	return nil
 }
