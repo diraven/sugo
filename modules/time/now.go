@@ -4,7 +4,6 @@ import (
 	"github.com/diraven/sugo"
 	"time"
 	"github.com/bwmarrin/discordgo"
-	"context"
 )
 
 var cmdNow = &sugo.Command{
@@ -13,7 +12,7 @@ var cmdNow = &sugo.Command{
 	AllowDefaultChannel: true,
 	ParamsAllowed:       true,
 	Description:         "Checks what time is it in given timezone.",
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		// Get location.
 		loc, err := getLoc(sg, m, q)
 		if err != nil {

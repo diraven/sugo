@@ -3,15 +3,14 @@ package stats
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 	"strconv"
 )
 
 var rootCommand = &sugo.Command{
-	Trigger:     "stats",
-	Description: "Gives general server stats.",
+	Trigger:            "stats",
+	Description:        "Gives general server stats.",
 	PermittedByDefault: true,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		if _, err := sg.RespondNotImplemented(m); err != nil {
 			return err
 		}
@@ -20,15 +19,18 @@ var rootCommand = &sugo.Command{
 	},
 	SubCommands: []*sugo.Command{
 		{
-			Trigger:     "playing",
-			Description: "Shows stats about games played most.",
+			Trigger:            "playing",
+			Description:        "Shows stats about games played most.",
 			PermittedByDefault: true,
 			//Usage:         "http://example.com/rss/",
 			//ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var response string
 
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				gamesNames, err := stats.getMostPlayedGames(sg, guild.ID)
 				if err != nil {
@@ -47,15 +49,18 @@ var rootCommand = &sugo.Command{
 			},
 		},
 		{
-			Trigger:     "messaging",
-			Description: "Shows stats about most active users.",
+			Trigger:            "messaging",
+			Description:        "Shows stats about most active users.",
 			PermittedByDefault: true,
 			//Usage:         "http://example.com/rss/",
 			//ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var response string
 
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				users, err := stats.getMostMessagingUsers(sg, guild.ID)
 				if err != nil {

@@ -1,17 +1,13 @@
 package sugo
 
 import (
-	"context"
 	"errors"
 	"github.com/bwmarrin/discordgo"
 	"strings"
-	"time"
 )
 
 // Command struct describes basic command type.
 type Command struct {
-	// Timeout
-	Timeout time.Duration
 	// Trigger is a sequence of symbols message should start with to match with the command.
 	Trigger string
 	// RootOnly determines if the command is supposed to be used by root only.
@@ -32,12 +28,14 @@ type Command struct {
 	SubCommands []*Command
 	// HasParams specifies if command is allowed to have additional parameters after the command path itself.
 	ParamsAllowed bool
+	// DMAble specifies if command can be used via direct messages.
+	DMAble bool
 
 	// parentCommand contains command, which is parent for this one
 	parent *Command
 
 	// Custom execute code for subcommand.
-	Execute func(ctx context.Context, sg *Instance, c *Command, m *discordgo.Message, q string) error
+	Execute func(sg *Instance, c *Command, m *discordgo.Message, q string) error
 }
 
 // getSubcommandsTriggers return all subcommands triggers available for given user.
@@ -223,20 +221,13 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, er
 }
 
 // execute is a default command execution function.
-func (c *Command) execute(ctx context.Context, q string, sg *Instance, m *discordgo.Message) error {
+func (c *Command) execute(q string, sg *Instance, m *discordgo.Message) error {
 	var actionPerformed bool
-
-	// Set timeout to the context if requested by user.
-	if c.Timeout != 0 {
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, c.Timeout)
-		defer cancel()
-	}
 
 	if c.Execute != nil {
 		// Run custom command Execute if set.
 
-		if err := c.Execute(ctx, sg, c, m, q); err != nil {
+		if err := c.Execute(sg, c, m, q); err != nil {
 			return err
 		}
 		actionPerformed = true

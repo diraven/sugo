@@ -7,6 +7,9 @@ import (
 )
 
 func onBeforeBotTriggerDetect(sg *sugo.Instance, m *discordgo.Message, q string) (string, error) {
+	// Trigger detection only works in guild text channels, so we are safe to assume we are in guild channel at this
+	// point.
+
 	var err error
 
 	g, err := sg.GuildFromMessage(m)

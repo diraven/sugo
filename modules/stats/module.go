@@ -8,8 +8,8 @@ var stats = tStats{}
 
 // Module allows to manipulate rss posting settings.
 var Module = &sugo.Module{
-	Startup:     startup,
-	RootCommand: rootCommand,
+	Startup:          startup,
+	RootCommand:      rootCommand,
 	OnPresenceUpdate: onPresenceUpdate,
-	OnMessageCreate: onMessageCreate,
+	OnMessageCreate:  onMessageCreate,
 }

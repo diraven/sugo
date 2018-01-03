@@ -1,7 +1,6 @@
 package guild_wars2
 
 import (
-	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
@@ -22,7 +21,7 @@ var itemInfo = &sugo.Command{
 	Description:        "Provides urls to the websites containing given item info.",
 	Usage:              "Item Name",
 	ParamsAllowed:      true,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Make sure there is a query specified.

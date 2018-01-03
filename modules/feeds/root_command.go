@@ -3,13 +3,12 @@ package feeds
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 )
 
 var rootCommand = &sugo.Command{
 	Trigger:     "feeds",
 	Description: "Allows to manipulate feeds.",
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		embed := &discordgo.MessageEmbed{
@@ -30,7 +29,7 @@ var rootCommand = &sugo.Command{
 			Description:   "Adds new feed.",
 			Usage:         "http://example.com/rss/",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
 				// Validate feed url.
@@ -52,7 +51,7 @@ var rootCommand = &sugo.Command{
 			Description:   "Deletes specified feed.",
 			Usage:         "http://example.com/rss",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
 				if err = feeds.del(sg, m.ChannelID, q); err != nil {

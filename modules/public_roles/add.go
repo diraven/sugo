@@ -1,7 +1,6 @@
 package public_roles
 
 import (
-	"context"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"strings"
@@ -12,7 +11,7 @@ var addCmd = &sugo.Command{
 	Description:   "Makes existing role public.",
 	Usage:         "role_name_or_id",
 	ParamsAllowed: true,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Make sure query is not empty.

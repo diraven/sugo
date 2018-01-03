@@ -3,7 +3,6 @@ package triggers
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 	"strings"
 )
 
@@ -11,9 +10,12 @@ var rootCommand = &sugo.Command{
 	Trigger:     "trigger",
 	RootOnly:    true,
 	Description: "Allows to manipulate bot trigger for the guild.",
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		// Get guild.
-		guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+		guild, err := sg.GuildFromMessage(m)
+		if err != nil {
+			return err
+		}
 
 		// Get current trigger.
 		trigger := triggers.get(sg, guild.ID)
@@ -35,9 +37,12 @@ var rootCommand = &sugo.Command{
 			Description:   "Sets bot trigger to the given value.",
 			Usage:         "!",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				// Get guild.
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				// Make sure prefix does not start with < as it might cause problems with mention-based triggers.
 				if strings.HasPrefix(q, "<") {
@@ -64,9 +69,12 @@ var rootCommand = &sugo.Command{
 			Description: "Sets trigger to default value (bot mention).",
 			//Usage:         "",
 			//ParamsAllowed: false,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				// Get guild.
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				// Set our trigger.
 				if err := triggers.setDefault(sg, guild.ID); err != nil {

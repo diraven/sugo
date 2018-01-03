@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
-	"context"
 	"errors"
 )
 
@@ -34,9 +33,6 @@ type Instance struct {
 	// triggers contains all the top level triggers for commands.
 	triggers []string
 }
-
-// Context keys.
-type CtxKey string
 
 // Bot contains bot instance.
 var Bot = &Instance{}
@@ -99,10 +95,15 @@ func (sg *Instance) HandleError(e error) error {
 
 // processMessage processes given message.
 func (sg *Instance) processMessage(m *discordgo.Message) error {
-	var err error                  // Used to capture and report errors.
-	var ctx = context.Background() // Root context.
-	var command *Command           // Used to store the command we will execute.
-	var q = m.Content              // Command query string.
+	var err error        // Used to capture and report errors.
+	var command *Command // Used to store the command we will execute.
+	var q = m.Content    // Command query string.
+
+	// Get Channel.
+	channel, err := Bot.ChannelFromMessage(m)
+	if err != nil {
+		Bot.HandleError(err)
+	}
 
 	// OnMessageCreate entry point for Modules.
 	for _, module := range Bot.Modules {
@@ -113,51 +114,46 @@ func (sg *Instance) processMessage(m *discordgo.Message) error {
 		}
 	}
 
-	// Make sure message author is not a bot.
+	// Ignore any message that is coming from bot.
 	if m.Author.Bot {
 		return nil
 	}
 
-	// OnBeforeBotTriggerDetect entry point for Modules.
-	for _, module := range Bot.Modules {
-		if module.OnBeforeBotTriggerDetect != nil {
-			q, err = module.OnBeforeBotTriggerDetect(Bot, m, q)
-			if err != nil {
-				Bot.HandleError(errors.New("OnBeforeMentionDetect error: " + err.Error() + " (" + q + ")"))
+	if channel.Type == discordgo.ChannelTypeDM {
+		// It's Direct Messaging channel. Every message here is in fact a direct message to the bot, so we consider
+		// it to be command without further checks.
+
+	}
+
+	if channel.Type == discordgo.ChannelTypeGuildText || channel.Type == discordgo.ChannelTypeGroupDM {
+		// It's either Guild Text channel or multiple people direct group channel.
+		// In order to detect command we need to account for trigger.
+
+		// OnBeforeBotTriggerDetect entry point for Modules.
+		for _, module := range Bot.Modules {
+			if module.OnBeforeBotTriggerDetect != nil {
+				q, err = module.OnBeforeBotTriggerDetect(Bot, m, q)
+				if err != nil {
+					Bot.HandleError(errors.New("OnBeforeMentionDetect error: " + err.Error() + " (" + q + ")"))
+				}
 			}
 		}
-	}
 
-	// If bot nick was changed on the server - it will have ! in it's mention, so we need to remove that in order
-	// for mention detection to work right.
-	if strings.HasPrefix(q, "<@!") {
-		q = strings.Replace(q, "<@!", "<@", 1)
-	}
+		// If bot nick was changed on the server - it will have ! in it's mention, so we need to remove that in order
+		// for mention detection to work right.
+		if strings.HasPrefix(q, "<@!") {
+			q = strings.Replace(q, "<@!", "<@", 1)
+		}
 
-	// Make sure message starts with bot mention.
-	if strings.HasPrefix(strings.TrimSpace(q), Bot.Self.Mention()) {
-		// Remove bot trigger from the string.
-		q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Self.Mention()))
-	} else {
-		return nil
-	}
+		// Make sure message starts with bot mention.
+		if strings.HasPrefix(strings.TrimSpace(q), Bot.Self.Mention()) {
+			// Remove bot trigger from the string.
+			q = strings.TrimSpace(strings.TrimPrefix(q, Bot.Self.Mention()))
+		} else {
+			return nil
+		}
 
-	// Fill context with necessary data.
-	// Get Channel.
-	channel, err := Bot.ChannelFromMessage(m)
-	if err != nil {
-		Bot.HandleError(err)
 	}
-	// Save into context.
-	ctx = context.WithValue(ctx, CtxKey("channel"), channel)
-
-	// Get Guild.
-	guild, err := Bot.GuildFromMessage(m)
-	if err != nil {
-		Bot.HandleError(err)
-	}
-	// Save into context.
-	ctx = context.WithValue(ctx, CtxKey("guild"), guild)
 
 	// OnBeforeCommandSearch entry point for Modules.
 	for _, module := range Bot.Modules {
@@ -176,12 +172,22 @@ func (sg *Instance) processMessage(m *discordgo.Message) error {
 		Bot.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + q + ")"))
 		Bot.Shutdown()
 	}
+
 	if command != nil {
 		// Remove command trigger from message string.
 		q = strings.TrimSpace(strings.TrimPrefix(q, command.Path()))
 
+		log.Println(command.DMAble)
+		log.Println(channel.Type)
+		log.Println(discordgo.ChannelTypeGuildText)
+
+		// Make sure command is possible to execute (i.e. it supports DM if channel is of DM type).
+		if !command.DMAble && channel.Type != discordgo.ChannelTypeGuildText {
+			return nil
+		}
+
 		// And execute command.
-		err = command.execute(ctx, q, Bot, m)
+		err = command.execute(q, Bot, m)
 		if err != nil {
 			if strings.Contains(err.Error(), "\"code\": 50013") {
 				// Insufficient permissions, bot configuration issue.

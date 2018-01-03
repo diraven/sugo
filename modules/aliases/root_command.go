@@ -3,7 +3,6 @@ package aliases
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 	"strings"
 )
 
@@ -11,7 +10,7 @@ var rootCommand = &sugo.Command{
 	Trigger:     "aliases",
 	RootOnly:    true,
 	Description: "Allows to manipulate aliases. Lists all aliases.",
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		guild, err := sg.GuildFromMessage(m)
 		if err != nil {
 			return err
@@ -36,7 +35,7 @@ var rootCommand = &sugo.Command{
 			Description:   "Adds new or updates existent alias.",
 			Usage:         "some_alias -> command [subcommand ...]",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				ss := strings.Split(q, "->")
 				if len(ss) < 2 {
 					_, err := sg.RespondBadCommandUsage(m, c, "", "")
@@ -55,7 +54,10 @@ var rootCommand = &sugo.Command{
 					return err
 				}
 
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				aliases.set(sg, guild, alias, commandPath)
 				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
@@ -70,8 +72,12 @@ var rootCommand = &sugo.Command{
 			Description:   "Deletes specified alias.",
 			Usage:         "some_alias",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
+
 				alias := aliases.get(sg, guild, q)
 
 				if alias == "" {
@@ -92,8 +98,11 @@ var rootCommand = &sugo.Command{
 			Description:   "Swaps specified shortcuts.",
 			Usage:         "1 2",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				ss := strings.Split(q, " ")
 				if len(ss) < 2 {

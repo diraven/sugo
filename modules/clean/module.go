@@ -7,7 +7,6 @@ import (
 	"strings"
 	"strconv"
 	"github.com/diraven/sugo/helpers"
-	"context"
 )
 
 var Module = &sugo.Module{
@@ -17,7 +16,7 @@ var Module = &sugo.Module{
 		ParamsAllowed:       true,
 		Description:         "Removes last n messages, or last n messages of the given @user (if specified) (100 max).",
 		Usage:               "[@user] [messages_count]",
-		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			// Command has to have 1 or 2 parameters.
 			ss := strings.Split(q, " ")
 

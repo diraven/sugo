@@ -3,7 +3,6 @@ package test
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 )
 
 // Test is just a testing command
@@ -46,7 +45,7 @@ var Module = &sugo.Module{
 				Trigger:            "responses",
 				PermittedByDefault: true,
 				Description:        "subTest2 command.",
-				Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+				Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 					if _, err := sg.Respond(m, "", "default", sugo.ColorPrimary, ""); err != nil {
 						return err
 					}

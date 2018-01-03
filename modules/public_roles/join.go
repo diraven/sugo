@@ -1,7 +1,6 @@
 package public_roles
 
 import (
-	"context"
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
 )
@@ -12,7 +11,7 @@ var joinCmd = &sugo.Command{
 	Usage:              "role_name_or_id",
 	PermittedByDefault: true,
 	ParamsAllowed:      true,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Make sure request is not empty.

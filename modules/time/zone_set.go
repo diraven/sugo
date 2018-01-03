@@ -3,7 +3,6 @@ package time
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 )
 
 var cmdZoneSet = &sugo.Command{
@@ -12,7 +11,7 @@ var cmdZoneSet = &sugo.Command{
 	AllowDefaultChannel: true,
 	ParamsAllowed:       true,
 	Description:         "Sets user timezone.",
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		// Make sure query is provided.
 		if q == "" {
 			if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
@@ -45,7 +44,7 @@ var cmdZoneSet = &sugo.Command{
 			ParamsAllowed:       true,
 			RootOnly:            true,
 			Description:         "Sets guild timezone.",
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				// Make sure query is provided.
 				if q == "" {
 					if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
@@ -60,7 +59,10 @@ var cmdZoneSet = &sugo.Command{
 				}
 
 				// Get guild.
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				// Save value.
 				if err := timezones.set(sg, guild.ID, q); err != nil {

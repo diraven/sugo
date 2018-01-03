@@ -4,7 +4,6 @@ import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
 	"time"
-	"context"
 	"log"
 )
 
@@ -15,7 +14,7 @@ var rootCommand = &sugo.Command{
 	ParamsAllowed:       true,
 	Description:         "Time-related tools.",
 	//Usage:               defaultFormat,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		_, err = sg.RespondBadCommandUsage(m, c, "", "")

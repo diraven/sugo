@@ -1,7 +1,6 @@
 package help
 
 import (
-	"context"
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"github.com/diraven/sugo"
@@ -45,7 +44,7 @@ var Module = &sugo.Module{
 		Description:        "Shows help section for the appropriate command.",
 		Usage:              "some_command",
 		ParamsAllowed:      true,
-		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
 
 			// Remove help command from the string

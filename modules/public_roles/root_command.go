@@ -3,7 +3,6 @@ package public_roles
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 )
 
 var rootCommand = &sugo.Command{
@@ -11,7 +10,7 @@ var rootCommand = &sugo.Command{
 	Description:        "Allows to manipulate public roles.",
 	PermittedByDefault: true,
 	ParamsAllowed:      true,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		// Try to find role based on query.
 		roles, err := publicRoles.findGuildPublicRole(sg, m, q)
 

@@ -9,6 +9,17 @@ func onPermissionsCheck(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message
 	var err error
 	var passed bool // the conclusion about if command is allowed
 
+	// Get channel.
+	channel, err := sg.ChannelFromMessage(m)
+	if err != nil {
+		return nil, err
+	}
+
+	// We only work with guild text channels and ignore everything else.
+	if channel.Type != discordgo.ChannelTypeGuildText {
+		return nil, nil
+	}
+
 	// Get guild.
 	guild, err := sg.GuildFromMessage(m)
 

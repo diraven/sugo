@@ -1,7 +1,6 @@
 package greet
 
 import (
-	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
@@ -14,7 +13,7 @@ var Module = &sugo.Module{
 	RootCommand: &sugo.Command{
 		Trigger:            "", // Command with no trigger will be applied if message consists from bot mention only.
 		PermittedByDefault: true,
-		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
 
 			_, err = sg.RespondInfo(m, "", "Hi! My name is "+

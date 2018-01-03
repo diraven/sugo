@@ -1,7 +1,6 @@
 package info
 
 import (
-	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
@@ -19,7 +18,7 @@ var Module = &sugo.Module{
 		PermittedByDefault:  true,
 		AllowDefaultChannel: true,
 		Description:         "Shows basic info about bot.",
-		Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
 
 			// Set command response.

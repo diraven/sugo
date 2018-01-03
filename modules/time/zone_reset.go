@@ -3,7 +3,6 @@ package time
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 )
 
 var cmdZoneReset = &sugo.Command{
@@ -11,7 +10,7 @@ var cmdZoneReset = &sugo.Command{
 	PermittedByDefault:  true,
 	AllowDefaultChannel: true,
 	Description:         "Resets user timezone.",
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		// Reset value.
 		if err := timezones.reset(sg, m.Author.ID); err != nil {
 			return err
@@ -30,9 +29,12 @@ var cmdZoneReset = &sugo.Command{
 			AllowDefaultChannel: true,
 			RootOnly:            true,
 			Description:         "Resets guild timezone.",
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				// Get guild.
-				guild := ctx.Value(sugo.CtxKey("guild")).(*discordgo.Guild)
+				guild, err := sg.GuildFromMessage(m)
+				if err != nil {
+					return err
+				}
 
 				// Save value.
 				if err := timezones.reset(sg, guild.ID); err != nil {

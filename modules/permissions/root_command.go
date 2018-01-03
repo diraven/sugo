@@ -3,7 +3,6 @@ package permissions
 import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
-	"context"
 )
 
 var rootCommand = &sugo.Command{
@@ -16,7 +15,7 @@ var rootCommand = &sugo.Command{
 			Description:   "Allows specific command usage for specific role.",
 			Usage:         "@role command [subcommand ...]",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
 				// Try to find role.
@@ -51,7 +50,7 @@ var rootCommand = &sugo.Command{
 			Description:   "Denies specific command usage for specific role.",
 			Usage:         "@role command [subcommand ...]",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
 				// Try to find role.
@@ -78,7 +77,7 @@ var rootCommand = &sugo.Command{
 			Description:   "Sets permissions for specific command usage by role to default.",
 			Usage:         "@role command [subcommand ...]",
 			ParamsAllowed: true,
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
 				// Try to find role.
@@ -103,7 +102,7 @@ var rootCommand = &sugo.Command{
 		{
 			Trigger:     "roles",
 			Description: "Shows all server roles with their IDs.",
-			Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
 				// Get guild.

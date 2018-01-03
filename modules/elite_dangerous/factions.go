@@ -23,13 +23,12 @@ func (e timeoutError) Error() string {
 
 // System returns info about given system.
 var factions = &sugo.Command{
-	Timeout:            5 * time.Second,
 	Trigger:            "factions",
 	PermittedByDefault: true,
 	Description:        "Provides minor factions info on the given system.",
 	Usage:              "Solar System Name",
 	ParamsAllowed:      true,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Make sure there is a query specified.
@@ -37,6 +36,11 @@ var factions = &sugo.Command{
 			_, err = sg.RespondBadCommandUsage(m, c, "", "")
 			return err
 		}
+
+		// Create context with timeout.
+		var ctx = context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
 
 		// Get system ID by searching with query q.
 		var systemID int

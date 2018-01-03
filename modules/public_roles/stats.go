@@ -1,7 +1,6 @@
 package public_roles
 
 import (
-	"context"
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"sort"
@@ -40,7 +39,7 @@ var statsCmd = &sugo.Command{
 	Usage:              "top/bottom",
 	PermittedByDefault: true,
 	ParamsAllowed:      true,
-	Execute: func(ctx context.Context, sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
 		// Get a guild.

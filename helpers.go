@@ -24,5 +24,3 @@ func (sg *Instance) MemberFromMessage(m *discordgo.Message) (*discordgo.Member, 
 	}
 	return sg.State.Member(g.ID, m.Author.ID)
 }
-
-
