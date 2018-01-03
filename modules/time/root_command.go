@@ -4,7 +4,6 @@ import (
 	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
 	"time"
-	"log"
 )
 
 var rootCommand = &sugo.Command{
