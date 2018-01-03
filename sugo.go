@@ -177,10 +177,6 @@ func (sg *Instance) processMessage(m *discordgo.Message) error {
 		// Remove command trigger from message string.
 		q = strings.TrimSpace(strings.TrimPrefix(q, command.Path()))
 
-		log.Println(command.DMAble)
-		log.Println(channel.Type)
-		log.Println(discordgo.ChannelTypeGuildText)
-
 		// Make sure command is possible to execute (i.e. it supports DM if channel is of DM type).
 		if !command.DMAble && channel.Type != discordgo.ChannelTypeGuildText {
 			return nil
