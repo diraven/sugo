@@ -9,7 +9,7 @@ import (
 type tStats struct{}
 
 // logPlaying logs user status update and game he/she played if any.
-func (s *tStats) logPlaying(sg *sugo.Instance, guildID string, userID string, theType int, game string) error {
+func (s *tStats) logPlaying(sg *sugo.Instance, guildID string, userID string, gameType discordgo.GameType, game string) error {
 	// Add new feed.
 	_, err := sg.DB.Exec(`
 		INSERT OR REPLACE INTO stats_playing (
@@ -17,7 +17,7 @@ func (s *tStats) logPlaying(sg *sugo.Instance, guildID string, userID string, th
 		) VALUES (
 			?, ?, ?, ?, ?
 		);
-	`, guildID, userID, theType, game, time.Now().Format("2006-01-02"))
+	`, guildID, userID, int(gameType), game, time.Now().Format("2006-01-02"))
 
 	if err != nil {
 		return err
