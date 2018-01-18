@@ -1,8 +1,8 @@
 package triggers
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 	"strings"
 )
 
@@ -33,10 +33,10 @@ var rootCommand = &sugo.Command{
 	},
 	SubCommands: []*sugo.Command{
 		{
-			Trigger:       "set",
-			Description:   "Sets bot trigger to the given value.",
-			Usage:         "!",
-			ParamsAllowed: true,
+			Trigger:     "set",
+			Description: "Sets bot trigger to the given value.",
+			Usage:       "!",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				// Get guild.
 				guild, err := sg.GuildFromMessage(m)
@@ -68,7 +68,7 @@ var rootCommand = &sugo.Command{
 			Trigger:     "default",
 			Description: "Sets trigger to default value (bot mention).",
 			//Usage:         "",
-			//ParamsAllowed: false,
+			//AllowParams: false,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				// Get guild.
 				guild, err := sg.GuildFromMessage(m)

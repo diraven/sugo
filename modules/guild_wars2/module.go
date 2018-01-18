@@ -1,4 +1,4 @@
-package guild_wars2
+package GuildWars2
 
 import (
 	"github.com/diraven/sugo"

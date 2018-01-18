@@ -2,13 +2,13 @@
 package sugo
 
 import (
+	"database/sql"
+	"errors"
+	"github.com/bwmarrin/discordgo"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
-	"github.com/bwmarrin/discordgo"
-	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 	"strings"
-	"errors"
 )
 
 // VERSION contains current version of the Sugo framework.
@@ -178,7 +178,7 @@ func (sg *Instance) processMessage(m *discordgo.Message) error {
 		q = strings.TrimSpace(strings.TrimPrefix(q, command.Path()))
 
 		// Make sure command is possible to execute (i.e. it supports DM if channel is of DM type).
-		if !command.DMAble && channel.Type != discordgo.ChannelTypeGuildText {
+		if !command.AllowDM && channel.Type != discordgo.ChannelTypeGuildText {
 			return nil
 		}
 

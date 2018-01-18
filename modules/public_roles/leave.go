@@ -10,7 +10,7 @@ var leaveCmd = &sugo.Command{
 	Description:        "Removes person to the public role.",
 	Usage:              "role_name_or_id",
 	PermittedByDefault: true,
-	ParamsAllowed:      true,
+	AllowParams:        true,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 

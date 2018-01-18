@@ -1,4 +1,4 @@
-package guild_wars2
+package GuildWars2
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ var itemInfo = &sugo.Command{
 	PermittedByDefault: true,
 	Description:        "Provides urls to the websites containing given item info.",
 	Usage:              "Item Name",
-	ParamsAllowed:      true,
+	AllowParams:        true,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 

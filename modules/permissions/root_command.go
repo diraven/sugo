@@ -1,8 +1,8 @@
 package permissions
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 )
 
 var rootCommand = &sugo.Command{
@@ -11,10 +11,10 @@ var rootCommand = &sugo.Command{
 	Description: "Allows to manipulate custom command permissions.",
 	SubCommands: []*sugo.Command{
 		{
-			Trigger:       "allow",
-			Description:   "Allows specific command usage for specific role.",
-			Usage:         "@role command [subcommand ...]",
-			ParamsAllowed: true,
+			Trigger:     "allow",
+			Description: "Allows specific command usage for specific role.",
+			Usage:       "@role command [subcommand ...]",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
@@ -46,10 +46,10 @@ var rootCommand = &sugo.Command{
 			},
 		},
 		{
-			Trigger:       "deny",
-			Description:   "Denies specific command usage for specific role.",
-			Usage:         "@role command [subcommand ...]",
-			ParamsAllowed: true,
+			Trigger:     "deny",
+			Description: "Denies specific command usage for specific role.",
+			Usage:       "@role command [subcommand ...]",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
@@ -73,10 +73,10 @@ var rootCommand = &sugo.Command{
 			},
 		},
 		{
-			Trigger:       "default",
-			Description:   "Sets permissions for specific command usage by role to default.",
-			Usage:         "@role command [subcommand ...]",
-			ParamsAllowed: true,
+			Trigger:     "default",
+			Description: "Sets permissions for specific command usage by role to default.",
+			Usage:       "@role command [subcommand ...]",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 

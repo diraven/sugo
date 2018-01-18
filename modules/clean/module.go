@@ -1,19 +1,19 @@
 package clean
 
 import (
-	"github.com/diraven/sugo"
-	"time"
 	"github.com/bwmarrin/discordgo"
-	"strings"
-	"strconv"
+	"github.com/diraven/sugo"
 	"github.com/diraven/sugo/helpers"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var Module = &sugo.Module{
 	RootCommand: &sugo.Command{
 		Trigger:             "clean",
 		AllowDefaultChannel: true,
-		ParamsAllowed:       true,
+		AllowParams:         true,
 		Description:         "Removes last n messages, or last n messages of the given @user (if specified) (100 max).",
 		Usage:               "[@user] [messages_count]",
 		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
@@ -53,7 +53,7 @@ var Module = &sugo.Module{
 				// Try to get count of messages to delete.
 				var err error
 				count, err = strconv.Atoi(ss[0]) // Try first argument.
-				if err != nil { // If first argument did not work.
+				if err != nil {                  // If first argument did not work.
 					count, err = strconv.Atoi(ss[1]) // Try second one.
 					if err != nil {
 						if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {

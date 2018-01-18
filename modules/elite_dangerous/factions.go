@@ -27,7 +27,7 @@ var factions = &sugo.Command{
 	PermittedByDefault: true,
 	Description:        "Provides minor factions info on the given system.",
 	Usage:              "Solar System Name",
-	ParamsAllowed:      true,
+	AllowParams:        true,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 

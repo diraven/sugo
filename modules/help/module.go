@@ -1,10 +1,10 @@
 package help
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"strings"
-	"github.com/diraven/sugo"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
+	"strings"
 )
 
 func generateHelpEmbed(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message) (*discordgo.MessageEmbed, error) {
@@ -43,7 +43,7 @@ var Module = &sugo.Module{
 		PermittedByDefault: true,
 		Description:        "Shows help section for the appropriate command.",
 		Usage:              "some_command",
-		ParamsAllowed:      true,
+		AllowParams:        true,
 		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 			var err error
 

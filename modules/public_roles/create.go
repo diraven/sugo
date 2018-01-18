@@ -7,10 +7,10 @@ import (
 )
 
 var createCmd = &sugo.Command{
-	Trigger:       "create",
-	Description:   "Creates new role on server and makes it public.",
-	Usage:         "role_name",
-	ParamsAllowed: true,
+	Trigger:     "create",
+	Description: "Creates new role on server and makes it public.",
+	Usage:       "role_name",
+	AllowParams: true,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 

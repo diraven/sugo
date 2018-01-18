@@ -27,9 +27,9 @@ type Command struct {
 	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
 	// HasParams specifies if command is allowed to have additional parameters after the command path itself.
-	ParamsAllowed bool
-	// DMAble specifies if command can be used via direct messages.
-	DMAble bool
+	AllowParams bool
+	// AllowDM specifies if command can be used via direct messages.
+	AllowDM bool
 
 	// parentCommand contains command, which is parent for this one
 	parent *Command
@@ -159,7 +159,7 @@ func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (*Command
 
 	// Either there are no subcommands, or none of those worked. Return parent command, but only if it has no params
 	// or params allowed.
-	if c.ParamsAllowed || q == "" {
+	if c.AllowParams || q == "" {
 		return c, nil
 	}
 

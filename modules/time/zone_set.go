@@ -1,15 +1,15 @@
 package time
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 )
 
 var cmdZoneSet = &sugo.Command{
 	Trigger:             "set",
 	PermittedByDefault:  true,
 	AllowDefaultChannel: true,
-	ParamsAllowed:       true,
+	AllowParams:         true,
 	Description:         "Sets user timezone.",
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		// Make sure query is provided.
@@ -41,7 +41,7 @@ var cmdZoneSet = &sugo.Command{
 		{
 			Trigger:             "guild",
 			AllowDefaultChannel: true,
-			ParamsAllowed:       true,
+			AllowParams:         true,
 			RootOnly:            true,
 			Description:         "Sets guild timezone.",
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {

@@ -1,8 +1,8 @@
 package feeds
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 )
 
 var rootCommand = &sugo.Command{
@@ -25,10 +25,10 @@ var rootCommand = &sugo.Command{
 	},
 	SubCommands: []*sugo.Command{
 		{
-			Trigger:       "add",
-			Description:   "Adds new feed.",
-			Usage:         "http://example.com/rss/",
-			ParamsAllowed: true,
+			Trigger:     "add",
+			Description: "Adds new feed.",
+			Usage:       "http://example.com/rss/",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 
@@ -47,10 +47,10 @@ var rootCommand = &sugo.Command{
 			},
 		},
 		{
-			Trigger:       "del",
-			Description:   "Deletes specified feed.",
-			Usage:         "http://example.com/rss",
-			ParamsAllowed: true,
+			Trigger:     "del",
+			Description: "Deletes specified feed.",
+			Usage:       "http://example.com/rss",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var err error
 

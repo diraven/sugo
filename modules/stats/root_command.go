@@ -1,8 +1,8 @@
 package stats
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 	"strconv"
 )
 
@@ -23,7 +23,7 @@ var rootCommand = &sugo.Command{
 			Description:        "Shows stats about games played most.",
 			PermittedByDefault: true,
 			//Usage:         "http://example.com/rss/",
-			//ParamsAllowed: true,
+			//AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var response string
 
@@ -53,7 +53,7 @@ var rootCommand = &sugo.Command{
 			Description:        "Shows stats about most active users.",
 			PermittedByDefault: true,
 			//Usage:         "http://example.com/rss/",
-			//ParamsAllowed: true,
+			//AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				var response string
 

@@ -9,7 +9,7 @@ var whoCmd = &sugo.Command{
 	Trigger:            "who",
 	Description:        "Lists people that have public role specified.",
 	PermittedByDefault: true,
-	ParamsAllowed:      true,
+	AllowParams:        true,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 

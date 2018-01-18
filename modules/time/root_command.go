@@ -1,8 +1,8 @@
 package time
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 	"time"
 )
 
@@ -10,7 +10,7 @@ var rootCommand = &sugo.Command{
 	Trigger:             "time",
 	PermittedByDefault:  true,
 	AllowDefaultChannel: true,
-	ParamsAllowed:       true,
+	AllowParams:         true,
 	Description:         "Time-related tools.",
 	//Usage:               defaultFormat,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {

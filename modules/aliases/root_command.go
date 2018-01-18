@@ -1,8 +1,8 @@
 package aliases
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 	"strings"
 )
 
@@ -31,10 +31,10 @@ var rootCommand = &sugo.Command{
 	},
 	SubCommands: []*sugo.Command{
 		{
-			Trigger:       "set",
-			Description:   "Adds new or updates existent alias.",
-			Usage:         "some_alias -> command [subcommand ...]",
-			ParamsAllowed: true,
+			Trigger:     "set",
+			Description: "Adds new or updates existent alias.",
+			Usage:       "some_alias -> command [subcommand ...]",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				ss := strings.Split(q, "->")
 				if len(ss) < 2 {
@@ -68,10 +68,10 @@ var rootCommand = &sugo.Command{
 			},
 		},
 		{
-			Trigger:       "del",
-			Description:   "Deletes specified alias.",
-			Usage:         "some_alias",
-			ParamsAllowed: true,
+			Trigger:     "del",
+			Description: "Deletes specified alias.",
+			Usage:       "some_alias",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				guild, err := sg.GuildFromMessage(m)
 				if err != nil {
@@ -94,10 +94,10 @@ var rootCommand = &sugo.Command{
 			},
 		},
 		{
-			Trigger:       "swap",
-			Description:   "Swaps specified shortcuts.",
-			Usage:         "1 2",
-			ParamsAllowed: true,
+			Trigger:     "swap",
+			Description: "Swaps specified shortcuts.",
+			Usage:       "1 2",
+			AllowParams: true,
 			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 				guild, err := sg.GuildFromMessage(m)
 				if err != nil {

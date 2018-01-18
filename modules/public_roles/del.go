@@ -6,10 +6,10 @@ import (
 )
 
 var delCmd = &sugo.Command{
-	Trigger:       "del",
-	Description:   "Makes given role not public (does not delete the role itself).",
-	Usage:         "role_name_or_id",
-	ParamsAllowed: true,
+	Trigger:     "del",
+	Description: "Makes given role not public (does not delete the role itself).",
+	Usage:       "role_name_or_id",
+	AllowParams: true,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 

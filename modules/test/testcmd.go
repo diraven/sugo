@@ -1,8 +1,8 @@
 package test
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 )
 
 // Test is just a testing command
@@ -37,7 +37,7 @@ var Module = &sugo.Module{
 			{
 				Trigger:            "test2",
 				PermittedByDefault: true,
-				ParamsAllowed:      true,
+				AllowParams:        true,
 				Description:        "subTest2 command.",
 				TextResponse:       "subTest2 passed.",
 			},

@@ -38,7 +38,7 @@ var statsCmd = &sugo.Command{
 	Description:        "Lists public roles with the highest/lowest count of people.",
 	Usage:              "top/bottom",
 	PermittedByDefault: true,
-	ParamsAllowed:      true,
+	AllowParams:        true,
 	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
 		var err error
 
