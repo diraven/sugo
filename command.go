@@ -38,7 +38,7 @@ type Command struct {
 	Execute func(sg *Instance, c *Command, m *discordgo.Message, q string) error
 }
 
-// getSubcommandsTriggers return all subcommands triggers available for given user.
+// GetSubcommandsTriggers return all subcommands triggers available for given user.
 func (c *Command) GetSubcommandsTriggers(sg *Instance, m *discordgo.Message) ([]string, error) {
 	var triggers []string
 
@@ -98,6 +98,7 @@ func (c *Command) Path() (value string) {
 	return c.Trigger
 }
 
+// FullHelpPath returns full help path including "help" command trigger.
 func (c *Command) FullHelpPath(sg *Instance) (value string) {
 	return "help " + c.Path()
 }
