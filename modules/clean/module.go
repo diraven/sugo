@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Module to handle messages cleanup from the channel.
 var Module = &sugo.Module{
 	RootCommand: &sugo.Command{
 		Trigger:             "clean",
@@ -16,9 +17,9 @@ var Module = &sugo.Module{
 		AllowParams:         true,
 		Description:         "Removes last n messages, or last n messages of the given @user (if specified) (100 max).",
 		Usage:               "[@user] [messages_count]",
-		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+		Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 			// Command has to have 1 or 2 parameters.
-			ss := strings.Split(q, " ")
+			ss := strings.Split(req.Query, " ")
 
 			var batchSize = 100  // Amount of messages to get in one go.
 			var maxCount = 100   // Maximum amount of messages deleted.
@@ -31,9 +32,9 @@ var Module = &sugo.Module{
 					break
 				}
 
-				if len(m.Mentions) > 0 { // Get user mention if available.
+				if len(req.Message.Mentions) > 0 { // Get user mention if available.
 					// Get user id.
-					userID = m.Mentions[0].ID
+					userID = req.Message.Mentions[0].ID
 				} else { // Get amount of messages to delete.
 					var err error
 					count, err = strconv.Atoi(ss[0]) // Try to parse count.
@@ -43,12 +44,12 @@ var Module = &sugo.Module{
 				}
 				break
 			case 2: // Means we've got both user mention and amount of messages to delete.
-				if len(m.Mentions) == 0 { // Query must have mention.
-					if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
+				if len(req.Message.Mentions) == 0 { // Query must have mention.
+					if _, err := sg.RespondBadCommandUsage(req, "", ""); err != nil {
 						return err
 					}
 				}
-				userID = m.Mentions[0].ID
+				userID = req.Message.Mentions[0].ID
 
 				// Try to get count of messages to delete.
 				var err error
@@ -56,14 +57,14 @@ var Module = &sugo.Module{
 				if err != nil {                  // If first argument did not work.
 					count, err = strconv.Atoi(ss[1]) // Try second one.
 					if err != nil {
-						if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
+						if _, err := sg.RespondBadCommandUsage(req, "", ""); err != nil {
 							return err
 						}
 					}
 				}
 				break
 			default:
-				if _, err := sg.RespondBadCommandUsage(m, c, "", ""); err != nil {
+				if _, err := sg.RespondBadCommandUsage(req, "", ""); err != nil {
 					return err
 				}
 				return nil
@@ -71,12 +72,12 @@ var Module = &sugo.Module{
 
 			// Validate count.
 			if count > maxCount {
-				if _, err := sg.RespondBadCommandUsage(m, c, "", "max messages count I can delete is "+strconv.Itoa(maxCount)); err != nil {
+				if _, err := sg.RespondBadCommandUsage(req, "", "max messages count I can delete is "+strconv.Itoa(maxCount)); err != nil {
 					return err
 				}
 			}
 
-			lastMessageID := m.ID                // To store last message id.
+			lastMessageID := req.Message.ID      // To store last message id.
 			var tmpMessages []*discordgo.Message // To store 100 current messages that are being scanned.
 			var messageIDs []string              // Resulting slice of messages to  be deleted.
 			limit := batchSize                   // Default limit per batch.
@@ -90,10 +91,9 @@ var Module = &sugo.Module{
 			for {
 				// Get next 100 messages.
 				var err error
-				tmpMessages, err = sg.ChannelMessages(m.ChannelID, limit, lastMessageID, "", "")
+				tmpMessages, err = sg.ChannelMessages(req.Channel.ID, limit, lastMessageID, "", "")
 				if err != nil {
 					return err
-					break messageLoop
 				}
 
 				// For each message.
@@ -107,7 +107,7 @@ var Module = &sugo.Module{
 
 					if time.Since(then).Hours() >= 24*14 {
 						// We are unable to delete messages older then 14 days.
-						_, err = sg.RespondDanger(m, "", "unable to delete messages older then 2 weeks")
+						_, err = sg.RespondDanger(req, "", "unable to delete messages older then 2 weeks")
 						if err != nil {
 							return err
 						}
@@ -141,13 +141,13 @@ var Module = &sugo.Module{
 			}
 
 			// Delete command itself. Ignore errors (such as message already deleted by someone) for now.
-			_ = sg.ChannelMessageDelete(m.ChannelID, m.ID)
+			_ = sg.ChannelMessageDelete(req.Channel.ID, req.Message.ID)
 
 			// Perform selected messages deletion. Ignore errors (such as message already deleted by someone) for now.
-			_ = sg.ChannelMessagesBulkDelete(m.ChannelID, messageIDs)
+			_ = sg.ChannelMessagesBulkDelete(req.Channel.ID, messageIDs)
 
 			// Notify user about deletion.
-			msg, err := sg.RespondWarning(m, "", "cleaning done, this message will self-destruct in 10 seconds")
+			msg, err := sg.RespondWarning(req, "", "cleaning done, this message will self-destruct in 10 seconds")
 			if err != nil {
 				return err
 			}

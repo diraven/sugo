@@ -1,11 +1,11 @@
-package public_roles
+package publicroles
 
 import (
-	"github.com/diraven/sugo"
-	"strings"
-	"github.com/texttheater/golang-levenshtein/levenshtein"
-	"github.com/bwmarrin/discordgo"
 	"errors"
+	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
+	"github.com/texttheater/golang-levenshtein/levenshtein"
+	"strings"
 )
 
 type tPublicRoles map[string][]string // map[guildID][]roleID
@@ -100,24 +100,18 @@ func (pr *tPublicRoles) reload(sg *sugo.Instance) error {
 	return err
 }
 
-func (pr *tPublicRoles) getGuildPublicRoles(sg *sugo.Instance, m *discordgo.Message) discordgo.Roles {
+func (pr *tPublicRoles) getGuildPublicRoles(sg *sugo.Instance, req *sugo.Request) discordgo.Roles {
 	// Make storage to store all public roles we discovered user is in.
 	roles := discordgo.Roles{}
 
-	// Get guild.
-	guild, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return roles
-	}
-
 	// Get all guild roles.
-	guildRoles, err := sg.GuildRoles(guild.ID)
+	guildRoles, err := sg.GuildRoles(req.Guild.ID)
 	if err != nil {
 		return roles
 	}
 
 	// Check if guild exists and has public roles.
-	roleIDs, ok := (*pr)[guild.ID]
+	roleIDs, ok := (*pr)[req.Guild.ID]
 
 	// If guild exists - try to match our saved roles with actual guild roles.
 	if ok {
@@ -146,25 +140,25 @@ func (pr *tPublicRoles) getGuildPublicRoles(sg *sugo.Instance, m *discordgo.Mess
 
 		// Clean up our role storage to remove references to the roles that do not exist any more.
 		for _, removedRoleID := range removedRolesIDs {
-			pr.del(sg, guild.ID, removedRoleID)
+			pr.del(sg, req.Guild.ID, removedRoleID)
 		}
 	}
 
 	return roles
 }
 
-func (pr *tPublicRoles) getUserPublicRoles(sg *sugo.Instance, m *discordgo.Message) discordgo.Roles {
+func (pr *tPublicRoles) getUserPublicRoles(sg *sugo.Instance, req *sugo.Request) discordgo.Roles {
 	// Make storage to store all public roles we discovered user is in.
 	roles := discordgo.Roles{}
 
 	// Get guild member.
-	member, err := sg.MemberFromMessage(m)
+	member, err := sg.State.Member(req.Guild.ID, req.Message.Author.ID)
 	if err != nil {
 		return roles
 	}
 
 	// Get guild public roles.
-	guildPublicRoles := pr.getGuildPublicRoles(sg, m)
+	guildPublicRoles := pr.getGuildPublicRoles(sg, req)
 
 	// Iterate over all member roles.
 	for _, memberRoleID := range member.Roles {
@@ -246,10 +240,10 @@ func (pr *tPublicRoles) findRole(roles discordgo.Roles, q string) (discordgo.Rol
 	panic(suggestedRoles)
 }
 
-func (pr *tPublicRoles) findUserPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (discordgo.Roles, error) {
-	return pr.findRole(pr.getUserPublicRoles(sg, m), q)
+func (pr *tPublicRoles) findUserPublicRole(sg *sugo.Instance, req *sugo.Request, q string) (discordgo.Roles, error) {
+	return pr.findRole(pr.getUserPublicRoles(sg, req), q)
 }
 
-func (pr *tPublicRoles) findGuildPublicRole(sg *sugo.Instance, m *discordgo.Message, q string) (discordgo.Roles, error) {
-	return pr.findRole(pr.getGuildPublicRoles(sg, m), q)
+func (pr *tPublicRoles) findGuildPublicRole(sg *sugo.Instance, req *sugo.Request, q string) (discordgo.Roles, error) {
+	return pr.findRole(pr.getGuildPublicRoles(sg, req), q)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Module represents sugo module with all it's facilities.
 type Module struct {
 	RootCommand *Command
 	Startup     func(sg *Instance) error
@@ -15,20 +16,20 @@ type Module struct {
 	// false - command is considered denied
 	// true - command is considered allowed
 	// nil - use default command permissions
-	OnPermissionsCheck func(sg *Instance, c *Command, m *discordgo.Message) (*bool, error)
+	OnPermissionsCheck func(sg *Instance, req *Request) (*bool, error)
 
 	// OnBeforeCommandSearch is called before command search is performed, but after query string is prepared
 	// returned value replaces query string that will be used for command search.
-	OnBeforeCommandSearch func(sg *Instance, m *discordgo.Message, q string) (string, error)
+	OnBeforeCommandSearch func(sg *Instance, req *Request) error
 
 	// OnBeforeCommandSearch is called before query is tested for bot mention.
-	OnBeforeBotTriggerDetect func(sg *Instance, m *discordgo.Message, q string) (string, error)
+	OnBeforeBotTriggerDetect func(sg *Instance, req *Request) error
+
+	// OnMessageCreate happens for every message bot sees created.
+	OnMessageCreate func(sg *Instance, req *Request) error
 
 	// OnPresenceUpdate happens every time member presence is updated for guild.
 	OnPresenceUpdate func(sg *Instance, pu *discordgo.PresenceUpdate) error
-
-	// OnMessageCreate happens for every message bot sees created.
-	OnMessageCreate func(sg *Instance, mc *discordgo.Message) error
 }
 
 // startup is internal function called for each module on bot startup.

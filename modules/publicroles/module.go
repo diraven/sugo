@@ -1,4 +1,4 @@
-package public_roles
+package publicroles
 
 import (
 	"github.com/bwmarrin/discordgo"
@@ -8,7 +8,7 @@ import (
 
 var publicRoles = tPublicRoles{}
 
-func respondFuzzyRolesSearchIssue(sg *sugo.Instance, m *discordgo.Message, roles []*discordgo.Role, err error) error {
+func respondFuzzyRolesSearchIssue(sg *sugo.Instance, req *sugo.Request, roles []*discordgo.Role, err error) error {
 	// Start building response.
 	var response string
 	response = err.Error()
@@ -22,10 +22,9 @@ func respondFuzzyRolesSearchIssue(sg *sugo.Instance, m *discordgo.Message, roles
 		}
 		response = response + ", try these:\n\n"
 		response = response + sugo.FmtStringsSlice(rolesToRoleNames(suggestedRoles), ", ", "`", 1500, "...", "")
-		response = response
 	}
 
-	_, err = sg.RespondWarning(m, "", response)
+	_, err = sg.RespondWarning(req, "", response)
 	return err
 }
 

@@ -1,4 +1,4 @@
-package public_roles
+package publicroles
 
 import (
 	"github.com/bwmarrin/discordgo"
@@ -39,18 +39,10 @@ var statsCmd = &sugo.Command{
 	Usage:              "top/bottom",
 	PermittedByDefault: true,
 	AllowParams:        true,
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
-
-		// Get a guild.
-		guild, err := sg.GuildFromMessage(m)
-		if err != nil {
-			_, err = sg.RespondDanger(m, "", err.Error())
-			return err
-		}
-
 		// Get all public roles.
-		roles, err := publicRoles.findGuildPublicRole(sg, m, "")
+		roles, err := publicRoles.findGuildPublicRole(sg, req, "")
 
 		// Make a storage for stats we are about to gather.
 		stats := &tStats{}
@@ -64,7 +56,7 @@ var statsCmd = &sugo.Command{
 		}
 
 		// Make members array we will be working with.
-		for _, member := range guild.Members {
+		for _, member := range req.Guild.Members {
 			for _, roleID := range member.Roles {
 				for _, role := range roles {
 					// Check if user has role
@@ -79,7 +71,7 @@ var statsCmd = &sugo.Command{
 		sort.Sort(stats)
 
 		// Reverse results if we want bottom side of the chart
-		if q != "bottom" {
+		if req.Query != "bottom" {
 			sort.Sort(sort.Reverse(stats))
 		}
 
@@ -94,10 +86,10 @@ var statsCmd = &sugo.Command{
 				}
 			}
 			response = response + "```"
-			_, err = sg.RespondInfo(m, "", response)
+			_, err = sg.RespondInfo(req, "", response)
 
 		} else {
-			_, err = sg.RespondDanger(m, "", "no data available")
+			_, err = sg.RespondDanger(req, "", "no data available")
 		}
 
 		return err

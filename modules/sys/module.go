@@ -1,7 +1,6 @@
 package sys
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 )
 
@@ -19,7 +18,7 @@ var Module = &sugo.Module{
 				Description:        "Shuts the bot town.",
 				PermittedByDefault: true,
 				TextResponse:       "Until next time, master!",
-				Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+				Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 					sg.Shutdown()
 					return nil
 				},

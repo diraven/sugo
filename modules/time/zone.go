@@ -2,7 +2,6 @@ package time
 
 import (
 	"github.com/diraven/sugo"
-	"github.com/bwmarrin/discordgo"
 )
 
 var cmdZone = &sugo.Command{
@@ -10,15 +9,15 @@ var cmdZone = &sugo.Command{
 	PermittedByDefault:  true,
 	AllowDefaultChannel: true,
 	Description:         "Shows user timezone.",
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		// Get user timezone value.
-		tzone, err := timezones.get(sg, m)
+		tzone, err := timezones.get(sg, req)
 		if err != nil {
 			return err
 		}
 
 		// Respond with the resulting time to the user.
-		if _, err := sg.RespondInfo(m, "", "your timezone: "+tzone); err != nil {
+		if _, err := sg.RespondInfo(req, "", "your timezone: "+tzone); err != nil {
 			return err
 		}
 

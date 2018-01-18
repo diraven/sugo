@@ -1,4 +1,4 @@
-package public_roles
+package publicroles
 
 import (
 	"github.com/bwmarrin/discordgo"
@@ -11,38 +11,31 @@ var addCmd = &sugo.Command{
 	Description: "Makes existing role public.",
 	Usage:       "role_name_or_id",
 	AllowParams: true,
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
 
 		// Make sure query is not empty.
-		if q == "" {
-			_, err = sg.RespondBadCommandUsage(m, c, "", "")
-			return err
-		}
-
-		// Get a guild.
-		guild, err := sg.GuildFromMessage(m)
-		if err != nil {
-			_, err = sg.RespondDanger(m, "", err.Error())
+		if req.Query == "" {
+			_, err = sg.RespondBadCommandUsage(req, "", "")
 			return err
 		}
 
 		// Get all guild roles.
-		roles, err := sg.GuildRoles(guild.ID)
+		roles, err := sg.GuildRoles(req.Guild.ID)
 		if err != nil {
-			_, err = sg.RespondDanger(m, "", err.Error())
+			_, err = sg.RespondDanger(req, "", err.Error())
 			return err
 		}
 
 		// Process request.
 		var request string
 
-		if len(m.MentionRoles) > 0 {
+		if len(req.Message.MentionRoles) > 0 {
 			// If there is at least one role mention - we use that mention.
-			request = m.MentionRoles[0]
+			request = req.Message.MentionRoles[0]
 		} else {
 			// Otherwise we just take full request.
-			request = q
+			request = req.Query
 		}
 
 		// Make a storage for role we matched.
@@ -53,32 +46,31 @@ var addCmd = &sugo.Command{
 			if strings.ToLower(role.Name) == strings.ToLower(request) || role.ID == request {
 				if matchedRole != nil {
 					_, err = sg.RespondDanger(
-						m, "",
-						"too many roles found, try again with a different search",
+						req, "",
+						(*req.TranslateFunc)("too many roles found, try again with a different search"),
 					)
 					return err
-				} else {
-					matchedRole = role
 				}
+				matchedRole = role
 			}
 		}
 
 		// If we did not find any match:
 		if matchedRole == nil {
 			// Notify user about fail.
-			_, err = sg.RespondDanger(m, "", "no roles found for query")
+			_, err = sg.RespondDanger(req, "", "no roles found for query")
 			return err
 		}
 
 		// Otherwise add new role to the public roles list.
-		err = publicRoles.add(sg, guild.ID, matchedRole.ID)
+		err = publicRoles.add(sg, req.Guild.ID, matchedRole.ID)
 		if err != nil {
-			_, err = sg.RespondDanger(m, "", err.Error())
+			_, err = sg.RespondDanger(req, "", err.Error())
 			return err
 		}
 
 		// And notify user about success.
-		_, err = sg.RespondSuccess(m, "", "role `"+matchedRole.Name+"` is public now")
+		_, err = sg.RespondSuccess(req, "", "role `"+matchedRole.Name+"` is public now")
 		return err
 	},
 }

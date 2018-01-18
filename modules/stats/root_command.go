@@ -1,7 +1,6 @@
 package stats
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"strconv"
 )
@@ -10,8 +9,8 @@ var rootCommand = &sugo.Command{
 	Trigger:            "stats",
 	Description:        "Gives general server stats.",
 	PermittedByDefault: true,
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-		if _, err := sg.RespondNotImplemented(m); err != nil {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+		if _, err := sg.RespondNotImplemented(req); err != nil {
 			return err
 		}
 
@@ -24,15 +23,10 @@ var rootCommand = &sugo.Command{
 			PermittedByDefault: true,
 			//Usage:         "http://example.com/rss/",
 			//AllowParams: true,
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 				var response string
 
-				guild, err := sg.GuildFromMessage(m)
-				if err != nil {
-					return err
-				}
-
-				gamesNames, err := stats.getMostPlayedGames(sg, guild.ID)
+				gamesNames, err := stats.getMostPlayedGames(sg, req.Guild.ID)
 				if err != nil {
 					return err
 				}
@@ -41,7 +35,7 @@ var rootCommand = &sugo.Command{
 					response = response + strconv.Itoa(i+1) + ". " + gameName + "\n"
 				}
 
-				if _, err := sg.RespondInfo(m, "most played games", response); err != nil {
+				if _, err := sg.RespondInfo(req, "most played games", response); err != nil {
 					return err
 				}
 
@@ -54,15 +48,10 @@ var rootCommand = &sugo.Command{
 			PermittedByDefault: true,
 			//Usage:         "http://example.com/rss/",
 			//AllowParams: true,
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 				var response string
 
-				guild, err := sg.GuildFromMessage(m)
-				if err != nil {
-					return err
-				}
-
-				users, err := stats.getMostMessagingUsers(sg, guild.ID)
+				users, err := stats.getMostMessagingUsers(sg, req.Guild.ID)
 				if err != nil {
 					return err
 				}
@@ -71,7 +60,7 @@ var rootCommand = &sugo.Command{
 					response = response + strconv.Itoa(i+1) + ". " + user.Mention() + "\n"
 				}
 
-				if _, err := sg.RespondInfo(m, "most active users", response); err != nil {
+				if _, err := sg.RespondInfo(req, "most active users", response); err != nil {
 					return err
 				}
 

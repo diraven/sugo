@@ -2,7 +2,6 @@ package time
 
 import (
 	"github.com/diraven/sugo"
-	"github.com/bwmarrin/discordgo"
 )
 
 var cmdZoneReset = &sugo.Command{
@@ -10,14 +9,14 @@ var cmdZoneReset = &sugo.Command{
 	PermittedByDefault:  true,
 	AllowDefaultChannel: true,
 	Description:         "Resets user timezone.",
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		// Reset value.
-		if err := timezones.reset(sg, m.Author.ID); err != nil {
+		if err := timezones.reset(sg, req.Message.Author.ID); err != nil {
 			return err
 		}
 
 		// Respond with the resulting time to the user.
-		if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+		if _, err := sg.RespondSuccess(req, "", ""); err != nil {
 			return err
 		}
 
@@ -29,20 +28,14 @@ var cmdZoneReset = &sugo.Command{
 			AllowDefaultChannel: true,
 			RootOnly:            true,
 			Description:         "Resets guild timezone.",
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				// Get guild.
-				guild, err := sg.GuildFromMessage(m)
-				if err != nil {
-					return err
-				}
-
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 				// Save value.
-				if err := timezones.reset(sg, guild.ID); err != nil {
+				if err := timezones.reset(sg, req.Guild.ID); err != nil {
 					return err
 				}
 
 				// Respond with the resulting time to the user.
-				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+				if _, err := sg.RespondSuccess(req, "", ""); err != nil {
 					return err
 				}
 

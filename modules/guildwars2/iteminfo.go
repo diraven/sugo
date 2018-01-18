@@ -1,4 +1,4 @@
-package GuildWars2
+package guildwars2
 
 import (
 	"fmt"
@@ -21,12 +21,12 @@ var itemInfo = &sugo.Command{
 	Description:        "Provides urls to the websites containing given item info.",
 	Usage:              "Item Name",
 	AllowParams:        true,
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
 
 		// Make sure there is a query specified.
-		if strings.TrimSpace(q) == "" {
-			_, err = sg.RespondBadCommandUsage(m, c, "", "")
+		if strings.TrimSpace(req.Query) == "" {
+			_, err = sg.RespondBadCommandUsage(req, "", "")
 			return err
 		}
 
@@ -40,12 +40,12 @@ var itemInfo = &sugo.Command{
 		for k, v := range infoUrls {
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 				Name:  k,
-				Value: fmt.Sprintf(v, url2.QueryEscape(q)),
+				Value: fmt.Sprintf(v, url2.QueryEscape(req.Query)),
 			})
 		}
 
 		// Respond with the embed we just built.
-		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
+		_, err = sg.ChannelMessageSendEmbed(req.Channel.ID, embed)
 		return err
 	},
 }

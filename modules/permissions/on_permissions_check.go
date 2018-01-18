@@ -1,30 +1,21 @@
 package permissions
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 )
 
-func onPermissionsCheck(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message) (*bool, error) {
+func onPermissionsCheck(sg *sugo.Instance, req *sugo.Request) (*bool, error) {
 	var err error
 	var passed bool // the conclusion about if command is allowed
 
-	// Get channel.
-	channel, err := sg.ChannelFromMessage(m)
-	if err != nil {
-		return nil, err
-	}
-
 	// We only work with guild text channels and ignore everything else.
-	if channel.Type != discordgo.ChannelTypeGuildText {
+	if req.Channel.Type != discordgo.ChannelTypeGuildText {
 		return nil, nil
 	}
 
-	// Get guild.
-	guild, err := sg.GuildFromMessage(m)
-
 	// Get guild member.
-	member, err := sg.State.Member(guild.ID, m.Author.ID)
+	member, err := sg.State.Member(req.Guild.ID, req.Message.Author.ID)
 	if err != nil {
 		passed = false
 		return &passed, err // Just make sure we are safe and return false in case of any errors.
@@ -39,13 +30,13 @@ func onPermissionsCheck(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message
 	var found bool   // if custom role setting found
 
 	// Start with checking "everyone" role permissions.
-	role, err = sg.State.Role(guild.ID, guild.ID)
+	role, err = sg.State.Role(req.Guild.ID, req.Guild.ID)
 	if err != nil {
 		passed = false
 		return &passed, err // Just make sure we are safe and return false in case of any errors.
 	}
 
-	isAllowed, exists := permissions.get(sg, c.Path(), role.ID)
+	isAllowed, exists := permissions.get(sg, req.Command.Path(), role.ID)
 	if exists {
 		found = true
 		passed = isAllowed
@@ -54,13 +45,13 @@ func onPermissionsCheck(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message
 	// And now check all the rest of the user roles.
 	for _, roleID := range member.Roles {
 		// Get role itself.
-		role, err = sg.State.Role(guild.ID, roleID)
+		role, err = sg.State.Role(req.Guild.ID, roleID)
 		if err != nil {
 			passed = false
 			return &passed, err // Just make sure we are safe and return false in case of any errors.
 		}
 		// Check if role is allowed to use the command.
-		isAllowed, exists := permissions.get(sg, role.ID, c.Path())
+		isAllowed, exists := permissions.get(sg, role.ID, req.Command.Path())
 
 		// If custom role setting exists and it's position less then the one we have already found (role that is higher
 		// takes precedence over the lower ones):

@@ -14,8 +14,5 @@ func onMessageUpdate(s *discordgo.Session, mu *discordgo.MessageUpdate) {
 		Bot.HandleError(err)
 	}
 
-	err = Bot.processMessage(message)
-	if err != nil {
-		Bot.HandleError(err)
-	}
+	Bot.processMessage(message)
 }

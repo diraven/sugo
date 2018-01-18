@@ -1,7 +1,6 @@
 package time
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"time"
 )
@@ -13,38 +12,38 @@ var rootCommand = &sugo.Command{
 	AllowParams:         true,
 	Description:         "Time-related tools.",
 	//Usage:               defaultFormat,
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
 
-		_, err = sg.RespondBadCommandUsage(m, c, "", "")
+		_, err = sg.RespondBadCommandUsage(req, "", "")
 		return err
 
 		// TODO Finish time conversion implementation.
 
 		// Check query.
-		if q == "" {
-			_, err := sg.RespondBadCommandUsage(m, c, "", "")
+		if req.Query == "" {
+			_, err := sg.RespondBadCommandUsage(req, "", "")
 			return err
 		}
 
 		// Get location we are interested in.
 		var loc *time.Location
-		loc, err = getLoc(sg, m, "")
+		loc, err = getLoc(sg, req)
 		if err != nil {
-			if _, err := sg.RespondDanger(m, "", err.Error()); err != nil {
+			if _, err := sg.RespondDanger(req, "", err.Error()); err != nil {
 				return err
 			}
 		}
 
 		// Try to parse time.
 		var t time.Time
-		if t, _ = time.ParseInLocation(defaultFormat, q, loc); err != nil {
-			_, err := sg.RespondDanger(m, "", "unable to parse time, the format should be: "+defaultFormat)
+		if t, _ = time.ParseInLocation(defaultFormat, req.Query, loc); err != nil {
+			_, err := sg.RespondDanger(req, "", "unable to parse time, the format should be: "+defaultFormat)
 			return err
 		}
 
 		// Respond with the resulting time to the user.
-		if _, err := sg.RespondInfo(m, "", t.In(loc).Format(defaultFormat)); err != nil {
+		if _, err := sg.RespondInfo(req, "", t.In(loc).Format(defaultFormat)); err != nil {
 			return err
 		}
 

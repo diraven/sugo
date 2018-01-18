@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func generateHelpEmbed(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message) (*discordgo.MessageEmbed, error) {
+func generateHelpEmbed(sg *sugo.Instance, req *sugo.Request, c *sugo.Command) (*discordgo.MessageEmbed, error) {
 	embed := &discordgo.MessageEmbed{
 		Title:       c.Path(),
 		Description: c.Description,
@@ -20,7 +20,7 @@ func generateHelpEmbed(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message)
 		},
 	}
 	// Get subcommands triggers respecting user permissions.
-	subcommandsTriggers, _ := c.GetSubcommandsTriggers(sg, m)
+	subcommandsTriggers, _ := c.GetSubcommandsTriggers(sg, req)
 
 	if len(c.SubCommands) > 0 {
 		embed.Fields = append(embed.Fields,
@@ -29,14 +29,14 @@ func generateHelpEmbed(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message)
 				Value: strings.Join(subcommandsTriggers, ", "),
 			}, &discordgo.MessageEmbedField{
 				Name:  "To get help on 'subcommand' type:",
-				Value: fmt.Sprintf("help %s subcommand", c.Trigger),
+				Value: fmt.Sprintf("help %s subcommand", c.Path()),
 			})
 	}
 	return embed, nil
 
 }
 
-// Help shows help section for appropriate command.
+// Module shows help section for appropriate command.
 var Module = &sugo.Module{
 	RootCommand: &sugo.Command{
 		Trigger:            "help",
@@ -44,15 +44,15 @@ var Module = &sugo.Module{
 		Description:        "Shows help section for the appropriate command.",
 		Usage:              "some_command",
 		AllowParams:        true,
-		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+		Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 			var err error
 
 			// Remove help command from the string
-			q = strings.TrimSpace(strings.TrimPrefix(q, c.Trigger))
+			req.Query = strings.TrimSpace(strings.TrimPrefix(req.Query, req.Command.Trigger))
 
-			if q == "" {
+			if req.Query == "" {
 				// No arguments, just the help itself.
-				_, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+				_, err = sg.ChannelMessageSendEmbed(req.Channel.ID, &discordgo.MessageEmbed{
 					Title:       "Available commands",
 					Description: strings.Join(sg.GetTriggers(), ", "),
 					Color:       sugo.ColorInfo,
@@ -67,22 +67,22 @@ var Module = &sugo.Module{
 			}
 
 			// Search for applicable command.
-			command, err := sg.FindCommand(m, q)
+			command, err := sg.FindCommand(req, req.Query)
 			if err != nil {
 				return err
 			}
 			if command != nil {
 				var embed *discordgo.MessageEmbed
 
-				embed, err = generateHelpEmbed(sg, command, m)
+				embed, err = generateHelpEmbed(sg, req, command)
 				if err != nil {
 					return err
 				}
 
-				_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
+				_, err = sg.ChannelMessageSendEmbed(req.Channel.ID, embed)
 				return err
 			}
-			_, err = sg.RespondWarning(m, "", "I know nothing about this command, sorry...")
+			_, err = sg.RespondWarning(req, "", "I know nothing about this command, sorry...")
 			return err
 		},
 	},

@@ -1,4 +1,4 @@
-package public_roles
+package publicroles
 
 import (
 	"github.com/diraven/sugo"

@@ -8,7 +8,7 @@ import (
 var rootCommand = &sugo.Command{
 	Trigger:     "feeds",
 	Description: "Allows to manipulate feeds.",
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
 
 		embed := &discordgo.MessageEmbed{
@@ -20,7 +20,7 @@ var rootCommand = &sugo.Command{
 			embed.Description = embed.Description + item.Url + "\n"
 		}
 
-		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
+		_, err = sg.ChannelMessageSendEmbed(req.Message.ChannelID, embed)
 		return err
 	},
 	SubCommands: []*sugo.Command{
@@ -29,20 +29,20 @@ var rootCommand = &sugo.Command{
 			Description: "Adds new feed.",
 			Usage:       "http://example.com/rss/",
 			AllowParams: true,
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 				var err error
 
 				// Validate feed url.
-				_, err = fp.ParseURL(q)
+				_, err = fp.ParseURL(req.Query)
 				if err != nil {
-					_, err = sg.RespondDanger(m, "", err.Error())
+					_, err = sg.RespondDanger(req, "", err.Error())
 					return err
 				}
 
 				// Add requested URL to the list.
-				feeds.add(sg, m.ChannelID, q)
+				feeds.add(sg, req.Channel.ID, req.Query)
 
-				_, err = sg.RespondSuccess(m, "", "")
+				_, err = sg.RespondSuccess(req, "", "")
 				return err
 			},
 		},
@@ -51,14 +51,14 @@ var rootCommand = &sugo.Command{
 			Description: "Deletes specified feed.",
 			Usage:       "http://example.com/rss",
 			AllowParams: true,
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 				var err error
 
-				if err = feeds.del(sg, m.ChannelID, q); err != nil {
+				if err = feeds.del(sg, req.Channel.ID, req.Query); err != nil {
 					return err
 				}
 
-				if _, err = sg.RespondSuccess(m, "", ""); err != nil {
+				if _, err = sg.RespondSuccess(req, "", ""); err != nil {
 					return err
 				}
 

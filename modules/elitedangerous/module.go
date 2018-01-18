@@ -1,11 +1,10 @@
-package elite_dangerous
+package elitedangerous
 
 import (
 	"github.com/diraven/sugo"
 )
 
-// Command contains all ed-related stuff.
-
+// Module contains all ed-related stuff.
 var Module = &sugo.Module{
 	RootCommand: &sugo.Command{
 		Trigger:            "elite_dangerous",

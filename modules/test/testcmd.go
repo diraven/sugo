@@ -1,11 +1,10 @@
 package test
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 )
 
-// Test is just a testing command
+// Module is just a few testing commands
 var Module = &sugo.Module{
 	RootCommand: &sugo.Command{
 		Trigger:             "test",
@@ -45,20 +44,20 @@ var Module = &sugo.Module{
 				Trigger:            "responses",
 				PermittedByDefault: true,
 				Description:        "subTest2 command.",
-				Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-					if _, err := sg.Respond(m, "", "default", sugo.ColorPrimary, ""); err != nil {
+				Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+					if _, err := sg.Respond(req, "", "default", sugo.ColorPrimary, ""); err != nil {
 						return err
 					}
-					if _, err := sg.RespondInfo(m, "", "info"); err != nil {
+					if _, err := sg.RespondInfo(req, "", "info"); err != nil {
 						return err
 					}
-					if _, err := sg.RespondSuccess(m, "", "success"); err != nil {
+					if _, err := sg.RespondSuccess(req, "", "success"); err != nil {
 						return err
 					}
-					if _, err := sg.RespondWarning(m, "", "warning"); err != nil {
+					if _, err := sg.RespondWarning(req, "", "warning"); err != nil {
 						return err
 					}
-					if _, err := sg.RespondDanger(m, "", "failure"); err != nil {
+					if _, err := sg.RespondDanger(req, "", "failure"); err != nil {
 						return err
 					}
 					return nil

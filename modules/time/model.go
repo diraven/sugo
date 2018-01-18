@@ -2,7 +2,6 @@ package time
 
 import (
 	"github.com/diraven/sugo"
-	"github.com/bwmarrin/discordgo"
 )
 
 type tTimezones map[string]string
@@ -47,25 +46,19 @@ func (tz *tTimezones) reset(sg *sugo.Instance, objectID string) error {
 }
 
 // get returns timezone name for given object id.
-func (tz *tTimezones) get(sg *sugo.Instance, m *discordgo.Message) (string, error) {
+func (tz *tTimezones) get(sg *sugo.Instance, req *sugo.Request) (string, error) {
 	var objectID string
 
 	// Get user ID.
-	objectID = m.Author.ID
+	objectID = req.Message.Author.ID
 
 	// Try to get user timezone.
 	if timezone, ok := (*tz)[objectID]; ok {
 		return timezone, nil
 	}
 
-	// Get guild ID.
-	guild, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return "", err
-	}
-
 	// Try to get guild timezone.
-	if timezone, ok := (*tz)[guild.ID]; ok {
+	if timezone, ok := (*tz)[req.Guild.ID]; ok {
 		return timezone, nil
 	}
 

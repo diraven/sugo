@@ -1,7 +1,6 @@
 package time
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"time"
 )
@@ -12,11 +11,11 @@ var cmdNow = &sugo.Command{
 	AllowDefaultChannel: true,
 	AllowParams:         true,
 	Description:         "Checks what time is it in given timezone.",
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		// Get location.
-		loc, err := getLoc(sg, m, q)
+		loc, err := getLoc(sg, req)
 		if err != nil {
-			if _, err := sg.RespondDanger(m, "", err.Error()); err != nil {
+			if _, err := sg.RespondDanger(req, "", err.Error()); err != nil {
 				return err
 			}
 			return nil
@@ -26,7 +25,7 @@ var cmdNow = &sugo.Command{
 		t := time.Now().In(loc)
 
 		// Respond with the resulting time to the user.
-		if _, err := sg.RespondInfo(m, "", t.Format(defaultFormat)); err != nil {
+		if _, err := sg.RespondInfo(req, "", t.Format(defaultFormat)); err != nil {
 			return err
 		}
 

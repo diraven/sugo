@@ -10,14 +10,9 @@ var rootCommand = &sugo.Command{
 	Trigger:     "aliases",
 	RootOnly:    true,
 	Description: "Allows to manipulate aliases. Lists all aliases.",
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-		guild, err := sg.GuildFromMessage(m)
-		if err != nil {
-			return err
-		}
-
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var result string
-		for alias, commandPath := range *aliases.all(guild) {
+		for alias, commandPath := range *aliases.all(req.Guild) {
 			result = result + alias + " -> " + commandPath + "\n"
 		}
 
@@ -26,7 +21,7 @@ var rootCommand = &sugo.Command{
 			Description: result,
 		}
 
-		sg.ChannelMessageSendEmbed(m.ChannelID, embed)
+		sg.ChannelMessageSendEmbed(req.Message.ChannelID, embed)
 		return nil
 	},
 	SubCommands: []*sugo.Command{
@@ -35,32 +30,27 @@ var rootCommand = &sugo.Command{
 			Description: "Adds new or updates existent alias.",
 			Usage:       "some_alias -> command [subcommand ...]",
 			AllowParams: true,
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				ss := strings.Split(q, "->")
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+				ss := strings.Split(req.Query, "->")
 				if len(ss) < 2 {
-					_, err := sg.RespondBadCommandUsage(m, c, "", "")
+					_, err := sg.RespondBadCommandUsage(req, "", "")
 					return err
 				}
 				alias := strings.TrimSpace(ss[0])
 				commandPath := strings.TrimSpace(ss[1])
 
 				// Try to find command.
-				command, err := sg.FindCommand(m, commandPath)
+				command, err := sg.FindCommand(req, commandPath)
 				if err != nil {
 					return err
 				}
 				if command == nil {
-					_, err := sg.RespondCommandNotFound(m)
+					_, err := sg.RespondCommandNotFound(req)
 					return err
 				}
 
-				guild, err := sg.GuildFromMessage(m)
-				if err != nil {
-					return err
-				}
-
-				aliases.set(sg, guild, alias, commandPath)
-				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+				aliases.set(sg, req.Guild, alias, commandPath)
+				if _, err := sg.RespondSuccess(req, "", ""); err != nil {
 					return err
 				}
 
@@ -72,21 +62,16 @@ var rootCommand = &sugo.Command{
 			Description: "Deletes specified alias.",
 			Usage:       "some_alias",
 			AllowParams: true,
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				guild, err := sg.GuildFromMessage(m)
-				if err != nil {
-					return err
-				}
-
-				alias := aliases.get(sg, guild, q)
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+				alias := aliases.get(sg, req.Guild, req.Query)
 
 				if alias == "" {
-					_, err := sg.RespondDanger(m, "", "Alias \""+q+"\" was not found.")
+					_, err := sg.RespondDanger(req, "", "Alias \""+req.Query+"\" was not found.")
 					return err
 				}
 
-				aliases.del(sg, guild, alias)
-				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+				aliases.del(sg, req.Guild, alias)
+				if _, err := sg.RespondSuccess(req, "", ""); err != nil {
 					return err
 				}
 
@@ -98,33 +83,28 @@ var rootCommand = &sugo.Command{
 			Description: "Swaps specified shortcuts.",
 			Usage:       "1 2",
 			AllowParams: true,
-			Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
-				guild, err := sg.GuildFromMessage(m)
-				if err != nil {
-					return err
-				}
-
-				ss := strings.Split(q, " ")
+			Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+				ss := strings.Split(req.Query, " ")
 				if len(ss) < 2 {
-					_, err := sg.RespondBadCommandUsage(m, c, "", "")
+					_, err := sg.RespondBadCommandUsage(req, "", "")
 					return err
 				}
 
-				alias1 := aliases.get(sg, guild, ss[0])
+				alias1 := aliases.get(sg, req.Guild, ss[0])
 				if alias1 == "" {
-					_, err := sg.RespondDanger(m, "", "alias `"+ss[0]+"` not found")
+					_, err := sg.RespondDanger(req, "", "alias `"+ss[0]+"` not found")
 					return err
 				}
 
-				alias2 := aliases.get(sg, guild, ss[1])
+				alias2 := aliases.get(sg, req.Guild, ss[1])
 				if alias2 == "" {
-					_, err := sg.RespondDanger(m, "", "alias `"+ss[1]+"` not found")
+					_, err := sg.RespondDanger(req, "", "alias `"+ss[1]+"` not found")
 					return err
 				}
 
-				aliases.swap(sg, guild, alias1, alias2)
+				aliases.swap(sg, req.Guild, alias1, alias2)
 
-				if _, err := sg.RespondSuccess(m, "", ""); err != nil {
+				if _, err := sg.RespondSuccess(req, "", ""); err != nil {
 					return err
 				}
 

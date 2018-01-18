@@ -1,33 +1,32 @@
 package time
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"github.com/diraven/sugo"
-	"time"
-	"strings"
 	"errors"
+	"github.com/diraven/sugo"
+	"strings"
+	"time"
 )
 
 var defaultFormat = "2006.01.02 15:04  MST"
 
 var timezones = tTimezones{}
 
-func getLoc(sg *sugo.Instance, m *discordgo.Message, q string) (*time.Location, error) {
+func getLoc(sg *sugo.Instance, req *sugo.Request) (*time.Location, error) {
 	// If query not specified - we fetch user/guild/default timezone.
-	if q == "" {
+	if req.Query == "" {
 		var err error
-		if q, err = timezones.get(sg, m); err != nil {
+		if req.Query, err = timezones.get(sg, req); err != nil {
 			return nil, err
 		}
 	}
 
 	// Try to find timezone in our offsets list.
-	if offset, ok := offsets[strings.ToUpper(q)]; ok {
-		return time.FixedZone(strings.ToUpper(q), offset), nil
+	if offset, ok := offsets[strings.ToUpper(req.Query)]; ok {
+		return time.FixedZone(strings.ToUpper(req.Query), offset), nil
 	}
 
 	// Try to search all other timezones in system tzdata.
-	loc, err := time.LoadLocation(q)
+	loc, err := time.LoadLocation(req.Query)
 	if err != nil {
 		return nil, errors.New("timezone not found")
 	}

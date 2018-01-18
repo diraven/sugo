@@ -35,16 +35,16 @@ type Command struct {
 	parent *Command
 
 	// Custom execute code for subcommand.
-	Execute func(sg *Instance, c *Command, m *discordgo.Message, q string) error
+	Execute func(sg *Instance, r *Request) error
 }
 
 // GetSubcommandsTriggers return all subcommands triggers available for given user.
-func (c *Command) GetSubcommandsTriggers(sg *Instance, m *discordgo.Message) ([]string, error) {
+func (c *Command) GetSubcommandsTriggers(sg *Instance, req *Request) ([]string, error) {
 	var triggers []string
 
 	// Generate triggers list respecting user permissions.
 	for _, subCommand := range c.SubCommands {
-		command, err := sg.FindCommand(m, subCommand.Path())
+		command, err := sg.FindCommand(req, subCommand.Path())
 		if err != nil {
 			return triggers, err
 		}
@@ -104,7 +104,7 @@ func (c *Command) FullHelpPath(sg *Instance) (value string) {
 }
 
 // match is a system matching function that checks if command trigger matches the start of message content.
-func (c *Command) match(sg *Instance, m *discordgo.Message, q string) bool {
+func (c *Command) match(sg *Instance, q string) bool {
 	// If trigger is not set, check if command is empty.
 	if c.Trigger == "" && q == "" {
 		return true
@@ -120,15 +120,15 @@ func (c *Command) match(sg *Instance, m *discordgo.Message, q string) bool {
 }
 
 // search searches for matching command (including permissions checks) in the given command's subcommands.
-func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (*Command, error) {
+func (c *Command) search(sg *Instance, req *Request, q string) (*Command, error) {
 	// Check if message matches command.
-	if !c.match(sg, m, q) {
+	if !c.match(sg, q) {
 		// Message did not match command.
 		return nil, nil
 	}
 
 	// Command matched, check if necessary permissions are present.
-	passed, err := c.checkPermissions(sg, m)
+	passed, err := c.checkPermissions(sg, req)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (*Command
 		// We do have subcommands.
 		for _, subCommand := range c.SubCommands {
 			// Now try to match any of the subcommands.
-			result, err := subCommand.search(sg, m, q)
+			result, err := subCommand.search(sg, req, q)
 			if err != nil {
 				return nil, err
 			}
@@ -169,9 +169,9 @@ func (c *Command) search(sg *Instance, m *discordgo.Message, q string) (*Command
 
 // checkPermissions checks if given user has necessary permissions to use the command. The function is called
 // sequentially for topmost command and following the path to the subcommand in question.
-func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, error) {
+func (c *Command) checkPermissions(sg *Instance, req *Request) (bool, error) {
 	// If user is a root - command is always allowed.
-	if sg.isRoot(m.Author) {
+	if sg.isRoot(req.Message.Author) {
 		return true, nil
 	}
 
@@ -181,7 +181,7 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, er
 	}
 
 	// Get channel.
-	channel, err := sg.State.Channel(m.ChannelID)
+	channel, err := sg.State.Channel(req.Channel.ID)
 	if err != nil {
 		return false, err
 	}
@@ -195,7 +195,7 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, er
 
 	for _, module := range sg.Modules {
 		if module.OnPermissionsCheck != nil {
-			passed, err := module.OnPermissionsCheck(sg, c, m)
+			passed, err := module.OnPermissionsCheck(sg, req)
 			if err != nil {
 				// In case of error - return error and deny command.
 				return false, err
@@ -222,13 +222,13 @@ func (c *Command) checkPermissions(sg *Instance, m *discordgo.Message) (bool, er
 }
 
 // execute is a default command execution function.
-func (c *Command) execute(q string, sg *Instance, m *discordgo.Message) error {
+func (c *Command) execute(sg *Instance, req *Request) error {
 	var actionPerformed bool
 
 	if c.Execute != nil {
 		// Run custom command Execute if set.
 
-		if err := c.Execute(sg, c, m, q); err != nil {
+		if err := c.Execute(sg, req); err != nil {
 			return err
 		}
 		actionPerformed = true
@@ -237,7 +237,7 @@ func (c *Command) execute(q string, sg *Instance, m *discordgo.Message) error {
 	if c.TextResponse != "" {
 		// Send command text response if set.
 
-		if _, err := sg.Respond(m, "", c.TextResponse, ColorPrimary, ""); err != nil {
+		if _, err := sg.Respond(req, "", c.TextResponse, ColorPrimary, ""); err != nil {
 			return err
 		}
 		actionPerformed = true
@@ -246,7 +246,7 @@ func (c *Command) execute(q string, sg *Instance, m *discordgo.Message) error {
 	if c.EmbedResponse != nil {
 		// Send command embed response if set.
 
-		if _, err := sg.ChannelMessageSendEmbed(m.ChannelID, c.EmbedResponse); err != nil {
+		if _, err := sg.ChannelMessageSendEmbed(req.Channel.ID, c.EmbedResponse); err != nil {
 			return err
 		}
 		actionPerformed = true
@@ -255,13 +255,12 @@ func (c *Command) execute(q string, sg *Instance, m *discordgo.Message) error {
 	if !actionPerformed {
 		if len(c.SubCommands) > 0 {
 			// If there is at least one subcommand and no other actions taken - explain it to the user.
-			_, err := sg.RespondBadCommandUsage(
-				m, c, "", "")
+			_, err := sg.RespondBadCommandUsage(req, "", "")
 			return err
 		}
 
 		// We did nothing and there are no subcommands...
-		_, err := Bot.RespondInfo(m, "", "looks like this command just does nothing... what is it here for anyways?")
+		_, err := Bot.RespondInfo(req, "", "looks like this command just does nothing... what is it here for anyways?")
 		return err
 	}
 

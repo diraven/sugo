@@ -1,4 +1,4 @@
-package elite_dangerous
+package elitedangerous
 
 import (
 	"context"
@@ -28,12 +28,12 @@ var factions = &sugo.Command{
 	Description:        "Provides minor factions info on the given system.",
 	Usage:              "Solar System Name",
 	AllowParams:        true,
-	Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
 
 		// Make sure there is a query specified.
-		if strings.TrimSpace(q) == "" {
-			_, err = sg.RespondBadCommandUsage(m, c, "", "")
+		if strings.TrimSpace(req.Query) == "" {
+			_, err = sg.RespondBadCommandUsage(req, "", "")
 			return err
 		}
 
@@ -44,10 +44,10 @@ var factions = &sugo.Command{
 
 		// Get system ID by searching with query q.
 		var systemID int
-		systemID, err = getSystemID(ctx, q)
+		systemID, err = getSystemID(ctx, req.Query)
 		if err != nil {
 			if _, ok := err.(timeoutError); ok {
-				_, err = sg.RespondDanger(m, "", err.Error())
+				_, err = sg.RespondDanger(req, "", err.Error())
 				if err != nil {
 					return err
 				}
@@ -56,7 +56,7 @@ var factions = &sugo.Command{
 		}
 		// If there are no systems found - we will end up with systemID=0
 		if systemID == 0 {
-			_, err = sg.RespondDanger(m, "", "oops... looks like no systems found")
+			_, err = sg.RespondDanger(req, "", "oops... looks like no systems found")
 			if err != nil {
 				return err
 			}
@@ -72,7 +72,7 @@ var factions = &sugo.Command{
 		// It is possible that embed is nil if ctx timeout is reached.
 		if embed == nil {
 			if _, ok := err.(timeoutError); ok {
-				_, err = sg.RespondDanger(m, "", err.Error())
+				_, err = sg.RespondDanger(req, "", err.Error())
 				if err != nil {
 					return err
 				}
@@ -80,7 +80,7 @@ var factions = &sugo.Command{
 			return err
 		}
 
-		_, err = sg.ChannelMessageSendEmbed(m.ChannelID, embed)
+		_, err = sg.ChannelMessageSendEmbed(req.Channel.ID, embed)
 		if err != nil {
 			return err
 		}

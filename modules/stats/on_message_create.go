@@ -1,33 +1,22 @@
 package stats
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 )
 
-func onMessageCreate(sg *sugo.Instance, m *discordgo.Message) error {
-	// Get channel.
-	channel, err := sg.ChannelFromMessage(m)
-	if err != nil {
-		return err
-	}
-
+func onMessageCreate(sg *sugo.Instance, req *sugo.Request) error {
 	// We only work with guild text channels and ignore everything else.
-	if channel.Type != discordgo.ChannelTypeGuildText {
+	if req.Channel.Type != discordgo.ChannelTypeGuildText {
 		return nil
-	}
-
-	guild, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return err
 	}
 
 	// Ignore bots.
-	if m.Author.Bot {
+	if req.Message.Author.Bot {
 		return nil
 	}
 
-	stats.logMessage(sg, guild.ID, m.Author.ID)
+	stats.logMessage(sg, req.Guild.ID, req.Message.Author.ID)
 
 	return nil
 }

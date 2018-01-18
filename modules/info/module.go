@@ -6,9 +6,9 @@ import (
 	"github.com/diraven/sugo"
 	"github.com/diraven/sugo/helpers"
 	"github.com/dustin/go-humanize"
+	"os"
 	"runtime"
 	"time"
-	"os"
 )
 
 // Info shows some general bot info.
@@ -18,7 +18,7 @@ var Module = &sugo.Module{
 		PermittedByDefault:  true,
 		AllowDefaultChannel: true,
 		Description:         "Shows basic info about bot.",
-		Execute: func(sg *sugo.Instance, c *sugo.Command, m *discordgo.Message, q string) error {
+		Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 			var err error
 
 			// Set command response.
@@ -32,7 +32,7 @@ var Module = &sugo.Module{
 
 			var memStats runtime.MemStats
 			runtime.ReadMemStats(&memStats)
-			_, err = sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+			_, err = sg.ChannelMessageSendEmbed(req.Channel.ID, &discordgo.MessageEmbed{
 				URL:         "https://github.com/diraven/sugo",
 				Title:       "https://github.com/diraven/sugo",
 				Description: "A Discord bot written in Go.",

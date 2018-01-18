@@ -7,39 +7,39 @@ import (
 
 // RespondBadCommandUsage responds to the channel with "incorrect command usage" message mentioning person that invoked
 // command.
-func (sg *Instance) RespondBadCommandUsage(m *discordgo.Message, c *Command, title string, description string) (*discordgo.Message, error) {
+func (sg *Instance) RespondBadCommandUsage(req *Request, title string, description string) (*discordgo.Message, error) {
 	if title == "" {
 		title = "bad command usage"
 	}
 	if description == "" {
-		description = "see \"" + c.FullHelpPath(sg) + "\" for details"
+		description = "see \"" + req.Command.FullHelpPath(sg) + "\" for details"
 	}
-	msg, err := sg.RespondDanger(m, title, description)
+	msg, err := sg.RespondDanger(req, title, description)
 	return msg, err
 }
 
 // RespondNotImplemented responds to the channel with "not implemented" message mentioning person that invoked
 // command.
-func (sg *Instance) RespondNotImplemented(m *discordgo.Message) (*discordgo.Message, error) {
-	msg, err := sg.RespondWarning(m, "not implemented", "this functionality is not implemented yet")
+func (sg *Instance) RespondNotImplemented(req *Request) (*discordgo.Message, error) {
+	msg, err := sg.RespondWarning(req, "not implemented", "this functionality is not implemented yet")
 	return msg, err
 }
 
 // RespondCommandNotFound responds to the channel with "command not found" message mentioning person that invoked
 // command.
-func (sg *Instance) RespondCommandNotFound(m *discordgo.Message) (*discordgo.Message, error) {
-	return sg.RespondWarning(m, "command not found", "")
+func (sg *Instance) RespondCommandNotFound(req *Request) (*discordgo.Message, error) {
+	return sg.RespondWarning(req, "command not found", "")
 }
 
 // Respond responds to the channel with an embed without any icons.
-func (sg *Instance) Respond(m *discordgo.Message, title string, description string, color int, icon string) (*discordgo.Message, error) {
+func (sg *Instance) Respond(req *Request, title string, description string, color int, icon string) (*discordgo.Message, error) {
 	if title == "" {
-		title = "@" + m.Author.Username
+		title = "@" + req.Message.Author.Username
 	}
 	if color == 0 {
 		color = ColorDefault
 	}
-	msg, err := sg.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+	msg, err := sg.ChannelMessageSendEmbed(req.Message.ChannelID, &discordgo.MessageEmbed{
 		Title:       strings.Join([]string{icon, title}, " "),
 		Description: description,
 		Color:       color,
@@ -48,21 +48,21 @@ func (sg *Instance) Respond(m *discordgo.Message, title string, description stri
 }
 
 // RespondInfo responds to the channel with the "info" embed.
-func (sg *Instance) RespondInfo(m *discordgo.Message, title string, description string) (*discordgo.Message, error) {
-	return sg.Respond(m, title, description, ColorInfo, ":information_source:")
+func (sg *Instance) RespondInfo(req *Request, title string, description string) (*discordgo.Message, error) {
+	return sg.Respond(req, title, description, ColorInfo, ":information_source:")
 }
 
-// RespondInfo responds to the channel with the "success" embed.
-func (sg *Instance) RespondSuccess(m *discordgo.Message, title string, description string) (*discordgo.Message, error) {
-	return sg.Respond(m, title, description, ColorSuccess, ":white_check_mark:")
+// RespondSuccess responds to the channel with the "success" embed.
+func (sg *Instance) RespondSuccess(req *Request, title string, description string) (*discordgo.Message, error) {
+	return sg.Respond(req, title, description, ColorSuccess, ":white_check_mark:")
 }
 
-// RespondInfo responds to the channel with the "warning" embed.
-func (sg *Instance) RespondWarning(m *discordgo.Message, title string, description string) (*discordgo.Message, error) {
-	return sg.Respond(m, title, description, ColorWarning, ":warning:")
+// RespondWarning responds to the channel with the "warning" embed.
+func (sg *Instance) RespondWarning(req *Request, title string, description string) (*discordgo.Message, error) {
+	return sg.Respond(req, title, description, ColorWarning, ":warning:")
 }
 
-// RespondInfo responds to the channel with the "Danger" embed.
-func (sg *Instance) RespondDanger(m *discordgo.Message, title string, description string) (*discordgo.Message, error) {
-	return sg.Respond(m, title, description, ColorDanger, ":no_entry:")
+// RespondDanger responds to the channel with the "Danger" embed.
+func (sg *Instance) RespondDanger(req *Request, title string, description string) (*discordgo.Message, error) {
+	return sg.Respond(req, title, description, ColorDanger, ":no_entry:")
 }

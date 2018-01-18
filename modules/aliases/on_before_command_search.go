@@ -1,38 +1,26 @@
 package aliases
 
 import (
+	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"strings"
-	"github.com/bwmarrin/discordgo"
 )
 
-func onBeforeCommandSearch(sg *sugo.Instance, m *discordgo.Message, q string) (string, error) {
-	// Get channel.
-	channel, err := sg.ChannelFromMessage(m)
-	if err != nil {
-		return "", err
-	}
-
+func onBeforeCommandSearch(sg *sugo.Instance, req *sugo.Request) error {
 	// We only work with guild text channels and ignore everything else.
-	if channel.Type != discordgo.ChannelTypeGuildText {
-		return q, nil
-	}
-
-	// Get guild.
-	guild, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return "", err
+	if req.Channel.Type != discordgo.ChannelTypeGuildText {
+		return nil
 	}
 
 	// Process aliases.
-	for alias, commandPath := range *aliases.all(guild) {
-		if strings.Index(q, alias) == 0 {
-			if len(q) == len(alias) || string(q[len(alias)]) == " " {
-				q = strings.Replace(q, alias, commandPath, 1)
+	for alias, commandPath := range *aliases.all(req.Guild) {
+		if strings.Index(req.Query, alias) == 0 {
+			if len(req.Query) == len(alias) || string(req.Query[len(alias)]) == " " {
+				req.Query = strings.Replace(req.Query, alias, commandPath, 1)
 				break
 			}
 		}
 	}
 	// Return resulting query.
-	return q, nil
+	return nil
 }

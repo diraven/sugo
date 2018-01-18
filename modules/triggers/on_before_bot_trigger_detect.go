@@ -2,31 +2,24 @@ package triggers
 
 import (
 	"github.com/diraven/sugo"
-	"github.com/bwmarrin/discordgo"
 	"strings"
 )
 
-func onBeforeBotTriggerDetect(sg *sugo.Instance, m *discordgo.Message, q string) (string, error) {
+func onBeforeBotTriggerDetect(sg *sugo.Instance, req *sugo.Request) error {
 	// Trigger detection only works in guild text channels, so we are safe to assume we are in guild channel at this
 	// point.
 
-	var err error
+	// Cleanup query.
+	req.Query = strings.TrimSpace(req.Query)
 
-	g, err := sg.GuildFromMessage(m)
-	if err != nil {
-		return q, err
-	}
-
-	q = strings.TrimSpace(q)
-
-	trigger := triggers.get(sg, g.ID)
+	// Get bot trigger.
+	trigger := triggers.get(sg, req.Guild.ID)
 
 	// If trigger for the given guild is set and present in the query:
-	if trigger != "" && strings.HasPrefix(q, trigger) {
+	if trigger != "" && strings.HasPrefix(req.Query, trigger) {
 		// Replace trigger with bot mention for it to be detected as bot trigger.
-		q = strings.Replace(q, trigger, sg.Self.Mention(), 1)
+		req.Query = strings.Replace(req.Query, trigger, sg.Self.Mention(), 1)
 	}
 
-	// Return our resulting query string.
-	return q, nil
+	return nil
 }
