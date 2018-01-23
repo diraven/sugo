@@ -22,7 +22,7 @@ func postKillmails(sg *sugo.Instance) {
 		case <-cPostNewItemsTeardown: // Bot is shutting down. Exit the loop.
 			wg.Done()
 			return
-		case <-time.After(time.Second):
+		case <-time.After(time.Millisecond):
 			resp, err := http.Get("https://redisq.zkillboard.com/listen.php")
 			if err != nil {
 				log.Println(err)
