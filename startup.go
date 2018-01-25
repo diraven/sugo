@@ -5,32 +5,25 @@ import (
 	"os/signal"
 	"syscall"
 	"os"
-	"database/sql"
 	"github.com/bwmarrin/discordgo"
 	"errors"
 )
 
 // Startup starts the bot up.
-func (sg *Instance) Startup(token string, rootUID string) error {
+func (sg *Instance) Startup(token string) error {
 	// Intitialize Shutdown channel.
 	sg.done = make(chan os.Signal, 1)
 
 	// Variable to store errors.
 	var err error
 
-	// Initialize database.
-	sg.DB, err = sql.Open("sqlite3", "./data.sqlite3")
-	if err != nil {
-		return err
-	}
-
-	// Create a new Discord session using the provided bot token.
+	// Create a new Discord Session using the provided bot token.
 	s, err := discordgo.New("Bot " + token)
 	if err != nil {
-		return errors.New("Error creating Discord session... " + err.Error())
+		return errors.New("Error creating Discord Session... " + err.Error())
 	}
 
-	// Save Discord session into Instance struct.
+	// Save Discord Session into Instance struct.
 	sg.Session = s
 
 	// Get bot discordgo.User instance.
@@ -40,30 +33,20 @@ func (sg *Instance) Startup(token string, rootUID string) error {
 	}
 	sg.Self = self
 
-	// Get root account info.
-	if rootUID != "" {
-		root, err := sg.Session.User(rootUID)
-		if err != nil {
-			return errors.New("Error obtaining root account details... " + err.Error())
-		}
-		sg.root = root
-	}
-
-	// Perform Startup for all Modules.
-	for _, module := range sg.Modules {
-		if err = module.startup(sg); err != nil {
+	// Run startup handlers.
+	for _, handler := range sg.startupHandlers {
+		if err = handler(sg); err != nil {
+			// If there is any error - we stop the startup process and shut the bot down as there is not much sense
+			// to let bot finish the startup in an event of an error.
+			sg.Shutdown()
 			return err
 		}
 	}
 
 	// Register callback for the messageCreate events.
-	sg.Session.AddHandler(onMessageCreate)
-
-	// Register callback for the messageUpdate events.
-	//sg.Session.AddHandler(onMessageUpdate)
-
-	// Register callback for the presenceUpdate events.
-	sg.Session.AddHandler(onPresenceUpdate)
+	sg.Session.AddHandler(func (s *discordgo.Session, mc *discordgo.MessageCreate) {
+		sg.onMessageCreate(mc.Message)
+	})
 
 	// Open the websocket and begin listening.
 	if err = sg.Session.Open(); err != nil {
@@ -79,7 +62,7 @@ func (sg *Instance) Startup(token string, rootUID string) error {
 	<-sg.done
 
 	// Gracefully shut the bot down.
-	err = sg.teardown()
+	sg.shutdown()
 
 	return nil
 }

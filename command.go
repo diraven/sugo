@@ -2,7 +2,6 @@ package sugo
 
 import (
 	"errors"
-	"github.com/bwmarrin/discordgo"
 	"strings"
 )
 
@@ -10,49 +9,31 @@ import (
 type Command struct {
 	// Trigger is a sequence of symbols message should start with to match with the command.
 	Trigger string
-	// RootOnly determines if the command is supposed to be used by root only.
-	RootOnly bool
-	// IgnoreDefaultChannel specifies if command works in guild default channel.
-	AllowDefaultChannel bool
-	// PermittedByDefault specifies if command is allowed to be used by default. Default is false.
-	PermittedByDefault bool
-	// Response is a string that will be sent to the user in response to the command.
-	TextResponse string
-	// EmbedResponse is a *discordgo.MessageEmbed, if set - has priority over text response.
-	EmbedResponse *discordgo.MessageEmbed
 	// Description should contain short command description.
 	Description string
 	// Usage contains an example of the command usage.
-	Usage string
+	HasParams bool
+	// PermissionsRequired specifies permissions set required by the command.
+	PermissionsRequired int
+	// Execute code for subcommand.
+	Execute func(sg *Instance, r *Request) error
 	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
-	// HasParams specifies if command is allowed to have additional parameters after the command path itself.
-	AllowParams bool
-	// AllowDM specifies if command can be used via direct messages.
-	AllowDM bool
-
 	// parentCommand contains command, which is parent for this one
 	parent *Command
-
-	// Custom execute code for subcommand.
-	Execute func(sg *Instance, r *Request) error
 }
 
 // GetSubcommandsTriggers return all subcommands triggers available for given user.
-func (c *Command) GetSubcommandsTriggers(sg *Instance, req *Request) ([]string, error) {
+func (c *Command) GetSubcommandsTriggers(sg *Instance, r *Request) []string {
 	var triggers []string
 
 	// Generate triggers list respecting user permissions.
 	for _, subCommand := range c.SubCommands {
-		command, err := sg.FindCommand(req, subCommand.Path())
-		if err != nil {
-			return triggers, err
-		}
-		if command != nil {
+		if sg.hasPermissions(r, subCommand.PermissionsRequired) {
 			triggers = append(triggers, subCommand.Trigger)
 		}
 	}
-	return triggers, nil
+	return triggers
 }
 
 // startup is internal function called for each command on bot startup.
@@ -61,7 +42,7 @@ func (c *Command) startup(sg *Instance) error {
 	for _, v := range c.SubCommands {
 		// Check if command is already registered elsewhere.
 		if v.parent != nil {
-			return errors.New("The subcommand is already registered elsewhere: " + c.Path())
+			return errors.New("The subcommand is already registered elsewhere: " + c.GetPath())
 		}
 		// Set command parent.
 		v.parent = c
@@ -90,22 +71,17 @@ func (c *Command) teardown(sg *Instance) error {
 	return nil
 }
 
-// Path returns sequence of triggers from outermost to innermost command for the given one.
-func (c *Command) Path() (value string) {
+// GetPath returns sequence of triggers from outermost (via the sequence of parents) to the given one.
+func (c *Command) GetPath() (value string) {
 	if c.parent != nil {
-		return strings.TrimSpace(c.parent.Path() + " " + c.Trigger)
+		return strings.TrimSpace(c.parent.GetPath() + " " + c.Trigger)
 	}
 	return c.Trigger
 }
 
-// FullHelpPath returns full help path including "help" command trigger.
-func (c *Command) FullHelpPath(sg *Instance) (value string) {
-	return "help " + c.Path()
-}
-
-// match is a system matching function that checks if command trigger matches the start of message content.
-func (c *Command) match(sg *Instance, q string) bool {
-	// If trigger is not set, check if command is empty.
+// match is a system matching function that checks if command Trigger matches the start of message content.
+func (c *Command) match(sg *Instance, r *Request, q string) bool {
+	// If Trigger is not set, check if command is empty.
 	if c.Trigger == "" && q == "" {
 		return true
 	}
@@ -113,156 +89,96 @@ func (c *Command) match(sg *Instance, q string) bool {
 	// Trigger is set, see if it's in the message.
 	if c.Trigger != "" {
 		if strings.HasPrefix(q, c.Trigger) {
+			// Now make sure user has the permissions necessary to run the command.
+			if !sg.hasPermissions(r, c.PermissionsRequired) {
+				return false
+			}
+			//func (s *State) UserChannelPermissions(userID, channelID string) (apermissions int, err error) {
+
 			return true
 		}
 	}
+
 	return false
 }
 
 // search searches for matching command (including permissions checks) in the given command's subcommands.
 func (c *Command) search(sg *Instance, req *Request, q string) (*Command, error) {
-	// Check if message matches command.
-	if !c.match(sg, q) {
-		// Message did not match command.
-		return nil, nil
-	}
-
-	// Command matched, check if necessary permissions are present.
-	passed, err := c.checkPermissions(sg, req)
-	if err != nil {
-		return nil, err
-	}
-	if !passed {
-		// Message did not pass permissions check.
-		return nil, nil
-	}
-
-	// Command matched and permissions check passed!
-	// Consume original parent command trigger from the message.
-	q = strings.TrimSpace(strings.TrimPrefix(q, c.Trigger))
-
-	// Check if there are any subcommands.
-	if len(c.SubCommands) > 0 {
-		// We do have subcommands.
-		for _, subCommand := range c.SubCommands {
-			// Now try to match any of the subcommands.
-			result, err := subCommand.search(sg, req, q)
-			if err != nil {
-				return nil, err
-			}
-			// If we were able to get subcommand that matched:
-			if result != nil {
-				return result, nil
-			}
+	// For every command in subcommands list. We start iterating immediately without considering top level command,
+	// because our top level command on bot is an artificial one to contain real ones. So this top level command is
+	// simply ignored.
+	for _, cmd := range c.SubCommands {
+		// Check if message matches command.
+		if !cmd.match(sg, req, q) {
+			// Message did not match command.
+			continue
 		}
+
+		// Make sure to strip away the Trigger of the parent command we have already found as matching.
+		q = strings.TrimSpace(strings.TrimPrefix(q, cmd.Trigger))
+
+		// Try to find subcommand that matches the remainder of the query.
+		subCmd, err := cmd.search(sg, req, q)
+		if err != nil {
+			return nil, err
+		}
+		if subCmd != nil {
+			// If we found matching subcommand, return it.
+			return subCmd, nil
+		}
+
+		// Otherwise return our parent command whose subcommands we were iterating over.
+		// Either q should be empty (fully consumed by matching) or the command we are going to return should be able to
+		// accept and process parameters.
+		// It's done to exclude false positives that tend to happen when you try to use subcommands and spell them
+		// improperly, which results in a situation where we return parent command with it's improperly spelled
+		// subcommand Trigger as a parameter.
+		if q == "" || cmd.HasParams {
+			return cmd, nil
+		}
+		// Otherwise continue with searching another command.
 	}
 
-	// Either there are no subcommands, or none of those worked. Return parent command, but only if it has no params
-	// or params allowed.
-	if c.AllowParams || q == "" {
-		return c, nil
-	}
-
-	// We did not find a command that satisfies all the requirements.
+	// None of subcommands matched.
 	return nil, nil
 }
 
-// checkPermissions checks if given user has necessary permissions to use the command. The function is called
-// sequentially for topmost command and following the path to the subcommand in question.
-func (c *Command) checkPermissions(sg *Instance, req *Request) (bool, error) {
-	// If user is a root - command is always allowed.
-	if sg.isRoot(req.Message.Author) {
-		return true, nil
+// validate validates commands for them to have either Execute method defined or have subcommands.
+func (c *Command) validate() error {
+	if c.Execute != nil {
+		return nil
 	}
 
-	// Otherwise if user is not a root and command is root-only - command is not allowed.
-	if c.RootOnly {
-		return false, nil
-	}
-
-	// Get channel.
-	channel, err := sg.State.Channel(req.Channel.ID)
-	if err != nil {
-		return false, err
-	}
-	// Check if we should ignore the command because it's disabled for default channel.
-	if !c.AllowDefaultChannel && channel.ID == channel.GuildID {
-		return false, nil
-	}
-
-	// Now check if we have any additional Modules handling permission checks and use those.
-	var allowedFound bool // specifies if any of the Modules returned explicit result
-
-	for _, module := range sg.Modules {
-		if module.OnPermissionsCheck != nil {
-			passed, err := module.OnPermissionsCheck(sg, req)
-			if err != nil {
-				// In case of error - return error and deny command.
-				return false, err
-			}
-			if passed == nil { // Undefined return.
-				continue // Just go on to the next module.
-			}
-			if *passed { // Command explicitly allowed
-				// Mark the fact we have found module that allows the command and go on to the next ones.
-				allowedFound = true
-				continue
-			} else { // Command explicitly disallowed.
-				return false, nil // We return false if at least one module disallowed the command execution.
-			}
+	if len(c.SubCommands) > 0 {
+		// Perform validation recursively for every subcommand.
+		for _, subCmd := range c.SubCommands {
+			return subCmd.validate()
 		}
 	}
 
-	if allowedFound { // At this point if there are Modules found with explicit return - they did allow the command.
-		return true, nil
-	}
+	return errors.New("command has neither subcommands nor Execute method defined: " + c.GetPath())
+}
 
-	// There are no special permissions set for any of the Modules. Just back to default.
-	return c.PermittedByDefault, nil
+// setParents sets parents for all commands for easier reference.
+func (c *Command) setParents() {
+	for _, subCmd := range c.SubCommands {
+		subCmd.parent = c
+		subCmd.setParents()
+	}
 }
 
 // execute is a default command execution function.
 func (c *Command) execute(sg *Instance, req *Request) error {
-	var actionPerformed bool
-
 	if c.Execute != nil {
-		// Run custom command Execute if set.
-
-		if err := c.Execute(sg, req); err != nil {
-			return err
-		}
-		actionPerformed = true
-	}
-
-	if c.TextResponse != "" {
-		// Send command text response if set.
-
-		if _, err := sg.Respond(req, "", c.TextResponse, ColorPrimary, ""); err != nil {
-			return err
-		}
-		actionPerformed = true
-	}
-
-	if c.EmbedResponse != nil {
-		// Send command embed response if set.
-
-		if _, err := sg.ChannelMessageSendEmbed(req.Channel.ID, c.EmbedResponse); err != nil {
-			return err
-		}
-		actionPerformed = true
-	}
-
-	if !actionPerformed {
-		if len(c.SubCommands) > 0 {
-			// If there is at least one subcommand and no other actions taken - explain it to the user.
-			_, err := sg.RespondBadCommandUsage(req, "", "")
-			return err
-		}
-
-		// We did nothing and there are no subcommands...
-		_, err := Bot.RespondInfo(req, "", "looks like this command just does nothing... what is it here for anyways?")
+		err := c.Execute(sg, req)
 		return err
 	}
 
-	return nil
+	if len(c.SubCommands) > 0 {
+		// If there is at least one subcommand and command was not executed - let user know he used command incorrectly.
+		_, err := sg.RespondBadCommandUsage(req, "", "")
+		return err
+	}
+
+	return errors.New("command has no Execute specified and no subcommands: " + c.GetPath())
 }

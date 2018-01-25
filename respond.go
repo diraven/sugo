@@ -12,7 +12,20 @@ func (sg *Instance) RespondBadCommandUsage(req *Request, title string, descripti
 		title = "bad command usage"
 	}
 	if description == "" {
-		description = "see \"" + req.Command.FullHelpPath(sg) + "\" for details"
+		description = "command used incorrectly"
+	}
+	msg, err := sg.RespondDanger(req, title, description)
+	return msg, err
+}
+
+// RespondGuildOnly responds to the channel with "guild only" message explaining that command is only available in guild
+// channel.
+func (sg *Instance) RespondGuildOnly(req *Request, title string, description string) (*discordgo.Message, error) {
+	if title == "" {
+		title = "guild only"
+	}
+	if description == "" {
+		description = "this command can only be executed in guild channel"
 	}
 	msg, err := sg.RespondDanger(req, title, description)
 	return msg, err
@@ -39,7 +52,7 @@ func (sg *Instance) Respond(req *Request, title string, description string, colo
 	if color == 0 {
 		color = ColorDefault
 	}
-	msg, err := sg.ChannelMessageSendEmbed(req.Message.ChannelID, &discordgo.MessageEmbed{
+	msg, err := sg.Session.ChannelMessageSendEmbed(req.Message.ChannelID, &discordgo.MessageEmbed{
 		Title:       strings.Join([]string{icon, title}, " "),
 		Description: description,
 		Color:       color,
