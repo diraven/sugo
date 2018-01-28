@@ -7,7 +7,6 @@ import (
 	"os"
 	"github.com/pkg/errors"
 	"log"
-	"fmt"
 )
 
 // VERSION contains current version of the Instance framework.
