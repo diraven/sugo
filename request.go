@@ -3,6 +3,7 @@ package sugo
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 // Request contains message context data along with some helpers to retrieve more information.
@@ -46,4 +47,9 @@ func (r *Request) IsChannelDM() bool {
 	}
 
 	return false
+}
+
+// WrapError error wraps error with additional request info.
+func (r *Request) WrapError(e error, text string) error {
+	return errors.Wrap(e, fmt.Sprintf("command error: %s: %s", r.Command.GetPath(), r.Query))
 }
