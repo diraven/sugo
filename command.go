@@ -1,8 +1,9 @@
 package sugo
 
 import (
-	"errors"
 	"strings"
+	"github.com/pkg/errors"
+	"fmt"
 )
 
 // Command struct describes basic command type.
@@ -21,6 +22,10 @@ type Command struct {
 	SubCommands []*Command
 	// parentCommand contains command, which is parent for this one
 	parent *Command
+}
+
+func (c *Command) Error(r *Request, e error, txt string) error {
+	return errors.Wrap(e, fmt.Sprintf("command error: %s %s", c.GetPath(), r.Query))
 }
 
 // GetSubcommandsTriggers return all subcommands triggers available for given user.
