@@ -7,6 +7,7 @@ import (
 	"os"
 	"github.com/pkg/errors"
 	"log"
+	"fmt"
 )
 
 // VERSION contains current version of the Instance framework.
@@ -120,6 +121,14 @@ func (sg *Instance) FindCommand(req *Request, q string) (*Command, error) {
 
 	// No commands found.
 	return nil, nil
+}
+
+// HandleRequestError wraps error with additional request info before handling.
+func (sg *Instance) HandleRequestError(r *Request, e error) {
+	if r != nil {
+		sg.HandleError(errors.Wrap(e, fmt.Sprintf("command error: %s: %s", r.Command.GetPath(), r.Query)))
+	}
+	sg.HandleError(e)
 }
 
 // HandleError handles unexpected errors that were returned unhandled elsewhere.
