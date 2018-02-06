@@ -3,16 +3,22 @@ package sugo
 import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
-	"github.com/pkg/errors"
+	"errors"
 )
 
+// onMessageCreate is a lowest level handler for bot. All the request building and command searching magic happen here.
 func (sg *Instance) onMessageCreate(m *discordgo.Message) {
-	var err error // Used to capture and report errors.
+	var err error
 
-	// Instance request.
+	// Ignore a message it's author is bot.
+	if m.Author.Bot {
+		return
+	}
+
+	// Instantiate request.
 	var r = &Request{}
 
-	// Put bot pointer into the appropriate var for reference.
+	// Put bot pointer into the appropriate request var for later reference.
 	r.Sugo = sg
 
 	// Put message into request.
@@ -21,24 +27,19 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	// Put initial query into request.
 	r.Query = m.Content
 
-	// Ignore any message that is coming from bot.
-	if m.Author.Bot {
-		return
-	}
-
-	// Get channel.
-	r.Channel, err = r.Sugo.Session.State.Channel(r.Message.ChannelID)
+	// Get message channel and put it into the request.
+	r.Channel, err = sg.Session.State.Channel(r.Message.ChannelID)
 	if err != nil {
-		sg.HandleError(errors.Wrap(err, "getting channel failed"))
+		sg.HandleError(errors.New("unable to get channel: " + err.Error() + " (" + r.Query + ")"))
 	}
 
 	if r.Channel.Type == discordgo.ChannelTypeDM {
 		// It's Direct Messaging Channel. Every message here is in fact a direct message to the bot, so we consider
-		// it to be command without any further checks.
+		// it to be command without any further checks for prefixes.
 
 	} else if r.Channel.Type == discordgo.ChannelTypeGuildText || r.Channel.Type == discordgo.ChannelTypeGroupDM {
 		// It's either Guild Text Channel or multiple people direct group Channel.
-		// In order to detect command we need to account for Trigger.
+		// In order to detect command we need to check for bot Trigger.
 
 		// If bot Trigger is set and command starts with that Trigger:
 		if sg.Trigger != "" && strings.HasPrefix(r.Query, sg.Trigger) {
@@ -52,7 +53,7 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 			r.Query = strings.Replace(r.Query, "<@!", "<@", 1)
 		}
 
-		// If the message starts with bot mention.
+		// If the message starts with bot mention:
 		if strings.HasPrefix(strings.TrimSpace(r.Query), sg.Self.Mention()) {
 			// Remove bot Trigger from the string.
 			r.Query = strings.TrimSpace(strings.TrimPrefix(r.Query, sg.Self.Mention()))
@@ -66,11 +67,10 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	// Search for applicable command.
 	r.Command, err = sg.FindCommand(r, r.Query)
 	if err != nil {
-		// Unhandled error in command.
-		sg.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + r.Query + ")"))
+		sg.HandleError(errors.New("command search error: " + err.Error() + " (" + r.Query + ")"))
 	}
 
-	// If we did not find matching command, try applying alias and searching again.
+	// If we did not find matching command, try applying alias and search again.
 	if r.Command == nil {
 		// Apply aliases if any applicable.
 		for _, alias := range *sg.aliases {
@@ -80,14 +80,14 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 			}
 		}
 
-		// Search for applicable command again after alias applied.
+		// Search for applicable command again after alias was applied.
 		r.Command, err = sg.FindCommand(r, r.Query)
 		if err != nil {
-			// Unhandled error in command.
-			sg.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + r.Query + ")"))
+			sg.HandleError(errors.New("command search error: " + err.Error() + " (" + r.Query + ")"))
 		}
 	}
 
+	// If we have found applicable command:
 	if r.Command != nil {
 		// Remove command Trigger from message string.
 		r.Query = strings.TrimSpace(strings.TrimPrefix(r.Query, r.Command.GetPath()))
@@ -96,15 +96,12 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 		err = r.Command.execute(sg, r)
 		if err != nil {
 			if strings.Contains(err.Error(), "\"code\": 50013") {
-				// Insufficient permissions, bot configuration issue.
-				sg.HandleError(errors.New("Bot permissions error: " + err.Error() + " (" + r.Query + ")"))
-			} else {
-				// Other discord errors.
-				sg.HandleError(errors.New("Bot command execute error: " + err.Error() + " (" + r.Query + ")"))
+				// Insufficient permissions.
+				sg.HandleError(errors.New("permissions error: " + err.Error() + " (" + r.Query + ")"))
 			}
-			sg.HandleError(err)
+			sg.HandleError(errors.New("command execution error: " + err.Error() + " (" + r.Query + ")"))
 		}
 	}
 
-	// Command not found.
+	// Command not found, we do nothing.
 }
