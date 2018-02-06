@@ -33,10 +33,10 @@ func isTriggered(req *Request) bool {
 			req.Query = strings.TrimSpace(strings.TrimPrefix(req.Query, req.Sugo.Self.Mention()))
 			// Bot is triggered.
 			return true
-		} else {
-			// Otherwise bot is not triggered.
-			return false
 		}
+
+		// Otherwise bot is not triggered.
+		return false
 	}
 
 	// We ignore all other channel types and consider bot not triggered.
