@@ -5,10 +5,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"github.com/texttheater/golang-levenshtein/levenshtein"
-	"strings"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 const storageFilename = "public_roles.yaml"

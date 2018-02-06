@@ -1,13 +1,13 @@
 package publicroles
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 )
 
 var delCmd = &sugo.Command{
-	Trigger:     "del",
-	Description: "Makes given role not public (does not delete the role itself).",
+	Trigger:             "del",
+	Description:         "Makes given role not public (does not delete the role itself).",
 	PermissionsRequired: discordgo.PermissionManageRoles,
 	HasParams:           true,
 	Execute: func(sg *sugo.Instance, req *sugo.Request) error {

@@ -34,9 +34,9 @@ func (ss *tStats) Swap(i, j int) {
 }
 
 var statsCmd = &sugo.Command{
-	Trigger:            "stats",
-	Description:        "Lists public roles with the highest/lowest count of people.",
-	HasParams:        true,
+	Trigger:     "stats",
+	Description: "Lists public roles with the highest/lowest count of people.",
+	HasParams:   true,
 	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
 		// Get all public roles.

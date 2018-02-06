@@ -4,9 +4,9 @@ package sugo
 import (
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/mattn/go-sqlite3" // We do not need actual sqlite driver reference in package.
-	"os"
 	"github.com/pkg/errors"
 	"log"
+	"os"
 )
 
 // VERSION contains current version of the Instance framework.
@@ -24,8 +24,6 @@ type Instance struct {
 	Self *discordgo.User
 	// RootCommand is a bot root meta-command.
 	RootCommand *Command
-	// root is a user whose ID was specified during bot error.
-	root *discordgo.User
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
 	// aliases contains all bot command aliases.

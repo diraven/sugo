@@ -1,8 +1,8 @@
 package sugo
 
 import (
+	"errors"
 	"os"
-	"github.com/pkg/errors"
 )
 
 // Shutdown sends Shutdown signal to the bot's Shutdown channel.
@@ -17,12 +17,12 @@ func (sg *Instance) shutdown() {
 		if err := handler(sg); err != nil {
 			// In case of an error - we report the error and continue the shutdown process. Errors should not interrupt
 			// shutdown as we need to perform shutdown as cleanly as possible.
-			sg.HandleError(errors.Wrap(err, "shutdown error"))
+			sg.HandleError(errors.New("shutdown error" + err.Error()))
 		}
 	}
 
 	// Close discord Session.
 	if err := sg.Session.Close(); err != nil {
-		sg.HandleError(errors.Wrap(err, "discord Session close error"))
+		sg.HandleError(errors.New("discordgo Session close error" + err.Error()))
 	}
 }

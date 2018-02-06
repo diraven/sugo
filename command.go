@@ -1,8 +1,8 @@
 package sugo
 
 import (
-	"strings"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 // Command struct describes basic command type.

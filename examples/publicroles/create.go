@@ -1,14 +1,14 @@
 package publicroles
 
 import (
+	"github.com/bwmarrin/discordgo"
 	"github.com/diraven/sugo"
 	"strings"
-	"github.com/bwmarrin/discordgo"
 )
 
 var createCmd = &sugo.Command{
-	Trigger:     "create",
-	Description: "Creates new role on server and makes it public.",
+	Trigger:             "create",
+	Description:         "Creates new role on server and makes it public.",
 	PermissionsRequired: discordgo.PermissionManageRoles,
 	HasParams:           true,
 	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
@@ -73,7 +73,6 @@ var createCmd = &sugo.Command{
 			_, err = sg.RespondDanger(req, "", err.Error())
 			return err
 		}
-
 
 		// And notify user about success.
 		_, err = sg.RespondSuccess(req, "", "new role `"+role.Name+"` was created and made public")

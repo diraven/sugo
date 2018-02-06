@@ -1,9 +1,9 @@
 package sugo
 
 import (
+	"errors"
 	"github.com/bwmarrin/discordgo"
 	"strings"
-	"errors"
 )
 
 // onMessageCreate is a lowest level handler for bot. All the request building and command searching magic happen here.

@@ -1,10 +1,10 @@
 package helpers
 
 import (
-	"time"
 	"math"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 )
 
 // TimeToDiscordTimestamp returns time in a format that Discord API accepts.

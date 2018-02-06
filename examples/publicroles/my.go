@@ -6,8 +6,8 @@ import (
 )
 
 var myCmd = &sugo.Command{
-	Trigger:            "my",
-	Description:        "Lists public roles you are in.",
+	Trigger:     "my",
+	Description: "Lists public roles you are in.",
 	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		// Try to find role based on query.
 		roles, err := storage.findUserPublicRole(sg, req, req.Query)

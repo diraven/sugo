@@ -1,8 +1,8 @@
 package sugo
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"errors"
+	"github.com/bwmarrin/discordgo"
 )
 
 // Request contains message context data along with some helpers to retrieve more information.

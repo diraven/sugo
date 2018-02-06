@@ -1,8 +1,8 @@
 package publicroles
 
 import (
-	"github.com/diraven/sugo"
 	"github.com/bwmarrin/discordgo"
+	"github.com/diraven/sugo"
 	"github.com/diraven/sugo/helpers"
 	"sort"
 )

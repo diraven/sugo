@@ -36,9 +36,9 @@ func generateHelpEmbed(sg *sugo.Instance, req *sugo.Request, c *sugo.Command) (*
 }
 
 var cmd = &sugo.Command{
-	Trigger:             "help",
-	Description:         "Shows help section for the appropriate command.",
-	HasParams:           true,
+	Trigger:     "help",
+	Description: "Shows help section for the appropriate command.",
+	HasParams:   true,
 	Execute: func(sg *sugo.Instance, r *sugo.Request) error {
 		var err error
 

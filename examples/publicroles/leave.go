@@ -5,9 +5,9 @@ import (
 )
 
 var leaveCmd = &sugo.Command{
-	Trigger:            "leave",
-	Description:        "Removes person to the public role.",
-	HasParams:        true,
+	Trigger:     "leave",
+	Description: "Removes person to the public role.",
+	HasParams:   true,
 	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
 		var err error
 

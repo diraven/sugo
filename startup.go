@@ -1,12 +1,12 @@
 package sugo
 
 import (
+	"errors"
+	"github.com/bwmarrin/discordgo"
 	"log"
+	"os"
 	"os/signal"
 	"syscall"
-	"os"
-	"github.com/bwmarrin/discordgo"
-	"errors"
 )
 
 // Startup starts the bot up.
@@ -44,7 +44,7 @@ func (sg *Instance) Startup(token string) error {
 	}
 
 	// Register callback for the messageCreate events.
-	sg.Session.AddHandler(func (s *discordgo.Session, mc *discordgo.MessageCreate) {
+	sg.Session.AddHandler(func(s *discordgo.Session, mc *discordgo.MessageCreate) {
 		sg.onMessageCreate(mc.Message)
 	})
 
