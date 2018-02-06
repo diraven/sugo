@@ -101,7 +101,7 @@ func main() {
 
 ### Permissions
 
-Bot comes with a simplistic permissions system. It utilizes discord permissions. Command can be restricted to the users that have specified permissions.
+Command can be restricted to the users that have specified discord permissions.
 
 For example if you want the command to be restricted to users that can ban members AND add reactions, command declaration will look like this:
 
