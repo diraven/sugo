@@ -3,8 +3,7 @@ package sugo
 
 import (
 	"github.com/bwmarrin/discordgo"
-	_ "github.com/mattn/go-sqlite3" // We do not need actual sqlite driver reference in package.
-	"github.com/pkg/errors"
+	"errors"
 	"log"
 	"os"
 )
@@ -89,7 +88,7 @@ func (sg *Instance) hasPermissions(req *Request, requiredPerms int) bool {
 	// First of all - get the user perms.
 	actualPerms, err := sg.Session.State.UserChannelPermissions(req.Message.Author.ID, req.Channel.ID)
 	if err != nil {
-		sg.HandleError(errors.Wrap(err, "user actual permissions retrieval failed"))
+		sg.HandleError(errors.New("user permissions retrieval failed: " + err.Error()))
 		return false
 	}
 

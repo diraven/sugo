@@ -1,7 +1,7 @@
 package sugo
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"strings"
 )
 
