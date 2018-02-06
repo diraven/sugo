@@ -2,7 +2,7 @@
 
 # Sugo
 
-Sugo is a command-based bot framework built on top of [discordgo](https://github.com/bwmarrin/discordgo).
+Sugo is a command-based bot framework built on top of [discordgo](https://github.com/bwmarrin/discordgo). There are no dependencies other then discordgo and stdlib.
 
 The idea of the project is to make simple wrapper around [discordgo](https://github.com/bwmarrin/discordgo) that allows fast and easy building of the commands-based bots without too much of a boilerplate code.
 
