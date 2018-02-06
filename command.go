@@ -19,56 +19,24 @@ type Command struct {
 	Execute func(sg *Instance, r *Request) error
 	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
-	// parentCommand contains command, which is parent for this one
+	// parentCommand contains command, which is parent for this one.
 	parent *Command
 }
 
-// GetSubcommandsTriggers return all subcommands triggers available for given user.
+// GetSubcommandsTriggers return all subcommands triggers of the given command available for given user.
 func (c *Command) GetSubcommandsTriggers(sg *Instance, r *Request) []string {
 	var triggers []string
 
-	// Generate triggers list respecting user permissions.
+	// For every subcommand:
 	for _, subCommand := range c.SubCommands {
+		// If user has permissions to use the command:
 		if sg.hasPermissions(r, subCommand.PermissionsRequired) {
+			// Add subcommand trigger to the list.
 			triggers = append(triggers, subCommand.Trigger)
 		}
 	}
+
 	return triggers
-}
-
-// startup is internal function called for each command on bot startup.
-func (c *Command) startup(sg *Instance) error {
-	// For every subcommand (if any):
-	for _, v := range c.SubCommands {
-		// Check if command is already registered elsewhere.
-		if v.parent != nil {
-			return errors.New("The subcommand is already registered elsewhere: " + c.GetPath())
-		}
-		// Set command parent.
-		v.parent = c
-
-		// Run system startup for subcommand.
-		if err := v.startup(sg); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// teardown is internal function called for each command on bot graceful Shutdown.
-func (c *Command) teardown(sg *Instance) error {
-	// !!!! Here be some internal code to tear commands down... some day. May be.
-
-	// For every subcommand (if any):
-	for _, v := range c.SubCommands {
-		// Run system teardown for subcommand.
-		if err := v.teardown(sg); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // GetPath returns sequence of triggers from outermost (via the sequence of parents) to the given one.
@@ -81,24 +49,18 @@ func (c *Command) GetPath() (value string) {
 
 // match is a system matching function that checks if command Trigger matches the start of message content.
 func (c *Command) match(sg *Instance, r *Request, q string) bool {
-	// If Trigger is not set, check if command is empty.
+	// Ff command is empty and trigger not set - we consider this a match.
 	if c.Trigger == "" && q == "" {
 		return true
 	}
 
-	// Trigger is set, see if it's in the message.
-	if c.Trigger != "" {
-		if strings.HasPrefix(q, c.Trigger) {
-			// Now make sure user has the permissions necessary to run the command.
-			if !sg.hasPermissions(r, c.PermissionsRequired) {
-				return false
-			}
-			//func (s *State) UserChannelPermissions(userID, channelID string) (apermissions int, err error) {
-
-			return true
-		}
+	// If trigger is set and in the query:
+	if c.Trigger != "" && strings.HasPrefix(q, c.Trigger) {
+		// Make sure user has the permissions necessary to run the command.
+		return sg.hasPermissions(r, c.PermissionsRequired)
 	}
 
+	// If no trigger is set and query is not empty then it's not a match.
 	return false
 }
 
@@ -108,9 +70,9 @@ func (c *Command) search(sg *Instance, req *Request, q string) (*Command, error)
 	// because our top level command on bot is an artificial one to contain real ones. So this top level command is
 	// simply ignored.
 	for _, cmd := range c.SubCommands {
-		// Check if message matches command.
+		// If message does not match command:
 		if !cmd.match(sg, req, q) {
-			// Message did not match command.
+			// Continue searching.
 			continue
 		}
 
@@ -136,19 +98,22 @@ func (c *Command) search(sg *Instance, req *Request, q string) (*Command, error)
 		if q == "" || cmd.HasParams {
 			return cmd, nil
 		}
+
 		// Otherwise continue with searching another command.
 	}
 
-	// None of subcommands matched.
+	// No subcommands matched.
 	return nil, nil
 }
 
 // validate validates commands for them to have either Execute method defined or have subcommands.
 func (c *Command) validate() error {
+	// If command has Execute function defined - we consider it valid and subcommands do not matter.
 	if c.Execute != nil {
 		return nil
 	}
 
+	// If there is no Execute function, but there is at least one subcommand:
 	if len(c.SubCommands) > 0 {
 		// Perform validation recursively for every subcommand.
 		for _, subCmd := range c.SubCommands {
@@ -161,8 +126,11 @@ func (c *Command) validate() error {
 
 // setParents sets parents for all commands for easier reference.
 func (c *Command) setParents() {
+	// For every subcommand:
 	for _, subCmd := range c.SubCommands {
+		// Set subcommand parent to current command.
 		subCmd.parent = c
+		// Do the same recursively for all sub-subcommands.
 		subCmd.setParents()
 	}
 }
@@ -180,5 +148,6 @@ func (c *Command) execute(sg *Instance, req *Request) error {
 		return err
 	}
 
+	// This should never happen as we validate commands before allowing to add them, but let it be here just in case.
 	return errors.New("command has no Execute specified and no subcommands: " + c.GetPath())
 }
