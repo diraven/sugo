@@ -11,7 +11,7 @@ type Command struct {
 	Trigger string
 	// Description should contain short command description.
 	Description string
-	// Usage contains an example of the command usage.
+	// HasParams specifies if command can have additional parameters in request string.
 	HasParams bool
 	// PermissionsRequired specifies permissions set required by the command.
 	PermissionsRequired int
