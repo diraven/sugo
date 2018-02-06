@@ -4,6 +4,7 @@ import (
 	"time"
 	"math"
 	"strings"
+	"strconv"
 )
 
 // TimeToDiscordTimestamp returns time in a format that Discord API accepts.
@@ -17,6 +18,7 @@ func DiscordTimestampToTime(s string) (time.Time, error) {
 	return time.Parse(time.RFC3339, s)
 }
 
+// FmtStringsSlice formats strings slice according to the given parameters.
 func FmtStringsSlice(slice []string, separator string, decorator string, limit int, moreText string, noMoreText string) (result string) {
 	// Specifies if there are more items then shown.
 	var more bool
@@ -39,60 +41,31 @@ func FmtStringsSlice(slice []string, separator string, decorator string, limit i
 		}
 	}
 
+	// Decorate slice with decorators.
 	for i := range slice {
 		slice[i] = decorator + slice[i] + decorator
 	}
 
+	// Join elements up to the one (and not including), which is over the limit.
 	result = strings.Join(slice[0:i], separator)
 
+	// Add moreText if we have cut some elements off.
 	if more {
 		result = result + moreText
 	} else {
 		result = result + noMoreText
 	}
 
-	// Join elements up to the one (and not including), which is over the limit.
 	return result
 }
 
-//func ConsumePrefix(s string, p string) string {
-//	if strings.HasPrefix(s, p) {
-//		s = strings.TrimPrefix(s, p)
-//		return strings.TrimSpace(s)
-//	}
-//	return s
-//}
-//
-//// PointerToString returns pointer to the string given.
-//func PointerToString(inputStr string) (pointerToStr *string) {
-//	return &inputStr
-//}
-//
-//// GetRoleById returns discordgo.Role based on role ID provided or nil if role not found
-//func GetRoleById(guild *discordgo.Guild, roleID string) *discordgo.Role {
-//	for _, role := range guild.Roles {
-//		if role.ID == roleID {
-//			return role
-//		}
-//	}
-//	return nil
-//}
-//
-//// DiscordIDCreationTime gets the time of creation of any ID.
-//func DiscordIDCreationTime(ID string) (time.Time, error) {
-//	i, err := strconv.ParseInt(ID, 10, 64)
-//	if err != nil {
-//		return
-//	}
-//	timestamp := (i >> 22) + 1420070400000
-//	t = time.Unix(timestamp/1000, 0)
-//	return
-//}
-//
-//// BoolToInt converts bool:true to int:1 and bool:false to int:0.
-//func BoolToInt(input bool) (output int) {
-//	if input {
-//		return 1
-//	}
-//	return 0
-//}
+// DiscordIDCreationTime gets the time of creation of any ID.
+func DiscordIDCreationTime(ID string) (*time.Time, error) {
+	i, err := strconv.ParseInt(ID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	timestamp := (i >> 22) + 1420070400000
+	t := time.Unix(timestamp/1000, 0)
+	return &t, nil
+}
