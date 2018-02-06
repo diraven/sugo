@@ -10,7 +10,7 @@ import (
 )
 
 // VERSION contains current version of the Instance framework.
-const VERSION = "0.5.0"
+const VERSION = "0.5.1"
 
 // Instance struct describes bot.
 type Instance struct {
