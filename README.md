@@ -87,10 +87,7 @@ func main() {
 	// Create new bot instance.
 	bot := sugo.New()
 
-	// Set bot trigger (not required, by default the bot will react to the messages starting with the bot @mention).
-	bot.Trigger = "."
-
-	// Initialize modules.
+	// Add command.
 	bot.AddCommand(cmd)
 
 	// Start the bot.
