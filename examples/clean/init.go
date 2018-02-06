@@ -62,6 +62,7 @@ var cmd = &sugo.Command{
 			// Try to get count of messages to delete.
 			var err error
 			count, err = strconv.Atoi(ss[0]) // Try first argument.
+
 			if err != nil { // If first argument did not work.
 				count, err = strconv.Atoi(ss[1]) // Try second one.
 				if err != nil {
