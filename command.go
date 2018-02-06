@@ -15,7 +15,7 @@ type Command struct {
 	HasParams bool
 	// PermissionsRequired specifies permissions set required by the command.
 	PermissionsRequired int
-	// Execute code for subcommand.
+	// Execute method is executed if request string matches the given command.
 	Execute func(req *Request) error
 	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
