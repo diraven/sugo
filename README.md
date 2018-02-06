@@ -56,6 +56,8 @@ func main() {
 
 You may need it to perform numerous API interactions such as assigning user roles etc. Inside commands it is available via Sugo instance `req.Sugo.Session`, see [godoc](https://godoc.org/github.com/diraven/sugo#Instance) for details. 
 
+**Warning:** `req.Sugo.Session` will be `nil` until bot starts up.
+
 ### Custom embeds
 
 If you need some custom message type and regular `req.Respond*` is not enough, you can send messages directly using lower level `*discordgo.Session`, like this:
