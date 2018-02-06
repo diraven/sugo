@@ -17,11 +17,11 @@ type Request struct {
 // GetGuild allows to retrieve *discordgo.Guild from request. Will not work and will throw error for channels
 // that have no guild such as DirectMessages or GroupDirectMessages channels, so you probably want to check
 // those beforehand.
-func (r *Request) GetGuild() (*discordgo.Guild, error) {
-	if r.Channel.GuildID != "" {
-		guild, err := r.Sugo.Session.State.Guild(r.Channel.GuildID)
+func (req *Request) GetGuild() (*discordgo.Guild, error) {
+	if req.Channel.GuildID != "" {
+		guild, err := req.Sugo.Session.State.Guild(req.Channel.GuildID)
 		if err != nil {
-			return nil, errors.New("unable to get guild for request: " + r.Query)
+			return nil, errors.New("unable to get guild for request: " + req.Query)
 		}
 
 		return guild, nil
@@ -31,8 +31,8 @@ func (r *Request) GetGuild() (*discordgo.Guild, error) {
 }
 
 // IsChannelDefault returns true if channel is Guild's default channel and false otherwise.
-func (r *Request) IsChannelDefault() bool {
-	if r.Channel.ID == r.Channel.GuildID {
+func (req *Request) IsChannelDefault() bool {
+	if req.Channel.ID == req.Channel.GuildID {
 		return true
 	}
 
@@ -40,8 +40,8 @@ func (r *Request) IsChannelDefault() bool {
 }
 
 // IsChannelDM returns true if channel is DirectMessages (or GroupDirectMessages) channel and false otherwise.
-func (r *Request) IsChannelDM() bool {
-	if r.Channel.Type == discordgo.ChannelTypeDM || r.Channel.Type == discordgo.ChannelTypeGroupDM {
+func (req *Request) IsChannelDM() bool {
+	if req.Channel.Type == discordgo.ChannelTypeDM || req.Channel.Type == discordgo.ChannelTypeGroupDM {
 		return true
 	}
 
@@ -49,6 +49,6 @@ func (r *Request) IsChannelDM() bool {
 }
 
 // WrapError error wraps error with additional request info.
-func (r *Request) WrapError(e error, text string) error {
-	return errors.New("request error: " + r.Command.GetPath() + ": " + r.Query)
+func (req *Request) WrapError(e error, text string) error {
+	return errors.New("request error: " + req.Command.GetPath() + ": " + req.Query)
 }

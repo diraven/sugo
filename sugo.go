@@ -10,7 +10,7 @@ import (
 )
 
 // VERSION contains current version of the Instance framework.
-const VERSION = "0.5.1"
+const VERSION = "0.5.2"
 
 // Instance struct describes bot.
 type Instance struct {
@@ -85,9 +85,9 @@ func (sg *Instance) AddCommand(c *Command) {
 }
 
 // hasPermissions calculates if user has all the necessary permissions.
-func (sg *Instance) hasPermissions(r *Request, requiredPerms int) bool {
+func (sg *Instance) hasPermissions(req *Request, requiredPerms int) bool {
 	// First of all - get the user perms.
-	actualPerms, err := sg.Session.State.UserChannelPermissions(r.Message.Author.ID, r.Channel.ID)
+	actualPerms, err := sg.Session.State.UserChannelPermissions(req.Message.Author.ID, req.Channel.ID)
 	if err != nil {
 		sg.HandleError(errors.Wrap(err, "user actual permissions retrieval failed"))
 		return false

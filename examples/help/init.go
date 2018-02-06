@@ -12,14 +12,14 @@ func Init(sg *sugo.Instance) {
 	sg.AddCommand(cmd)
 }
 
-func generateHelpEmbed(sg *sugo.Instance, req *sugo.Request, c *sugo.Command) (*discordgo.MessageEmbed, error) {
+func generateHelpEmbed(req *sugo.Request, c *sugo.Command) (*discordgo.MessageEmbed, error) {
 	embed := &discordgo.MessageEmbed{
 		Title:       c.GetPath(),
 		Description: c.Description,
 		Color:       sugo.ColorInfo,
 	}
 	// Get subcommands triggers respecting user permissions.
-	subcommandsTriggers := c.GetSubcommandsTriggers(sg, req)
+	subcommandsTriggers := c.GetSubcommandsTriggers(req.Sugo, req)
 
 	if len(c.SubCommands) > 0 {
 		embed.Fields = append(embed.Fields,
@@ -39,17 +39,17 @@ var cmd = &sugo.Command{
 	Trigger:     "help",
 	Description: "Shows help section for the appropriate command.",
 	HasParams:   true,
-	Execute: func(sg *sugo.Instance, r *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		var err error
 
 		// Remove help command from the string
-		r.Query = strings.TrimSpace(strings.TrimPrefix(r.Query, r.Command.Trigger))
+		req.Query = strings.TrimSpace(strings.TrimPrefix(req.Query, req.Command.Trigger))
 
-		if r.Query == "" {
+		if req.Query == "" {
 			// No arguments, just the help itself.
-			_, err = sg.Session.ChannelMessageSendEmbed(r.Channel.ID, &discordgo.MessageEmbed{
+			_, err = req.Sugo.Session.ChannelMessageSendEmbed(req.Channel.ID, &discordgo.MessageEmbed{
 				Title:       "Available commands",
-				Description: strings.Join(sg.RootCommand.GetSubcommandsTriggers(sg, r), ", "),
+				Description: strings.Join(req.Sugo.RootCommand.GetSubcommandsTriggers(req.Sugo, req), ", "),
 				Color:       sugo.ColorInfo,
 				Fields: []*discordgo.MessageEmbedField{
 					{
@@ -62,22 +62,22 @@ var cmd = &sugo.Command{
 		}
 
 		// Search for applicable command.
-		command, err := sg.FindCommand(r, r.Query)
+		command, err := req.Sugo.FindCommand(req, req.Query)
 		if err != nil {
 			return err
 		}
 		if command != nil {
 			var embed *discordgo.MessageEmbed
 
-			embed, err = generateHelpEmbed(sg, r, command)
+			embed, err = generateHelpEmbed(req, command)
 			if err != nil {
 				return err
 			}
 
-			_, err = sg.Session.ChannelMessageSendEmbed(r.Channel.ID, embed)
+			_, err = req.Sugo.Session.ChannelMessageSendEmbed(req.Channel.ID, embed)
 			return err
 		}
-		_, err = sg.RespondWarning(r, "", "I know nothing about this command, sorry...")
+		_, err = req.RespondWarning("", "I know nothing about this command, sorry...")
 		return err
 	},
 }

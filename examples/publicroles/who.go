@@ -9,13 +9,13 @@ var whoCmd = &sugo.Command{
 	Trigger:     "who",
 	Description: "Lists people that have public role specified.",
 	HasParams:   true,
-	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		var err error
 
 		// Try to find role based on query.
-		roles, err := storage.findGuildPublicRole(sg, req, req.Query)
+		roles, err := storage.findGuildPublicRole(req, req.Query)
 		if err != nil {
-			return respondFuzzyRolesSearchIssue(sg, req, roles, err)
+			return respondFuzzyRolesSearchIssue(req, roles, err)
 		}
 
 		// Get guild.
@@ -37,7 +37,7 @@ var whoCmd = &sugo.Command{
 		// Start building response.
 		response := helpers.FmtStringsSlice(memberMentions, ", ", "", 1500, "...", "")
 
-		_, err = sg.RespondInfo(req, "", "people with `"+roles[0].Name+"` role:\n\n"+response)
+		_, err = req.RespondInfo("", "people with `"+roles[0].Name+"` role:\n\n"+response)
 		return err
 	},
 }

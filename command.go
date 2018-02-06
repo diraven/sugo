@@ -16,7 +16,7 @@ type Command struct {
 	// PermissionsRequired specifies permissions set required by the command.
 	PermissionsRequired int
 	// Execute code for subcommand.
-	Execute func(sg *Instance, r *Request) error
+	Execute func(req *Request) error
 	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
 	// parentCommand contains command, which is parent for this one.
@@ -24,13 +24,13 @@ type Command struct {
 }
 
 // GetSubcommandsTriggers return all subcommands triggers of the given command available for given user.
-func (c *Command) GetSubcommandsTriggers(sg *Instance, r *Request) []string {
+func (c *Command) GetSubcommandsTriggers(sg *Instance, req *Request) []string {
 	var triggers []string
 
 	// For every subcommand:
 	for _, subCommand := range c.SubCommands {
 		// If user has permissions to use the command:
-		if sg.hasPermissions(r, subCommand.PermissionsRequired) {
+		if sg.hasPermissions(req, subCommand.PermissionsRequired) {
 			// Add subcommand trigger to the list.
 			triggers = append(triggers, subCommand.Trigger)
 		}
@@ -48,7 +48,7 @@ func (c *Command) GetPath() (value string) {
 }
 
 // match is a system matching function that checks if command Trigger matches the start of message content.
-func (c *Command) match(sg *Instance, r *Request, q string) bool {
+func (c *Command) match(sg *Instance, req *Request, q string) bool {
 	// Ff command is empty and trigger not set - we consider this a match.
 	if c.Trigger == "" && q == "" {
 		return true
@@ -57,7 +57,7 @@ func (c *Command) match(sg *Instance, r *Request, q string) bool {
 	// If trigger is set and in the query:
 	if c.Trigger != "" && strings.HasPrefix(q, c.Trigger) {
 		// Make sure user has the permissions necessary to run the command.
-		return sg.hasPermissions(r, c.PermissionsRequired)
+		return sg.hasPermissions(req, c.PermissionsRequired)
 	}
 
 	// If no trigger is set and query is not empty then it's not a match.
@@ -138,13 +138,13 @@ func (c *Command) setParents() {
 // execute is a default command execution function.
 func (c *Command) execute(sg *Instance, req *Request) error {
 	if c.Execute != nil {
-		err := c.Execute(sg, req)
+		err := c.Execute(req)
 		return err
 	}
 
 	if len(c.SubCommands) > 0 {
 		// If there is at least one subcommand and command was not executed - let user know he used command incorrectly.
-		_, err := sg.RespondBadCommandUsage(req, "", "")
+		_, err := req.RespondBadCommandUsage("", "")
 		return err
 	}
 

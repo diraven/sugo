@@ -19,7 +19,7 @@ func Init(sg *sugo.Instance) {
 var cmd = &sugo.Command{
 	Trigger:     "info",
 	Description: "Shows basic info about bot.",
-	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		var err error
 
 		// Set command response.
@@ -29,7 +29,7 @@ var cmd = &sugo.Command{
 		var memStats runtime.MemStats
 		runtime.ReadMemStats(&memStats)
 
-		_, err = sg.Session.ChannelMessageSendEmbed(req.Channel.ID, &discordgo.MessageEmbed{
+		_, err = req.Sugo.Session.ChannelMessageSendEmbed(req.Channel.ID, &discordgo.MessageEmbed{
 			URL:         "https://github.com/diraven/sugo",
 			Title:       "https://github.com/diraven/sugo",
 			Description: "A Discord bot written in Go.",
@@ -66,7 +66,7 @@ var cmd = &sugo.Command{
 				},
 				{
 					Name:   "modules loaded",
-					Value:  fmt.Sprintf("%d", len(sg.RootCommand.SubCommands)),
+					Value:  fmt.Sprintf("%d", len(req.Sugo.RootCommand.SubCommands)),
 					Inline: true,
 				},
 			},

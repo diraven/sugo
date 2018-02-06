@@ -8,19 +8,19 @@ var joinCmd = &sugo.Command{
 	Trigger:     "join",
 	Description: "Joins person to the public role.",
 	HasParams:   true,
-	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		var err error
 
 		// Make sure request is not empty.
 		if req.Query == "" {
-			_, err = sg.RespondBadCommandUsage(req, "", "")
+			_, err = req.RespondBadCommandUsage("", "")
 			return err
 		}
 
 		// Try to find role based on query.
-		roles, err := storage.findGuildPublicRole(sg, req, req.Query)
+		roles, err := storage.findGuildPublicRole(req, req.Query)
 		if err != nil {
-			return respondFuzzyRolesSearchIssue(sg, req, roles, err)
+			return respondFuzzyRolesSearchIssue(req, roles, err)
 		}
 
 		// Get guild.
@@ -30,14 +30,14 @@ var joinCmd = &sugo.Command{
 		}
 
 		// Try to assign role.
-		err = sg.Session.GuildMemberRoleAdd(guild.ID, req.Message.Author.ID, roles[0].ID)
+		err = req.Sugo.Session.GuildMemberRoleAdd(guild.ID, req.Message.Author.ID, roles[0].ID)
 		if err != nil {
-			_, err = sg.RespondDanger(req, "", err.Error())
+			_, err = req.RespondDanger("", err.Error())
 			return err
 		}
 
 		// Respond about successful operation.
-		_, err = sg.RespondSuccess(req, "", "you now have `"+roles[0].Name+"` role")
+		_, err = req.RespondSuccess("", "you now have `"+roles[0].Name+"` role")
 		return err
 	},
 }

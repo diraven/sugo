@@ -111,7 +111,7 @@ func (pr *publicRolesStorage) load() error {
 	return nil
 }
 
-func (pr *publicRolesStorage) getGuildPublicRoles(sg *sugo.Instance, req *sugo.Request) discordgo.Roles {
+func (pr *publicRolesStorage) getGuildPublicRoles(req *sugo.Request) discordgo.Roles {
 	// Make storage to store all roles we will find.
 	roles := discordgo.Roles{}
 
@@ -122,7 +122,7 @@ func (pr *publicRolesStorage) getGuildPublicRoles(sg *sugo.Instance, req *sugo.R
 	}
 
 	// Get all guild roles.
-	guildRoles, err := sg.Session.GuildRoles(guild.ID)
+	guildRoles, err := req.Sugo.Session.GuildRoles(guild.ID)
 	if err != nil {
 		return roles
 	}
@@ -161,7 +161,7 @@ func (pr *publicRolesStorage) getGuildPublicRoles(sg *sugo.Instance, req *sugo.R
 	return roles
 }
 
-func (pr *publicRolesStorage) getUserPublicRoles(sg *sugo.Instance, req *sugo.Request) discordgo.Roles {
+func (pr *publicRolesStorage) getUserPublicRoles(req *sugo.Request) discordgo.Roles {
 	// Make storage to store all public roles we discovered user is in.
 	roles := discordgo.Roles{}
 
@@ -172,13 +172,13 @@ func (pr *publicRolesStorage) getUserPublicRoles(sg *sugo.Instance, req *sugo.Re
 	}
 
 	// Get guild member.
-	member, err := sg.Session.State.Member(guild.ID, req.Message.Author.ID)
+	member, err := req.Sugo.Session.State.Member(guild.ID, req.Message.Author.ID)
 	if err != nil {
 		return roles
 	}
 
 	// Get guild public roles.
-	guildPublicRoles := pr.getGuildPublicRoles(sg, req)
+	guildPublicRoles := pr.getGuildPublicRoles(req)
 
 	// Iterate over all member roles.
 	for _, memberRoleID := range member.Roles {
@@ -260,10 +260,10 @@ func (pr *publicRolesStorage) findRole(roles discordgo.Roles, q string) (discord
 	panic(suggestedRoles)
 }
 
-func (pr *publicRolesStorage) findUserPublicRole(sg *sugo.Instance, req *sugo.Request, q string) (discordgo.Roles, error) {
-	return pr.findRole(pr.getUserPublicRoles(sg, req), q)
+func (pr *publicRolesStorage) findUserPublicRole(req *sugo.Request, q string) (discordgo.Roles, error) {
+	return pr.findRole(pr.getUserPublicRoles(req), q)
 }
 
-func (pr *publicRolesStorage) findGuildPublicRole(sg *sugo.Instance, req *sugo.Request, q string) (discordgo.Roles, error) {
-	return pr.findRole(pr.getGuildPublicRoles(sg, req), q)
+func (pr *publicRolesStorage) findGuildPublicRole(req *sugo.Request, q string) (discordgo.Roles, error) {
+	return pr.findRole(pr.getGuildPublicRoles(req), q)
 }

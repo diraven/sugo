@@ -37,10 +37,10 @@ var statsCmd = &sugo.Command{
 	Trigger:     "stats",
 	Description: "Lists public roles with the highest/lowest count of people.",
 	HasParams:   true,
-	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		var err error
 		// Get all public roles.
-		roles, err := storage.findGuildPublicRole(sg, req, "")
+		roles, err := storage.findGuildPublicRole(req, "")
 
 		// Make a storage for stats we are about to gather.
 		stats := &tStats{}
@@ -90,10 +90,10 @@ var statsCmd = &sugo.Command{
 				}
 			}
 			response = response + "```"
-			_, err = sg.RespondInfo(req, "", response)
+			_, err = req.RespondInfo("", response)
 
 		} else {
-			_, err = sg.RespondDanger(req, "", "no data available")
+			_, err = req.RespondDanger("", "no data available")
 		}
 
 		return err

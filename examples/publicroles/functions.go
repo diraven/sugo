@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-func respondFuzzyRolesSearchIssue(sg *sugo.Instance, req *sugo.Request, roles []*discordgo.Role, err error) error {
+func respondFuzzyRolesSearchIssue(req *sugo.Request, roles []*discordgo.Role, err error) error {
 	// Start building response.
 	var response string
 	response = err.Error()
@@ -23,7 +23,7 @@ func respondFuzzyRolesSearchIssue(sg *sugo.Instance, req *sugo.Request, roles []
 		response = response + helpers.FmtStringsSlice(rolesToRoleNames(suggestedRoles), ", ", "`", 1500, "...", "")
 	}
 
-	_, err = sg.RespondWarning(req, "", response)
+	_, err = req.RespondWarning("", response)
 	return err
 }
 

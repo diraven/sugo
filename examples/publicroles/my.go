@@ -8,21 +8,21 @@ import (
 var myCmd = &sugo.Command{
 	Trigger:     "my",
 	Description: "Lists public roles you are in.",
-	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		// Try to find role based on query.
-		roles, err := storage.findUserPublicRole(sg, req, req.Query)
+		roles, err := storage.findUserPublicRole(req, req.Query)
 
 		// If we have got at least one suggested role.
 		if len(roles) > 0 {
 			// Make an array of suggested role names.
 			response := "public roles you are in:\n\n"
 			response = response + helpers.FmtStringsSlice(rolesToRoleNames(roles), ", ", "`", 1500, "...", "")
-			_, err = sg.RespondInfo(req, "", response)
+			_, err = req.RespondInfo("", response)
 		} else {
 			if req.Query == "" {
-				_, err = sg.RespondWarning(req, "", "you got no roles")
+				_, err = req.RespondWarning("", "you got no roles")
 			} else {
-				_, err = sg.RespondWarning(req, "", "you got no such roles")
+				_, err = req.RespondWarning("", "you got no such roles")
 			}
 		}
 

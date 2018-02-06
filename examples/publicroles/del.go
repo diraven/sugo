@@ -10,19 +10,19 @@ var delCmd = &sugo.Command{
 	Description:         "Makes given role not public (does not delete the role itself).",
 	PermissionsRequired: discordgo.PermissionManageRoles,
 	HasParams:           true,
-	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		var err error
 
 		// Make sure query is not empty.
 		if req.Query == "" {
-			_, err = sg.RespondBadCommandUsage(req, "", "")
+			_, err = req.RespondBadCommandUsage("", "")
 			return err
 		}
 
 		// Try to find role based on query.
-		roles, err := storage.findGuildPublicRole(sg, req, req.Query)
+		roles, err := storage.findGuildPublicRole(req, req.Query)
 		if err != nil {
-			return respondFuzzyRolesSearchIssue(sg, req, roles, err)
+			return respondFuzzyRolesSearchIssue(req, roles, err)
 		}
 
 		// Delete role.
@@ -32,7 +32,7 @@ var delCmd = &sugo.Command{
 		}
 
 		// Notify user about success of the operation.
-		_, err = sg.RespondSuccess(req, "", "role `"+roles[0].Name+"` is not public any more")
+		_, err = req.RespondSuccess("", "role `"+roles[0].Name+"` is not public any more")
 		return err
 	},
 }

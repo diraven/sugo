@@ -24,7 +24,7 @@ var cmd = &sugo.Command{
 		"",
 	HasParams:           true,
 	PermissionsRequired: discordgo.PermissionManageMessages,
-	Execute: func(sg *sugo.Instance, req *sugo.Request) error {
+	Execute: func(req *sugo.Request) error {
 		// Command has to have 1 or 2 parameters.
 		ss := strings.Split(req.Query, " ")
 
@@ -36,7 +36,7 @@ var cmd = &sugo.Command{
 		switch len(ss) {
 		case 1: // Means we have got either user mention or amount of messages to delete.
 			if ss[0] == "" { // No parameters given.
-				_, err := sg.RespondBadCommandUsage(req, "", "")
+				_, err := req.RespondBadCommandUsage("", "")
 				return err
 			}
 
@@ -53,7 +53,7 @@ var cmd = &sugo.Command{
 			break
 		case 2: // Means we've got both user mention and amount of messages to delete.
 			if len(req.Message.Mentions) == 0 { // Query must have mention.
-				if _, err := sg.RespondBadCommandUsage(req, "", ""); err != nil {
+				if _, err := req.RespondBadCommandUsage("", ""); err != nil {
 					return err
 				}
 			}
@@ -66,14 +66,14 @@ var cmd = &sugo.Command{
 			if err != nil { // If first argument did not work.
 				count, err = strconv.Atoi(ss[1]) // Try second one.
 				if err != nil {
-					if _, err := sg.RespondBadCommandUsage(req, "", ""); err != nil {
+					if _, err := req.RespondBadCommandUsage("", ""); err != nil {
 						return err
 					}
 				}
 			}
 			break
 		default:
-			if _, err := sg.RespondBadCommandUsage(req, "", ""); err != nil {
+			if _, err := req.RespondBadCommandUsage("", ""); err != nil {
 				return err
 			}
 			return nil
@@ -81,7 +81,7 @@ var cmd = &sugo.Command{
 
 		// Validate count.
 		if count > maxCount {
-			if _, err := sg.RespondBadCommandUsage(req, "", "max messages count I can delete is "+strconv.Itoa(maxCount)); err != nil {
+			if _, err := req.RespondBadCommandUsage("", "max messages count I can delete is "+strconv.Itoa(maxCount)); err != nil {
 				return err
 			}
 		}
@@ -100,7 +100,7 @@ var cmd = &sugo.Command{
 		for {
 			// Get next 100 messages.
 			var err error
-			tmpMessages, err = sg.Session.ChannelMessages(req.Channel.ID, limit, lastMessageID, "", "")
+			tmpMessages, err = req.Sugo.Session.ChannelMessages(req.Channel.ID, limit, lastMessageID, "", "")
 			if err != nil {
 				return err
 			}
@@ -116,7 +116,7 @@ var cmd = &sugo.Command{
 
 				if time.Since(then).Hours() >= 24*14 {
 					// We are unable to delete messages older then 14 days.
-					_, err = sg.RespondDanger(req, "", "unable to delete messages older then 2 weeks")
+					_, err = req.RespondDanger("", "unable to delete messages older then 2 weeks")
 					if err != nil {
 						return err
 					}
@@ -150,13 +150,13 @@ var cmd = &sugo.Command{
 		}
 
 		// Delete command itself. Ignore errors (such as message already deleted by someone) for now.
-		_ = sg.Session.ChannelMessageDelete(req.Channel.ID, req.Message.ID)
+		_ = req.Sugo.Session.ChannelMessageDelete(req.Channel.ID, req.Message.ID)
 
 		// Perform selected messages deletion. Ignore errors (such as message already deleted by someone) for now.
-		_ = sg.Session.ChannelMessagesBulkDelete(req.Channel.ID, messageIDs)
+		_ = req.Sugo.Session.ChannelMessagesBulkDelete(req.Channel.ID, messageIDs)
 
 		// Notify user about deletion.
-		msg, err := sg.RespondWarning(req, "", "cleaning done, this message will self-destruct in 10 seconds")
+		msg,  err := req.RespondWarning("", "cleaning done, this message will self-destruct in 10 seconds")
 		if err != nil {
 			return err
 		}
@@ -165,7 +165,7 @@ var cmd = &sugo.Command{
 		time.Sleep(10 * time.Second)
 
 		// Delete notification. Ignore errors (such as message already deleted by someone) for now.
-		_ = sg.Session.ChannelMessageDelete(msg.ChannelID, msg.ID)
+		_ = req.Sugo.Session.ChannelMessageDelete(msg.ChannelID, msg.ID)
 		return err
 	},
 }
