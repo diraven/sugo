@@ -79,13 +79,13 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 				break // we apply only one alias that matched first.
 			}
 		}
-	}
 
-	// Search for applicable command again after alias applied.
-	r.Command, err = sg.FindCommand(r, r.Query)
-	if err != nil {
-		// Unhandled error in command.
-		sg.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + r.Query + ")"))
+		// Search for applicable command again after alias applied.
+		r.Command, err = sg.FindCommand(r, r.Query)
+		if err != nil {
+			// Unhandled error in command.
+			sg.HandleError(errors.New("Bot command search error: " + err.Error() + " (" + r.Query + ")"))
+		}
 	}
 
 	if r.Command != nil {
