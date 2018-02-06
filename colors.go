@@ -1,6 +1,6 @@
 package sugo
 
-// These are essentially the same as bootstrap colors.
+// These are essentially the same as respective bootstrap colors.
 
 // ColorDefault is gray-ish.
 const ColorDefault = 0x636c72
