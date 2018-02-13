@@ -85,20 +85,25 @@ func (sg *Instance) AddCommand(c *Command) {
 
 // hasPermissions calculates if user has all the necessary permissions.
 func (sg *Instance) hasPermissions(req *Request, requiredPerms int) bool {
-	// First of all - get the user perms.
-	actualPerms, err := sg.Session.State.UserChannelPermissions(req.Message.Author.ID, req.Channel.ID)
-	if err != nil {
-		sg.HandleError(errors.New("user permissions retrieval failed: " + err.Error()))
+	if requiredPerms != 0 {
+		// First of all - get the user perms.
+		actualPerms, err := sg.Session.State.UserChannelPermissions(req.Message.Author.ID, req.Channel.ID)
+		if err != nil {
+			sg.HandleError(errors.New("user permissions retrieval failed: " + err.Error()))
+			return false
+		}
+
+		// Check if user has all the required permissions.
+		if (actualPerms | requiredPerms) == actualPerms {
+			return true
+		}
+
+		// User does not have required permissions.
 		return false
 	}
 
-	// Check if user has all the required permissions.
-	if (actualPerms | requiredPerms) == actualPerms {
-		return true
-	}
-
-	// User does not have required permissions.
-	return false
+	// No permissions specified.
+	return true
 }
 
 // FindCommand searches for the command in the modules registered.
