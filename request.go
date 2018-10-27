@@ -21,7 +21,7 @@ func (req *Request) GetGuild() (*discordgo.Guild, error) {
 	if req.Channel.GuildID != "" {
 		guild, err := req.Sugo.Session.State.Guild(req.Channel.GuildID)
 		if err != nil {
-			return nil, errors.New("unable to get guild for request: " + req.Query)
+			return nil, errors.New("unable to get guild for request")
 		}
 
 		return guild, nil
@@ -46,9 +46,4 @@ func (req *Request) IsChannelDM() bool {
 	}
 
 	return false
-}
-
-// WrapError error wraps error with additional request info.
-func (req *Request) WrapError(e error, text string) error {
-	return errors.New("request error: " + req.Command.GetPath() + ": " + req.Query)
 }

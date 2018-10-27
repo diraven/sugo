@@ -1,7 +1,7 @@
 package sugo
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -56,7 +56,7 @@ func (c *Command) match(sg *Instance, req *Request, q string) bool {
 
 	// If trigger is set and in the query:
 	if c.Trigger != "" && strings.HasPrefix(q, c.Trigger) {
-		// Make sure user has the permissions necessary to run the command.
+		// Make sure user has permissions necessary to run the command.
 		return sg.hasPermissions(req, c.PermissionsRequired)
 	}
 
@@ -137,17 +137,15 @@ func (c *Command) setParents() {
 
 // execute is a default command execution function.
 func (c *Command) execute(sg *Instance, req *Request) error {
+	// There is always either execute defined or subcommands available as enforced by validate() on command add.
+
+	// If execute method defined - use it.
 	if c.Execute != nil {
 		err := c.Execute(req)
 		return err
 	}
 
-	if len(c.SubCommands) > 0 {
-		// If there is at least one subcommand and command was not executed - let user know he used command incorrectly.
-		_, err := req.RespondBadCommandUsage("", "")
-		return err
-	}
-
-	// This should never happen as we validate commands before allowing to add them, but let it be here just in case.
-	return errors.New("command has no Execute specified and no subcommands: " + c.GetPath())
+	// Otherwise there must be subcommands. Notify user that command is used incorrectly.
+	_, err := req.RespondBadCommandUsage("", "")
+	return err
 }

@@ -1,7 +1,7 @@
 package sugo
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"os"
 )
 
@@ -11,18 +11,21 @@ func (sg *Instance) Shutdown() {
 }
 
 // teardown gracefully releases all resources and saves data before Shutdown.
-func (sg *Instance) shutdown() {
+func (sg *Instance) shutdown() (err error) {
 	// Run shutdown handlers.
 	for _, handler := range sg.shutdownHandlers {
 		if err := handler(sg); err != nil {
 			// In case of an error - we report the error and continue the shutdown process. Errors should not interrupt
 			// shutdown as we need to perform shutdown as cleanly as possible.
-			sg.HandleError(errors.New("shutdown error" + err.Error()))
+			sg.HandleError(errors.Wrap(err, "shutdown error"), nil)
 		}
 	}
 
 	// Close discord Session.
 	if err := sg.Session.Close(); err != nil {
-		sg.HandleError(errors.New("discordgo Session close error" + err.Error()))
+		return errors.Wrap(err, "discordgo session close error")
 	}
+
+	// No errors.
+	return
 }

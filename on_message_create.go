@@ -1,8 +1,8 @@
 package sugo
 
 import (
-	"errors"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -67,7 +67,7 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	// Get message channel and put it into the request.
 	req.Channel, err = sg.Session.State.Channel(req.Message.ChannelID)
 	if err != nil {
-		sg.HandleError(errors.New("unable to get channel: " + err.Error() + " (" + req.Query + ")"))
+		sg.HandleError(err, req)
 	}
 
 	// Make sure bot is triggered by the request.
@@ -78,7 +78,7 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	// Search for applicable command.
 	req.Command, err = sg.FindCommand(req, req.Query)
 	if err != nil {
-		sg.HandleError(errors.New("command search error: " + err.Error() + " (" + req.Query + ")"))
+		sg.HandleError(errors.Wrap(err, "command search error"), req)
 	}
 
 	// If we did not find matching command, try applying alias and search again.
@@ -94,7 +94,7 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 		// Search for applicable command again after alias was applied.
 		req.Command, err = sg.FindCommand(req, req.Query)
 		if err != nil {
-			sg.HandleError(errors.New("command search error: " + err.Error() + " (" + req.Query + ")"))
+			sg.HandleError(errors.Wrap(err, "aliased command search error"), req)
 		}
 	}
 
@@ -106,13 +106,10 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 		// And execute command.
 		err = req.Command.execute(sg, req)
 		if err != nil {
-			if strings.Contains(err.Error(), "\"code\": 50013") {
-				// Insufficient permissions.
-				sg.HandleError(errors.New("permissions error: " + err.Error() + " (" + req.Query + ")"))
-			}
-			sg.HandleError(errors.New("command execution error: " + err.Error() + " (" + req.Query + ")"))
+			sg.HandleError(errors.Wrap(err, "command execution error"), req)
 		}
 	}
 
 	// Command not found, we do nothing.
+	return
 }

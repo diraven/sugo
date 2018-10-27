@@ -1,8 +1,8 @@
 package sugo
 
 import (
-	"errors"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 	"log"
 	"os"
 	"os/signal"
@@ -10,17 +10,14 @@ import (
 )
 
 // Startup starts the bot up.
-func (sg *Instance) Startup(token string) error {
+func (sg *Instance) Startup(token string) (err error) {
 	// Intitialize Shutdown channel.
 	sg.done = make(chan os.Signal, 1)
-
-	// Variable to store errors.
-	var err error
 
 	// Create a new Discord Session using the provided bot token.
 	s, err := discordgo.New("Bot " + token)
 	if err != nil {
-		return errors.New("Error creating Discord Session... " + err.Error())
+		return errors.Wrap(err, "unable to create discord session")
 	}
 
 	// Save Discord Session into Instance struct.
@@ -29,7 +26,7 @@ func (sg *Instance) Startup(token string) error {
 	// Get bot discordgo.User instance.
 	self, err := sg.Session.User("@me")
 	if err != nil {
-		return errors.New("Error obtaining bot account details... " + err.Error())
+		return errors.Wrap(err, "unable to obtain bot account details")
 	}
 	sg.Self = self
 
@@ -37,9 +34,9 @@ func (sg *Instance) Startup(token string) error {
 	for _, handler := range sg.startupHandlers {
 		if err = handler(sg); err != nil {
 			// If there is any error - we stop the startup process and shut the bot down as there is not much sense
-			// to let bot finish the startup in an event of an error.
+			// to let bot finish the startup in an event of an error in startup handlers.
 			sg.Shutdown()
-			return err
+			return
 		}
 	}
 
@@ -50,9 +47,10 @@ func (sg *Instance) Startup(token string) error {
 
 	// Open the websocket and begin listening.
 	if err = sg.Session.Open(); err != nil {
-		return errors.New("Error opening connection... " + err.Error())
+		return errors.Wrap(err, "unable to open discord connection")
 	}
 
+	// Notify that bot is now running.
 	log.Println("Bot is now running. Press CTRL-C to exit.")
 
 	// Register bot sg.done channel to receive Shutdown signals.
@@ -61,8 +59,7 @@ func (sg *Instance) Startup(token string) error {
 	// Wait for Shutdown signal to arrive.
 	<-sg.done
 
-	// Gracefully shut the bot down.
-	sg.shutdown()
-
-	return nil
+	// Gracefully shut the bot down and return errors if any.
+	err = sg.shutdown()
+	return
 }

@@ -3,7 +3,7 @@ package sugo
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"errors"
+	"github.com/pkg/errors"
 	"log"
 	"os"
 )
@@ -33,7 +33,10 @@ type Instance struct {
 	// shutdownHandlers are executed sequentially one by one on bot shutdown.
 	shutdownHandlers []func(sg *Instance) error
 	// shutdownHandlers are executed sequentially one by one on bot shutdown.
-	errorHandlers []func(err error)
+	errorHandlers []func(
+		err error,
+		req *Request,
+	)
 }
 
 // New creates new bot instance.
@@ -65,15 +68,18 @@ func (sg *Instance) AddShutdownHandler(handler func(sg *Instance) error) {
 }
 
 // AddErrorHandler adds function that will be called on error if it's unhandled elsewhere.
-func (sg *Instance) AddErrorHandler(handler func(err error)) {
+func (sg *Instance) AddErrorHandler(handler func(
+	err error,
+	req *Request,
+)) {
 	sg.errorHandlers = append(sg.errorHandlers, handler)
 }
 
 // AddCommand adds command to the bot's commands list.
-func (sg *Instance) AddCommand(c *Command) {
+func (sg *Instance) AddCommand(c *Command) (err error) {
 	// Validate command.
-	if err := c.validate(); err != nil {
-		sg.HandleError(err)
+	if err = c.validate(); err != nil {
+		return
 	}
 
 	// Set parents for all subcommands.
@@ -81,15 +87,17 @@ func (sg *Instance) AddCommand(c *Command) {
 
 	// Add the command.
 	sg.RootCommand.SubCommands = append(sg.RootCommand.SubCommands, c)
+
+	return
 }
 
 // hasPermissions calculates if user has all the necessary permissions.
-func (sg *Instance) hasPermissions(req *Request, requiredPerms int) bool {
+func (sg *Instance) hasPermissions(req *Request, requiredPerms int) (result bool) {
 	if requiredPerms != 0 {
 		// First of all - get the user perms.
 		actualPerms, err := sg.Session.State.UserChannelPermissions(req.Message.Author.ID, req.Channel.ID)
 		if err != nil {
-			sg.HandleError(errors.New("user permissions retrieval failed: " + err.Error()))
+			sg.HandleError(errors.Wrap(err, "user permissions retrieval failed"), req)
 			return false
 		}
 
@@ -125,15 +133,19 @@ func (sg *Instance) FindCommand(req *Request, q string) (*Command, error) {
 }
 
 // HandleError handles unexpected errors that were returned unhandled elsewhere.
-func (sg *Instance) HandleError(e error) {
+func (sg *Instance) HandleError(
+	err error,
+	req *Request,
+) {
 	// If there are any error handlers registered:
 	if len(sg.errorHandlers) > 0 {
 		// Run error handlers.
 		for _, handler := range sg.errorHandlers {
-			handler(e)
+			handler(err, req)
 		}
+		return
 	}
 
 	// Otherwise just put error into the log.
-	log.Printf("%+v", e)
+	log.Println(err)
 }
