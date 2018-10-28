@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"log"
 	"os"
+	"strings"
 )
 
 // VERSION contains current version of the Instance framework.
@@ -14,7 +15,7 @@ const VERSION = "0.5.2"
 // Instance struct describes bot.
 type Instance struct {
 	// Trigger specifies what should message start with for the bot to consider it to be command.
-	Trigger string
+	DefaultTrigger string
 	// HelpTrigger specifies what should message start with for the bot to consider it to be help command.
 	HelpTrigger string
 	// Session is a *discordgo.Session bot is wrapped around.
@@ -28,10 +29,12 @@ type Instance struct {
 	// aliases contains all bot command aliases.
 	aliases *aliases
 
+	// IsTriggered should return true if the bot is to react to command and false otherwise.
+	IsTriggered func(req *Request) (triggered bool, err error)
 	// errorHandlers are executed sequentially one by one on bot error.
-	startupHandlers []func(sg *Instance) error
+	startupHandlers []func(sg *Instance) (err error)
 	// shutdownHandlers are executed sequentially one by one on bot shutdown.
-	shutdownHandlers []func(sg *Instance) error
+	shutdownHandlers []func(sg *Instance) (err error)
 	// shutdownHandlers are executed sequentially one by one on bot shutdown.
 	errorHandlers []func(
 		err error,
@@ -148,4 +151,46 @@ func (sg *Instance) HandleError(
 
 	// Otherwise just put error into the log.
 	log.Println(err)
+}
+
+func (sg *Instance) isTriggered(req *Request) (triggered bool, err error) {
+	// Use custom IsTriggered function is provided.
+	if sg.IsTriggered != nil {
+		return sg.IsTriggered(req)
+	}
+
+	if req.Channel.Type == discordgo.ChannelTypeDM {
+		// It's Direct Messaging Channel. Every message here is in fact a direct message to the bot, so we consider
+		// it to be command without any further checks for prefixes.
+		return true, nil
+	} else if req.Channel.Type == discordgo.ChannelTypeGuildText || req.Channel.Type == discordgo.ChannelTypeGroupDM {
+		// It's either Guild Text Channel or multiple people direct group Channel.
+		// In order to detect command we need to check for bot Triggereq.
+
+		// If bot Trigger is set and command starts with that Trigger:
+		if sg.DefaultTrigger != "" && strings.HasPrefix(req.Query, sg.DefaultTrigger) {
+			// Replace custom Trigger with bot mention for it to be detected as bot Triggereq.
+			req.Query = strings.Replace(req.Query, sg.DefaultTrigger, req.Sugo.Self.Mention(), 1)
+		}
+
+		// If bot nick was changed on the server - it will have ! in it's mention, so we need to remove that in order
+		// for mention detection to work right.
+		if strings.HasPrefix(req.Query, "<@!") {
+			req.Query = strings.Replace(req.Query, "<@!", "<@", 1)
+		}
+
+		// If the message starts with bot mention:
+		if strings.HasPrefix(strings.TrimSpace(req.Query), req.Sugo.Self.Mention()) {
+			// Remove bot Trigger from the string.
+			req.Query = strings.TrimSpace(strings.TrimPrefix(req.Query, req.Sugo.Self.Mention()))
+			// Bot is triggered.
+			return true, nil
+		}
+
+		// Otherwise bot is not triggered.
+		return false, nil
+	}
+
+	// We ignore all other channel types and consider bot not triggered.
+	return false, nil
 }

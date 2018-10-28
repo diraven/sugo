@@ -38,13 +38,16 @@ func main() {
 	bot := sugo.New()
 
 	// Set bot trigger (not required, by default the bot will react to the messages starting with the bot @mention).
-	bot.Trigger = "."
+	bot.DefaultTrigger = "."
 
 	// Initialize modules.
-	bot.AddCommand(cmd)
+	if err := bot.AddCommand(cmd); err != nil {
+		log.Println(err)
+		return
+	}
 
 	// Start the bot.
-	if err := bot.Startup("bot YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
 		bot.HandleError(err)
 	}
 }
@@ -93,7 +96,7 @@ func main() {
 	bot.AddCommand(cmd)
 
 	// Start the bot.
-	if err := bot.Startup("bot YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
 		bot.HandleError(err)
 	}
 }
@@ -134,7 +137,7 @@ func main() {
 	bot.AddCommand(cmd)
 
 	// Start the bot.
-	if err := bot.Startup("bot YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
 		bot.HandleError(err)
 	}
 }
@@ -161,15 +164,24 @@ func main() {
 	bot := sugo.New()
 
 	// Set bot trigger.
-	bot.Trigger = "."
+	bot.DefaultTrigger = "."
 
 	// Initialize modules.
-	test.Init(bot)
-	help.Init(bot)
-	info.Init(bot)
+	if err := test.Init(bot); err != nil {
+		log.Println(err)
+		return
+	}
+	if err := help.Init(bot); err != nil {
+		log.Println(err)
+		return
+	}
+	if err := info.Init(bot); err != nil {
+		log.Println(err)
+		return
+	}
 
 	// Start the bot.
-	if err := bot.Startup("bot YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
 		bot.HandleError(err)
 	}
 }

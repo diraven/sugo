@@ -6,43 +6,6 @@ import (
 	"strings"
 )
 
-func isTriggered(req *Request) bool {
-	if req.Channel.Type == discordgo.ChannelTypeDM {
-		// It's Direct Messaging Channel. Every message here is in fact a direct message to the bot, so we consider
-		// it to be command without any further checks for prefixes.
-		return true
-	} else if req.Channel.Type == discordgo.ChannelTypeGuildText || req.Channel.Type == discordgo.ChannelTypeGroupDM {
-		// It's either Guild Text Channel or multiple people direct group Channel.
-		// In order to detect command we need to check for bot Triggereq.
-
-		// If bot Trigger is set and command starts with that Trigger:
-		if req.Sugo.Trigger != "" && strings.HasPrefix(req.Query, req.Sugo.Trigger) {
-			// Replace custom Trigger with bot mention for it to be detected as bot Triggereq.
-			req.Query = strings.Replace(req.Query, req.Sugo.Trigger, req.Sugo.Self.Mention(), 1)
-		}
-
-		// If bot nick was changed on the server - it will have ! in it's mention, so we need to remove that in order
-		// for mention detection to work right.
-		if strings.HasPrefix(req.Query, "<@!") {
-			req.Query = strings.Replace(req.Query, "<@!", "<@", 1)
-		}
-
-		// If the message starts with bot mention:
-		if strings.HasPrefix(strings.TrimSpace(req.Query), req.Sugo.Self.Mention()) {
-			// Remove bot Trigger from the string.
-			req.Query = strings.TrimSpace(strings.TrimPrefix(req.Query, req.Sugo.Self.Mention()))
-			// Bot is triggered.
-			return true
-		}
-
-		// Otherwise bot is not triggered.
-		return false
-	}
-
-	// We ignore all other channel types and consider bot not triggered.
-	return false
-}
-
 // onMessageCreate is a lowest level handler for bot. All the request building and command searching magic happen here.
 func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	var err error
@@ -71,7 +34,11 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	}
 
 	// Make sure bot is triggered by the request.
-	if !isTriggered(req) {
+	var triggered bool
+	if triggered, err = sg.isTriggered(req); err != nil {
+		sg.HandleError(errors.Wrap(err, "error processing bot trigger"), req)
+	}
+	if !triggered {
 		return
 	}
 
