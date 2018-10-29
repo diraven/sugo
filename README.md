@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// Start the bot.
-	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("TOKEN"); err != nil {
 		bot.HandleError(err)
 	}
 }
@@ -96,7 +96,7 @@ func main() {
 	bot.AddCommand(cmd)
 
 	// Start the bot.
-	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("TOKEN"); err != nil {
 		bot.HandleError(err)
 	}
 }
@@ -137,7 +137,7 @@ func main() {
 	bot.AddCommand(cmd)
 
 	// Start the bot.
-	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("TOKEN"); err != nil {
 		bot.HandleError(err)
 	}
 }
@@ -181,7 +181,7 @@ func main() {
 	}
 
 	// Start the bot.
-	if err := bot.Startup("YOURTOKENSTRING"); err != nil {
+	if err := bot.Startup("TOKEN"); err != nil {
 		bot.HandleError(err)
 	}
 }

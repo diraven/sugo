@@ -36,8 +36,7 @@ var cmd = &sugo.Command{
 		switch len(ss) {
 		case 1: // Means we have got either user mention or amount of messages to delete.
 			if ss[0] == "" { // No parameters given.
-				_, err := req.RespondBadCommandUsage("", "")
-				return err
+				return sugo.NewBadCommandUsageError(req)
 			}
 
 			if len(req.Message.Mentions) > 0 { // Get user mention if available.
@@ -53,9 +52,7 @@ var cmd = &sugo.Command{
 			break
 		case 2: // Means we've got both user mention and amount of messages to delete.
 			if len(req.Message.Mentions) == 0 { // Query must have mention.
-				if _, err := req.RespondBadCommandUsage("", ""); err != nil {
-					return err
-				}
+				return sugo.NewBadCommandUsageError(req)
 			}
 			userID = req.Message.Mentions[0].ID
 
@@ -66,24 +63,17 @@ var cmd = &sugo.Command{
 			if err != nil { // If first argument did not work.
 				count, err = strconv.Atoi(ss[1]) // Try second one.
 				if err != nil {
-					if _, err := req.RespondBadCommandUsage("", ""); err != nil {
-						return err
-					}
+					return sugo.NewBadCommandUsageError(req)
 				}
 			}
 			break
 		default:
-			if _, err := req.RespondBadCommandUsage("", ""); err != nil {
-				return err
-			}
-			return nil
+			return sugo.NewBadCommandUsageError(req)
 		}
 
 		// Validate count.
 		if count > maxCount {
-			if _, err := req.RespondBadCommandUsage("", "max messages count I can delete is "+strconv.Itoa(maxCount)); err != nil {
-				return err
-			}
+			return sugo.NewError(req, "max count of messages count I can delete in one go is "+strconv.Itoa(maxCount))
 		}
 
 		lastMessageID := req.Message.ID      // To store last message id.
@@ -116,11 +106,7 @@ var cmd = &sugo.Command{
 
 				if time.Since(then).Hours() >= 24*14 {
 					// We are unable to delete messages older then 14 days.
-					_, err = req.RespondDanger("", "unable to delete messages older then 2 weeks")
-					if err != nil {
-						return err
-					}
-					break messageLoop
+					return sugo.NewError(req, "unable to delete messages older then 14 days")
 				}
 				if userID != "" {
 					// If user ID is specified, we compare message with the user ID.
@@ -156,7 +142,7 @@ var cmd = &sugo.Command{
 		_ = req.Sugo.Session.ChannelMessagesBulkDelete(req.Channel.ID, messageIDs)
 
 		// Notify user about deletion.
-		msg,  err := req.RespondWarning("", "cleaning done, this message will self-destruct in 10 seconds")
+		msg, err := req.Respond("", sugo.NewWarningEmbed(req, "cleaning done, this message will self-destruct in 10 seconds"), false)
 		if err != nil {
 			return err
 		}
@@ -166,6 +152,6 @@ var cmd = &sugo.Command{
 
 		// Delete notification. Ignore errors (such as message already deleted by someone) for now.
 		_ = req.Sugo.Session.ChannelMessageDelete(msg.ChannelID, msg.ID)
-		return err
+		return nil
 	},
 }

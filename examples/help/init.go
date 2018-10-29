@@ -77,7 +77,6 @@ var cmd = &sugo.Command{
 			_, err = req.Sugo.Session.ChannelMessageSendEmbed(req.Channel.ID, embed)
 			return err
 		}
-		_, err = req.RespondWarning("", "I know nothing about this command, sorry...")
-		return err
+		return sugo.NewCommandNotFoundError(req)
 	},
 }

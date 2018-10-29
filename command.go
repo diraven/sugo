@@ -1,6 +1,7 @@
 package sugo
 
 import (
+	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"strings"
 )
@@ -15,6 +16,8 @@ type Command struct {
 	HasParams bool
 	// PermissionsRequired specifies permissions set required by the command.
 	PermissionsRequired int
+	// RequireGuild specifies if this command works in guild chats only.
+	RequireGuild bool
 	// Execute method is executed if request string matches the given command.
 	Execute func(req *Request) error
 	// SubCommands contains all subcommands of the given command.
@@ -49,7 +52,12 @@ func (c *Command) GetPath() (value string) {
 
 // match is a system matching function that checks if command Trigger matches the start of message content.
 func (c *Command) match(sg *Instance, req *Request, q string) bool {
-	// Ff command is empty and trigger not set - we consider this a match.
+	// If command is for guild text channels only and executed elsewhere - it's not a match.
+	if c.RequireGuild && req.Channel.Type != discordgo.ChannelTypeGuildText {
+		return false
+	}
+
+	// If command is empty and trigger not set - we consider this a match.
 	if c.Trigger == "" && q == "" {
 		return true
 	}
@@ -146,6 +154,5 @@ func (c *Command) execute(sg *Instance, req *Request) error {
 	}
 
 	// Otherwise there must be subcommands. Notify user that command is used incorrectly.
-	_, err := req.RespondBadCommandUsage("", "")
-	return err
+	return NewBadCommandUsageError(req)
 }

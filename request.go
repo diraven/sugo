@@ -1,12 +1,14 @@
 package sugo
 
 import (
-	"errors"
+	"context"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
 // Request contains message context data along with some helpers to retrieve more information.
 type Request struct {
+	Ctx     context.Context
 	Sugo    *Instance
 	Message *discordgo.Message
 	Channel *discordgo.Channel
