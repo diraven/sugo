@@ -13,7 +13,7 @@ var cmd = &sugo.Command{
 	Trigger:     "test",
 	Description: "command made for testing purposes\n",
 	Execute: func(req *sugo.Request) (err error) {
-		if _, err := req.Respond("", sugo.NewInfoEmbed(req, "test"), false); err != nil {
+		if _, err = req.SimpleResponse("test").Send(); err != nil {
 			return sugo.WrapError(req, err)
 		}
 		return
@@ -22,7 +22,7 @@ var cmd = &sugo.Command{
 		{
 			Trigger: "subtest1",
 			Execute: func(req *sugo.Request) (err error) {
-				if _, err := req.Respond("", sugo.NewInfoEmbed(req, "subtest1"), false); err != nil {
+				if _, err = req.SimpleResponse("subtest1").Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
 				return
@@ -31,7 +31,7 @@ var cmd = &sugo.Command{
 				{
 					Trigger: "subtest11",
 					Execute: func(req *sugo.Request) (err error) {
-						if _, err := req.Respond("", sugo.NewInfoEmbed(req, "subtest11"), false); err != nil {
+						if _, err = req.SimpleResponse("subtest11").Send(); err != nil {
 							return sugo.WrapError(req, err)
 						}
 						return
@@ -40,7 +40,7 @@ var cmd = &sugo.Command{
 				{
 					Trigger: "subtest12",
 					Execute: func(req *sugo.Request) (err error) {
-						if _, err := req.Respond("", sugo.NewInfoEmbed(req, "subtest12"), false); err != nil {
+						if _, err = req.SimpleResponse("subtest12").Send(); err != nil {
 							return sugo.WrapError(req, err)
 						}
 						return
@@ -51,34 +51,97 @@ var cmd = &sugo.Command{
 		{
 			Trigger: "subtest2",
 			Execute: func(req *sugo.Request) (err error) {
-				if _, err := req.Respond("", sugo.NewInfoEmbed(req, "subtest2"), false); err != nil {
+				if _, err = req.SimpleResponse("subtest2").Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
 				return
 			},
 		},
 		{
-			Trigger: "responses",
+			Trigger: "plaintext",
 			Execute: func(req *sugo.Request) (err error) {
-				if _, err := req.Respond("text", nil, false); err != nil {
+				if _, err = req.NewResponse(
+					sugo.ResponsePlainText,
+					"message title",
+					"message text",
+				).Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
-				if _, err := req.Respond("", sugo.NewDefaultEmbed(req, "default"), false); err != nil {
+				return
+			},
+		},
+		{
+			Trigger: "simple",
+			Execute: func(req *sugo.Request) (err error) {
+				if _, err = req.SimpleResponse("message text").Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
-				if _, err := req.Respond("", sugo.NewInfoEmbed(req, "info"), false); err != nil {
+				return
+			},
+		},
+		{
+			Trigger: "default",
+			Execute: func(req *sugo.Request) (err error) {
+				if _, err = req.NewResponse(
+					sugo.ResponseDefault,
+					"message title",
+					"message text",
+				).Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
-				if _, err := req.Respond("", sugo.NewWarningEmbed(req, "warning"), false); err != nil {
+				return
+			},
+		},
+		{
+			Trigger: "info",
+			Execute: func(req *sugo.Request) (err error) {
+				if _, err = req.NewResponse(
+					sugo.ResponseInfo,
+					"message title",
+					"message text",
+				).Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
-				if _, err := req.Respond("", sugo.NewDangerEmbed(req, "danger"), false); err != nil {
+				return
+			},
+		},
+		{
+			Trigger: "success",
+			Execute: func(req *sugo.Request) (err error) {
+				if _, err = req.NewResponse(
+					sugo.ResponseSuccess,
+					"message title",
+					"message text",
+				).Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
-				if _, err := req.Respond("", sugo.NewDefaultEmbed(req, "default (DM)"), true); err != nil {
+				return
+			},
+		},
+		{
+			Trigger: "warning",
+			Execute: func(req *sugo.Request) (err error) {
+				if _, err = req.NewResponse(
+					sugo.ResponseWarning,
+					"message title",
+					"message text",
+				).Send(); err != nil {
 					return sugo.WrapError(req, err)
 				}
-				return sugo.NewError(req, "error")
+				return
+			},
+		},
+		{
+			Trigger: "danger",
+			Execute: func(req *sugo.Request) (err error) {
+				if _, err = req.NewResponse(
+					sugo.ResponseDanger,
+					"message title",
+					"message text",
+				).Send(); err != nil {
+					return sugo.WrapError(req, err)
+				}
+				return
 			},
 		},
 	},

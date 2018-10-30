@@ -16,20 +16,20 @@ type Request struct {
 	Query   string
 }
 
-// GetGuild allows to retrieve *discordgo.Guild from request. Will not work and will throw error for channels
+// GetGuild allows to retrieve *discordgo.Guild from Request. Will not work and will throw error for channels
 // that have no guild such as DirectMessages or GroupDirectMessages channels, so you probably want to check
 // those beforehand.
 func (req *Request) GetGuild() (*discordgo.Guild, error) {
 	if req.Channel.GuildID != "" {
 		guild, err := req.Sugo.Session.State.Guild(req.Channel.GuildID)
 		if err != nil {
-			return nil, errors.New("unable to get guild for request")
+			return nil, errors.New("unable to get guild for Request")
 		}
 
 		return guild, nil
 	}
 
-	return nil, errors.New("request has no guild")
+	return nil, errors.New("Request has no guild")
 }
 
 // IsChannelDefault returns true if channel is Guild's default channel and false otherwise.

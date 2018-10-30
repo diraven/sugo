@@ -12,13 +12,13 @@ type Command struct {
 	Trigger string
 	// Description should contain short command description.
 	Description string
-	// HasParams specifies if command can have additional parameters in request string.
+	// HasParams specifies if command can have additional parameters in Request string.
 	HasParams bool
 	// PermissionsRequired specifies permissions set required by the command.
 	PermissionsRequired int
 	// RequireGuild specifies if this command works in guild chats only.
 	RequireGuild bool
-	// Execute method is executed if request string matches the given command.
+	// Execute method is executed if Request string matches the given command.
 	Execute func(req *Request) error
 	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
@@ -52,7 +52,7 @@ func (c *Command) GetPath() (value string) {
 
 // match is a system matching function that checks if command Trigger matches the start of message content.
 func (c *Command) match(sg *Instance, req *Request, q string) bool {
-	// If command is for guild text channels only and executed elsewhere - it's not a match.
+	// If command is for guild Text channels only and executed elsewhere - it's not a match.
 	if c.RequireGuild && req.Channel.Type != discordgo.ChannelTypeGuildText {
 		return false
 	}

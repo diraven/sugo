@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// onMessageCreate is a lowest level handler for bot. All the request building and command searching magic happen here.
+// onMessageCreate is a lowest level handler for bot. All the Request building and command searching magic happen here.
 func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	var err error
 
@@ -16,28 +16,28 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 		return
 	}
 
-	// Instantiate request.
+	// Instantiate Request.
 	var req = &Request{}
 
-	// Create request context.
+	// Create Request context.
 	req.Ctx = context.Background()
 
-	// Put bot pointer into the appropriate request var for later reference.
+	// Put bot pointer into the appropriate Request var for later reference.
 	req.Sugo = sg
 
-	// Put message into request.
+	// Put message into Request.
 	req.Message = m
 
-	// Put initial query into request.
+	// Put initial query into Request.
 	req.Query = m.Content
 
-	// Get message channel and put it into the request.
+	// Get message channel and put it into the Request.
 	req.Channel, err = sg.Session.State.Channel(req.Message.ChannelID)
 	if err != nil {
 		sg.HandleError(err)
 	}
 
-	// Make sure bot is triggered by the request.
+	// Make sure bot is triggered by the Request.
 	var triggered bool
 	if triggered, err = sg.isTriggered(req); err != nil {
 		sg.HandleError(errors.Wrap(err, "error processing bot trigger"))

@@ -21,16 +21,13 @@ func (sg *Instance) HandleError(
 
 	if sugoErr, ok := cause.(*Error); ok {
 		// Error is sugo error.
-		// Make sure we have got a valid request to work with.
+		// Make sure we have got a valid Request to work with.
 		if sugoErr.request != nil {
-			// Prepare response embed.
-			var embed = NewDangerEmbed(sugoErr.request, sugoErr.text)
-
-			// Now try to respond with the embed.
-			if _, channelSendErr := sugoErr.request.Respond("", embed, false); channelSendErr != nil {
+			// Now try to respond with the Embed.
+			if _, channelSendErr := sugoErr.request.NewResponse(ResponseDanger, "", sugoErr.text).Send(); channelSendErr != nil {
 				// If we were unable to send the message to the same channel command was issued on,
 				// try to send to the user DM instead.
-				if _, dmSendErr := sugoErr.request.Respond("", embed, true); dmSendErr != nil {
+				if _, dmSendErr := sugoErr.request.NewResponse(ResponseDanger, "", sugoErr.text).SendDM(); dmSendErr != nil {
 					// We were unable to send the error via DM either. In that case just log it into the console as well
 					// as all the rest of the errors we have encountered.
 					log.Println(channelSendErr)
@@ -43,9 +40,9 @@ func (sg *Instance) HandleError(
 			// Message was sent to the channel. There is nothing else we need to do.
 			return
 		}
-		// There is a sugoErr, but without request provided. There must be something very wrong. Report the issue.
+		// There is a sugoErr, but without Request provided. There must be something very wrong. Report the issue.
 		log.Println(sugoErr)
-		log.Println(errors.New("sugoErr is provided without request"))
+		log.Println(errors.New("sugoErr is provided without Request"))
 		return
 	}
 
