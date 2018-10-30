@@ -11,8 +11,8 @@ import (
 )
 
 // Init initializes module on the given bot.
-func Init(sg *sugo.Instance) {
-	sg.AddCommand(cmd)
+func Init(sg *sugo.Instance) (err error) {
+	return sg.AddCommand(cmd)
 }
 
 // Info shows some general bot info.
