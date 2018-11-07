@@ -17,7 +17,7 @@ func (sg *Instance) shutdown() (err error) {
 		if err := handler(sg); err != nil {
 			// In case of an error - we report the error and continue the shutdown process. Errors should not interrupt
 			// shutdown as we need to perform shutdown as cleanly as possible.
-			sg.HandleError(errors.Wrap(err, "shutdown error"))
+			sg.HandleError(nil, errors.Wrap(err, "shutdown error"))
 		}
 	}
 

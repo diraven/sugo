@@ -144,15 +144,18 @@ func (c *Command) setParents() {
 }
 
 // execute is a default command execution function.
-func (c *Command) execute(sg *Instance, req *Request) error {
+func (c *Command) execute(sg *Instance, req *Request) (err error) {
 	// There is always either execute defined or subcommands available as enforced by validate() on command add.
 
 	// If execute method defined - use it.
 	if c.Execute != nil {
-		err := c.Execute(req)
-		return err
+		return c.Execute(req)
 	}
 
 	// Otherwise there must be subcommands. Notify user that command is used incorrectly.
-	return NewBadCommandUsageError(req)
+	if _, err = req.NewResponse(ResponseDanger, "", "I'm unable to execute this command itself, try subcommands instead").Send(); err != nil {
+		return
+	}
+
+	return
 }

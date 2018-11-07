@@ -34,22 +34,18 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 	// Get message channel and put it into the Request.
 	req.Channel, err = sg.Session.State.Channel(req.Message.ChannelID)
 	if err != nil {
-		sg.HandleError(err)
+		sg.HandleError(req, errors.Wrap(err, "unable to retrieve discord channel"))
 	}
 
 	// Make sure bot is triggered by the Request.
-	var triggered bool
-	if triggered, err = sg.isTriggered(req); err != nil {
-		sg.HandleError(errors.Wrap(err, "error processing bot trigger"))
-	}
-	if !triggered {
+	if !sg.isTriggered(req) {
 		return
 	}
 
 	// Search for applicable command.
 	req.Command, err = sg.FindCommand(req, req.Query)
 	if err != nil {
-		sg.HandleError(errors.Wrap(err, "command search error"))
+		sg.HandleError(req, errors.Wrap(err, "unable to search commands"))
 	}
 
 	//// If we did not find matching command, try applying alias and search again.
@@ -77,7 +73,7 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 		// And execute command.
 		err = req.Command.execute(sg, req)
 		if err != nil {
-			sg.HandleError(errors.Wrap(err, "command execution error"))
+			sg.HandleError(req, errors.Wrap(err, "command execution error"))
 		}
 	}
 

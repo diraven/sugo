@@ -10,6 +10,7 @@ type Response struct {
 	Request *Request
 	Text    string
 	Embed   *discordgo.MessageEmbed
+	Emoji   discordgo.Emoji
 }
 
 type responseType string
@@ -22,6 +23,17 @@ const (
 	ResponseWarning   responseType = "warning"
 	ResponseDanger    responseType = "danger"
 )
+
+type emoji string
+
+const (
+	ReactionOk emoji = "👌"
+)
+
+// ReactOk adds "ok" emoji to the command message.
+func (req *Request) AddReaction(reaction emoji) (err error) {
+	return req.Sugo.Session.MessageReactionAdd(req.Channel.ID, req.Message.ID, string(reaction))
+}
 
 func (req *Request) SimpleResponse(text string) (resp *Response) {
 	return req.NewResponse(ResponseDefault, "", text)
@@ -87,7 +99,7 @@ func (resp *Response) send(channelID string) (m *discordgo.Message, err error) {
 
 	switch resp.Type {
 	case ResponsePlainText:
-		// Response is a plain text response, send is a plain text.
+		// Response is a plain text response, send it as a plain text.
 		return resp.Request.Sugo.Session.ChannelMessageSend(channelID, resp.Text)
 
 	case ResponseDefault, ResponseInfo, ResponseSuccess, ResponseWarning, ResponseDanger:
@@ -101,7 +113,10 @@ func (resp *Response) send(channelID string) (m *discordgo.Message, err error) {
 
 // Send sends a Response into the channel Request was sent in.
 func (resp *Response) Send() (m *discordgo.Message, err error) {
-	return resp.send(resp.Request.Message.ChannelID)
+	if m, err = resp.send(resp.Request.Message.ChannelID); err != nil {
+		return m, errors.Wrap(err, "unable to send message")
+	}
+	return
 }
 
 // SendDM sends a Response to the user DirectMessages channel.

@@ -24,9 +24,10 @@ type Instance struct {
 	RootCommand *Command
 
 	// IsTriggered should return true if the bot is to react to command and false otherwise.
-	IsTriggered func(req *Request) (triggered bool, err error)
-	// ErrorHandler is the function that receives and handles all the errors.
-	ErrorHandler func(err error)
+	IsTriggered func(req *Request) (triggered bool)
+	// ErrorHandler is the function that receives and handles all the errors. Keep in mind that *Request can be nil
+	// if error handler is called outside of command request scope.
+	ErrorHandler func(req *Request, err error)
 
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
@@ -83,7 +84,7 @@ func (sg *Instance) hasPermissions(req *Request, requiredPerms int) (result bool
 		// First of all - get the user perms.
 		actualPerms, err := sg.Session.State.UserChannelPermissions(req.Message.Author.ID, req.Channel.ID)
 		if err != nil {
-			sg.HandleError(errors.Wrap(err, "user permissions retrieval failed"))
+			sg.HandleError(nil, errors.Wrap(err, "user permissions retrieval failed"))
 			return false
 		}
 

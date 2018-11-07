@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (sg *Instance) isTriggered(req *Request) (triggered bool, err error) {
+func (sg *Instance) isTriggered(req *Request) (triggered bool) {
 	// Use custom IsTriggered function is provided.
 	if sg.IsTriggered != nil {
 		return sg.IsTriggered(req)
@@ -14,7 +14,8 @@ func (sg *Instance) isTriggered(req *Request) (triggered bool, err error) {
 	if req.Channel.Type == discordgo.ChannelTypeDM {
 		// It's Direct Messaging Channel. Every message here is in fact a direct message to the bot, so we consider
 		// it to be command without any further checks for prefixes.
-		return true, nil
+		triggered = true
+		return
 	} else if req.Channel.Type == discordgo.ChannelTypeGuildText || req.Channel.Type == discordgo.ChannelTypeGroupDM {
 		// It's either Guild Text Channel or multiple people direct group Channel.
 		// In order to detect command we need to check for bot Trigger.
@@ -36,13 +37,14 @@ func (sg *Instance) isTriggered(req *Request) (triggered bool, err error) {
 			// Remove bot Trigger from the string.
 			req.Query = strings.TrimSpace(strings.TrimPrefix(req.Query, req.Sugo.Self.Mention()))
 			// Bot is triggered.
-			return true, nil
+			triggered = true
+			return
 		}
 
 		// Otherwise bot is not triggered.
-		return false, nil
+		return
 	}
 
 	// We ignore all other channel types and consider bot not triggered.
-	return false, nil
+	return
 }
