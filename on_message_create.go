@@ -42,28 +42,18 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 		return
 	}
 
+	// Apply request middlewares if any.
+	for _, m := range sg.requestMiddlewares {
+		if err = m(req); err != nil {
+			sg.HandleError(req, err)
+		}
+	}
+
 	// Search for applicable command.
 	req.Command, err = sg.FindCommand(req, req.Query)
 	if err != nil {
 		sg.HandleError(req, errors.Wrap(err, "unable to search commands"))
 	}
-
-	//// If we did not find matching command, try applying alias and search again.
-	//if req.Command == nil {
-	//	// Apply aliases if any applicable.
-	//	for _, alias := range *sg.aliases {
-	//		if strings.HasPrefix(strings.TrimSpace(req.Query), alias.from) {
-	//			req.Query = strings.Replace(req.Query, alias.from, alias.to, 1)
-	//			break // we apply only one alias that matched first.
-	//		}
-	//	}
-	//
-	//	// Search for applicable command again after alias was applied.
-	//	req.Command, err = sg.FindCommand(req, req.Query)
-	//	if err != nil {
-	//		sg.HandleError(errors.Wrap(err, "aliased command search error"), req)
-	//	}
-	//}
 
 	// If we have found applicable command:
 	if req.Command != nil {
@@ -71,9 +61,23 @@ func (sg *Instance) onMessageCreate(m *discordgo.Message) {
 		req.Query = strings.TrimSpace(strings.TrimPrefix(req.Query, req.Command.GetPath()))
 
 		// And execute command.
-		err = req.Command.execute(sg, req)
-		if err != nil {
+		var resp *Response
+		if resp, err = req.Command.execute(sg, req); err != nil {
 			sg.HandleError(req, errors.Wrap(err, "command execution error"))
+		}
+
+		// Apply response middlewares.
+		for _, m := range sg.responseMiddlewares {
+			if err = m(resp); err != nil {
+				sg.HandleError(req, err)
+			}
+		}
+
+		// Process response.
+		if resp != nil {
+			if _, err = resp.Send(); err != nil {
+				sg.HandleError(req, errors.Wrap(err, "response processing error"))
+			}
 		}
 	}
 

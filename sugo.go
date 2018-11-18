@@ -4,11 +4,17 @@ package sugo
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"log"
 	"os"
 )
 
 // VERSION contains current version of the Instance framework.
 const VERSION = "0.6.0"
+
+type RequestMiddleware func(*Request) error
+type ResponseMiddleware func(*Response) error
+type startupHandler func(sg *Instance) (err error)
+type shutdownHandler func(sg *Instance) (err error)
 
 // Instance struct describes bot.
 type Instance struct {
@@ -32,9 +38,12 @@ type Instance struct {
 	// done is channel that receives Shutdown signals.
 	done chan os.Signal
 	// startupHandlers are executed sequentially one by one on bot startup.
-	startupHandlers []func(sg *Instance) (err error)
+	startupHandlers []startupHandler
 	// shutdownHandlers are executed sequentially one by one on bot shutdown.
-	shutdownHandlers []func(sg *Instance) (err error)
+	shutdownHandlers []shutdownHandler
+
+	requestMiddlewares  []RequestMiddleware
+	responseMiddlewares []ResponseMiddleware
 }
 
 // New creates new bot instance.
@@ -53,20 +62,30 @@ func New() *Instance {
 }
 
 // AddStartupHandler adds function that will be called on bot startup.
-func (sg *Instance) AddStartupHandler(handler func(sg *Instance) error) {
+func (sg *Instance) AddStartupHandler(handler startupHandler) {
 	sg.startupHandlers = append(sg.startupHandlers, handler)
 }
 
 // AddShutdownHandler adds function that will be called on bot shutdown.
-func (sg *Instance) AddShutdownHandler(handler func(sg *Instance) error) {
+func (sg *Instance) AddShutdownHandler(handler shutdownHandler) {
 	sg.shutdownHandlers = append(sg.shutdownHandlers, handler)
 }
 
+// AddRequestMiddleware adds request middleware.
+func (sg *Instance) AddRequestMiddleware(m RequestMiddleware) {
+	sg.requestMiddlewares = append(sg.requestMiddlewares, m)
+}
+
+// AddResponseMiddleware adds response middleware.
+func (sg *Instance) AddResponseMiddleware(m ResponseMiddleware) {
+	sg.responseMiddlewares = append(sg.responseMiddlewares, m)
+}
+
 // AddCommand adds command to the bot's commands list.
-func (sg *Instance) AddCommand(c *Command) (err error) {
+func (sg *Instance) AddCommand(c *Command) {
 	// Validate command.
-	if err = c.validate(); err != nil {
-		return
+	if err := c.validate(); err != nil {
+		log.Fatal(err)
 	}
 
 	// Set parents for all subcommands.

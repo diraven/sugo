@@ -19,7 +19,7 @@ type Command struct {
 	// RequireGuild specifies if this command works in guild chats only.
 	RequireGuild bool
 	// Execute method is executed if Request string matches the given command.
-	Execute func(req *Request) error
+	Execute func(req *Request) (*Response, error)
 	// SubCommands contains all subcommands of the given command.
 	SubCommands []*Command
 	// parentCommand contains command, which is parent for this one.
@@ -144,7 +144,7 @@ func (c *Command) setParents() {
 }
 
 // execute is a default command execution function.
-func (c *Command) execute(sg *Instance, req *Request) (err error) {
+func (c *Command) execute(sg *Instance, req *Request) (resp *Response, err error) {
 	// There is always either execute defined or subcommands available as enforced by validate() on command add.
 
 	// If execute method defined - use it.
@@ -153,9 +153,7 @@ func (c *Command) execute(sg *Instance, req *Request) (err error) {
 	}
 
 	// Otherwise there must be subcommands. Notify user that command is used incorrectly.
-	if _, err = req.NewResponse(ResponseDanger, "", "I'm unable to execute this command itself, try subcommands instead").Send(); err != nil {
-		return
-	}
+	resp = req.NewResponse(ResponseDanger, "", "I'm unable to execute this command itself, try subcommands instead")
 
 	return
 }
