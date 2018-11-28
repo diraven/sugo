@@ -51,7 +51,7 @@ func (sg *Instance) Startup(token string) (err error) {
 	}
 
 	// Notify that bot is now running.
-	log.Println("Bot is now running. Press CTRL-C to exit.")
+	log.Println("bot is now running, press ctrl+c to exit")
 
 	// Register bot sg.done channel to receive Shutdown signals.
 	signal.Notify(sg.done, syscall.SIGINT, syscall.SIGTERM)
