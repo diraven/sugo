@@ -35,8 +35,14 @@ func (req *Request) AddReaction(reaction emoji) (err error) {
 	return req.Sugo.Session.MessageReactionAdd(req.Channel.ID, req.Message.ID, string(reaction))
 }
 
+// SimpleResponse creates a default embed response.
 func (req *Request) SimpleResponse(text string) (resp *Response) {
 	return req.NewResponse(ResponseDefault, "", text)
+}
+
+// PlainTextResponse creates a raw text response.
+func (req *Request) PlainTextResponse(text string) (resp *Response) {
+	return req.NewResponse(ResponsePlainText, "", text)
 }
 
 // Respond responds (via DM if viaDM is set to true) with the Text or Embed provided. If both provided - only Text is
