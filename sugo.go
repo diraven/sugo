@@ -9,7 +9,7 @@ import (
 )
 
 // VERSION contains current version of the Instance framework.
-const VERSION = "0.6.0"
+const VERSION = "0.6.1"
 
 type RequestMiddleware func(*Request) error
 type ResponseMiddleware func(*Response) error
